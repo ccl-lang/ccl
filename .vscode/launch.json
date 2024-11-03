@@ -10,7 +10,11 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
-            "args": ["help"]
+            "args": [
+                "generate", 
+                "--source", "examples/api_types.ccl", 
+                "--language", "go", 
+                "--output", "examples/apiTypes_gen"],
         }
     ]
 }

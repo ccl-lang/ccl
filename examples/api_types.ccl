@@ -1,0 +1,31 @@
+#[CCLVersion("1.0.0")]
+#[SerializationType("binary")]
+
+// hello there, this is a comment test
+/* this is a comment test */
+
+[SerializationType("binary")]
+model AuthRequest {
+    Username: string;
+    Password: string;
+}
+
+model AuthResponse {
+    Token: string;
+    UserId: int64;
+    ProfileImage: bytes;
+}
+
+model UserInfo {
+    Id: int64;
+    Username: string;
+    Email: string;
+    ProfileImage: bytes;
+    CreatedAt: datetime;
+    UpdatedAt: datetime;
+}
+
+model GetUsersResult {
+    Users: UserInfo[];
+    OtherUsers: UserInfo   [];
+}

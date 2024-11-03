@@ -6,7 +6,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/ALiwoto/ccl-gen/src/cclParser"
+	"github.com/ALiwoto/ccl/src/cclGenerators"
+	"github.com/ALiwoto/ccl/src/cclLoader"
+	"github.com/ALiwoto/ccl/src/cclParser"
 )
 
 func main() {
@@ -51,11 +53,25 @@ func main() {
 			os.Exit(1)
 		}
 
-		_, parseErr := cclParser.ParseCCLSourceFile(*source)
+		parsedDefinitions, parseErr := cclParser.ParseCCLSourceFile(&cclParser.CCLParseOptions{
+			Source: *source,
+		})
 		if parseErr != nil {
 			fmt.Printf("Error: failed to parse source file %s: %v\n", *source, parseErr)
 			os.Exit(1)
 		}
+
+		cclLoader.LoadGenerators()
+		result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
+			CCLDefinition:  parsedDefinitions,
+			OutputPath:     *output,
+			TargetLanguage: *language,
+		})
+		if err != nil {
+			fmt.Printf("Error: failed to generate code: %v\n", err)
+			os.Exit(1)
+		}
+		print(result)
 	case "version":
 		fmt.Printf("ccl version %s %s/%s\n", "1.0.0", runtime.GOOS, runtime.GOARCH)
 	case "help":

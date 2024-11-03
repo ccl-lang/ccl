@@ -5,10 +5,10 @@ ccl is a code generation tool for converting a .ccl source file to certain progr
 
 ## Installation
 ```bash
-go install github.com/ALiwoto/ccl-gen@latest
+go install github.com/ALiwoto/ccl@latest
 ```
 
 ## Usage
 ```bash
-ccl-gen generate --source definitions.ccl -o path/to/output -language Go
+ccl generate --source definitions.ccl -o path/to/output -language Go
 ```
