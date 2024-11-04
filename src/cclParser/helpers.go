@@ -2,7 +2,6 @@ package cclParser
 
 import (
 	"os"
-	"regexp"
 
 	"github.com/ALiwoto/ccl/src/core/cclErrors"
 	"github.com/ALiwoto/ccl/src/core/cclValues"
@@ -14,47 +13,50 @@ func ParseCCLSourceFile(options *CCLParseOptions) (*cclValues.SourceCodeDefiniti
 		return nil, err
 	}
 
-	modelRegex := regexp.MustCompile(`(?ms)model\s+(\w+)\s*\{(.*?)\}`)
-	fieldRegex := regexp.MustCompile(`(\w+)\s*:\s*([\w]+)\s*(\[\s*\])?\s*;`)
-
+	srcDefinition := &cclValues.SourceCodeDefinition{}
 	modelMatches := modelRegex.FindAllStringSubmatch(string(content), -1)
-	parsedModels := cclValues.ModelsMap{}
+	parsedModels := []*cclValues.ModelDefinition{}
+	definedModels := map[string]bool{}
 
 	for _, modelMatch := range modelMatches {
 		modelName := modelMatch[1]
 		fieldMatches := fieldRegex.FindAllStringSubmatch(modelMatch[2], -1)
-		parsedFields := cclValues.FieldsMap{}
+		definedFields := map[string]bool{}
+		currentModel := &cclValues.ModelDefinition{
+			ModelId: srcDefinition.GetNextModelId(),
+			Name:    modelName,
+			Fields:  []*cclValues.FieldDefinition{},
+		}
 
 		for _, fieldMatch := range fieldMatches {
 			fieldName := fieldMatch[1]
 			fieldType := fieldMatch[2]
 			extraOperators := fieldMatch[3]
-			if _, exists := parsedFields[fieldName]; exists {
+			if _, exists := definedFields[fieldName]; exists {
 				return nil, &cclErrors.DuplicateFieldError{
 					ModelName: modelName,
 					FieldName: fieldName,
 				}
 			}
 
-			parsedFields[fieldName] = &cclValues.FieldDefinition{
+			currentModel.Fields = append(currentModel.Fields, &cclValues.FieldDefinition{
+				OwnedBy:        currentModel,
 				Name:           fieldName,
 				Type:           fieldType,
 				ExtraOperators: extraOperators,
-			}
+			})
+			definedFields[fieldName] = true
 		}
 
-		if _, exists := parsedModels[modelName]; exists {
+		if _, exists := definedModels[modelName]; exists {
 			return nil, &cclErrors.DuplicateModelError{
 				ModelName: modelName,
 			}
 		}
-		parsedModels[modelName] = &cclValues.ModelDefinition{
-			Name:   modelName,
-			Fields: parsedFields,
-		}
+		parsedModels = append(parsedModels, currentModel)
+		definedModels[modelName] = true
 	}
 
-	return &cclValues.SourceCodeDefinition{
-		Models: parsedModels,
-	}, nil
+	srcDefinition.Models = parsedModels
+	return srcDefinition, nil
 }

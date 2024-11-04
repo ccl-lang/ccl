@@ -8,6 +8,7 @@ type CodeGenerationOptions struct {
 	CCLDefinition  *cclValues.SourceCodeDefinition
 	OutputPath     string
 	TargetLanguage string
+	PackageName    string
 }
 
 type CodeGenerationResult struct {

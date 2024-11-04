@@ -19,3 +19,12 @@ func (d *DuplicateModelError) Error() string {
 }
 
 //---------------------------------------------------------
+
+func (u *UnsupportedFieldTypeError) Error() string {
+	return "Unsupported field type: " + u.TypeName +
+		" for field " + u.FieldName +
+		" in model " + u.ModelName +
+		" when compiling to " + u.TargetLanguage
+}
+
+//---------------------------------------------------------

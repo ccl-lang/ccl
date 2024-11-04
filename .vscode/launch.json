@@ -14,7 +14,7 @@
                 "generate", 
                 "--source", "examples/api_types.ccl", 
                 "--language", "go", 
-                "--output", "examples/apiTypes_gen"],
+                "--output", "examples/go_gen/apiTypes_gen"],
         }
     ]
 }
