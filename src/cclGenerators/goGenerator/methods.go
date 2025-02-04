@@ -131,7 +131,7 @@ func (c *GoGenerationContext) GenerateTypes() error {
 	c.TypesCode.WriteString("type Serializable interface {\n")
 	c.TypesCode.WriteString("\tSerializeBinary() ([]byte, error)\n")
 	c.TypesCode.WriteString("\tDeserializeBinary(data []byte) error\n")
-	c.TypesCode.WriteString("\tCloneEmpty() Serializable\n")
+	c.TypesCode.WriteString("\tCloneEmptySerializable() Serializable\n")
 	c.TypesCode.WriteString("}\n\n")
 
 	for _, currentModel := range c.Options.CCLDefinition.Models {
