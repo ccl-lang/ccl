@@ -19,6 +19,8 @@ var (
 		"int64":    "int64",
 		"uint64":   "uint64",
 		"float":    "float64",
+		"float64":  "float64",
+		"float32":  "float32",
 		"string":   "string",
 		"bool":     "bool",
 		"datetime": "time.Time",
