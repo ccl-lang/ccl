@@ -295,6 +295,10 @@ func (c *GoGenerationContext) GenerateMethods() error {
 		c.MethodsCode.WriteString("}\n\n")
 
 		c.MethodsCode.WriteString("func (m *" + currentModel.Name + ") DeserializeBinary(data []byte) error {\n")
+		// add nil checker or when the len(data) is 0 or (len(data) == 1 and data[0] == 0)
+		c.MethodsCode.WriteString("\tif m == nil || len(data) == 0 || (len(data) == 1 && data[0] == 0) {\n")
+		c.MethodsCode.WriteString("\t\treturn nil\n")
+		c.MethodsCode.WriteString("\t}\n\n")
 		c.MethodsCode.WriteString("\tbuf := bytes.NewReader(data)\n\n")
 
 		for _, field := range currentModel.Fields {
@@ -390,8 +394,8 @@ func (c *GoGenerationContext) GenerateMethods() error {
 					c.MethodsCode.WriteString("\t\treturn err\n")
 					c.MethodsCode.WriteString("\t}\n")
 
-					// make sure m.field is not nil
-					c.MethodsCode.WriteString("\tif m." + field.Name + " == nil {\n")
+					// make sure m.field is not nil ONLY when len(bytesVarName) != 0 and !(len(bytesVarName) == 1 and bytesVarName[0] == 0)
+					c.MethodsCode.WriteString("\tif m." + field.Name + " == nil && len(" + bytesVarName + ") != 0 && !(len(" + bytesVarName + ") == 1 && " + bytesVarName + "[0] == 0) {\n")
 					c.MethodsCode.WriteString("\t\tm." + field.Name + " = new(" + field.Type + ")\n")
 					c.MethodsCode.WriteString("\t}\n")
 
