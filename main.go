@@ -27,7 +27,7 @@ func main() {
 		language := fs.String("language", "", "Programming language for the generated code")
 		output := fs.String("output", "", "Output path for the generated package")
 		o := fs.String("o", "", "Output path for the generated package")
-		if o != nil && output == nil {
+		if o != nil && *o != "" {
 			output = o
 		}
 

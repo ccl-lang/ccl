@@ -37,11 +37,13 @@ model GetUsersResult {
 
 
 ## Installation
+
 ```bash
 go install github.com/ALiwoto/ccl@latest
 ```
 
 ## Usage
+
 ```bash
 ccl generate --source definitions.ccl -o path/to/output -language Go
 ```

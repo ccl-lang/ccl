@@ -232,14 +232,15 @@ func (c *GoGenerationContext) GenerateMethods() error {
 					c.MethodsCode.WriteString("\t}\n")
 					c.MethodsCode.WriteString("\tfor _, elem := range m." + field.Name + " {\n")
 					if isCustomType {
-						c.MethodsCode.WriteString("\t\tcurrentBytes, err := elem.SerializeBinary()\n")
+						currentBytesName := "current_" + field.Name + "Bytes"
+						c.MethodsCode.WriteString("\t\t" + currentBytesName + ", err := elem.SerializeBinary()\n")
 						c.MethodsCode.WriteString("\t\tif err != nil {\n")
 						c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
 						c.MethodsCode.WriteString("\t\t}\n")
-						c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(currentBytes))); err != nil {\n")
+						c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(" + currentBytesName + "))); err != nil {\n")
 						c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
 						c.MethodsCode.WriteString("\t\t}\n")
-						c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, currentBytes); err != nil {\n")
+						c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, " + currentBytesName + "); err != nil {\n")
 						c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
 						c.MethodsCode.WriteString("\t\t}\n")
 					} else {
@@ -249,14 +250,15 @@ func (c *GoGenerationContext) GenerateMethods() error {
 					}
 					c.MethodsCode.WriteString("\t}\n")
 				} else if isCustomType {
-					c.MethodsCode.WriteString("\tcurrentBytes, err := m." + field.Name + ".SerializeBinary()\n")
+					currentBytesName := "current_" + field.Name + "Bytes"
+					c.MethodsCode.WriteString("\t" + currentBytesName + ", err := m." + field.Name + ".SerializeBinary()\n")
 					c.MethodsCode.WriteString("\tif err != nil {\n")
 					c.MethodsCode.WriteString("\t\treturn nil, err\n")
 					c.MethodsCode.WriteString("\t}\n")
-					c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(currentBytes))); err != nil {\n")
+					c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(" + currentBytesName + "))); err != nil {\n")
 					c.MethodsCode.WriteString("\t\treturn nil, err\n")
 					c.MethodsCode.WriteString("\t}\n")
-					c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, currentBytes); err != nil {\n")
+					c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, " + currentBytesName + "); err != nil {\n")
 					c.MethodsCode.WriteString("\t\treturn nil, err\n")
 					c.MethodsCode.WriteString("\t}\n")
 				} else {
@@ -349,7 +351,29 @@ func (c *GoGenerationContext) GenerateMethods() error {
 					}
 					c.MethodsCode.WriteString("\t}\n")
 				} else if isCustomType {
-					c.MethodsCode.WriteString("\tif err := m." + field.Name + ".DeserializeBinary(buf); err != nil {\n")
+					// read the length of the next buffer that we need
+					// var basicLen uint32
+					// if err := binary.Read(buf, binary.LittleEndian, &basicLen); err != nil {
+					// 	return err
+					// }
+					lenVarName := field.Name + "_bytesLen"
+					c.MethodsCode.WriteString("\tvar " + lenVarName + " uint32\n")
+					c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &" + lenVarName + "); err != nil {\n")
+					c.MethodsCode.WriteString("\t\treturn err\n")
+					c.MethodsCode.WriteString("\t}\n")
+
+					bytesVarName := field.Name + "Bytes"
+					c.MethodsCode.WriteString("\t" + bytesVarName + " := make([]byte, " + lenVarName + ")\n")
+					c.MethodsCode.WriteString("\tif _, err := buf.Read(" + bytesVarName + "); err != nil {\n")
+					c.MethodsCode.WriteString("\t\treturn err\n")
+					c.MethodsCode.WriteString("\t}\n")
+
+					// make sure m.field is not nil
+					c.MethodsCode.WriteString("\tif m." + field.Name + " == nil {\n")
+					c.MethodsCode.WriteString("\t\tm." + field.Name + " = new(" + field.Type + ")\n")
+					c.MethodsCode.WriteString("\t}\n")
+
+					c.MethodsCode.WriteString("\tif err := m." + field.Name + ".DeserializeBinary(" + bytesVarName + "); err != nil {\n")
 					c.MethodsCode.WriteString("\t\treturn err\n")
 					c.MethodsCode.WriteString("\t}\n")
 				} else {
