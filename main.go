@@ -26,6 +26,10 @@ func main() {
 		source := fs.String("source", "", "Path to the source file")
 		language := fs.String("language", "", "Programming language for the generated code")
 		output := fs.String("output", "", "Output path for the generated package")
+		o := fs.String("o", "", "Output path for the generated package")
+		if o != nil && output == nil {
+			output = o
+		}
 
 		// Parse flags
 		fs.Parse(os.Args[2:])
