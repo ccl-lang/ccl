@@ -128,6 +128,12 @@ func (c *GoGenerationContext) GenerateTypes() error {
 		c.TypesCode.WriteString(")\n\n")
 	}
 
+	c.TypesCode.WriteString("type Serializable interface {\n")
+	c.TypesCode.WriteString("\tSerializeBinary() ([]byte, error)\n")
+	c.TypesCode.WriteString("\tDeserializeBinary(data []byte) error\n")
+	c.TypesCode.WriteString("\tCloneEmpty() Serializable\n")
+	c.TypesCode.WriteString("}\n\n")
+
 	for _, currentModel := range c.Options.CCLDefinition.Models {
 		c.TypesCode.WriteString("type " + currentModel.Name + " struct {\n")
 		for _, currentField := range currentModel.Fields {
@@ -194,6 +200,13 @@ func (c *GoGenerationContext) GenerateMethods() error {
 		// generate CloneEmpty() method
 		c.MethodsCode.WriteString("\nfunc (m *" + currentModel.Name + ") CloneEmpty() *")
 		c.MethodsCode.WriteString(currentModel.Name + " {\n")
+		c.MethodsCode.WriteString("\tif m == nil {\n")
+		c.MethodsCode.WriteString("\t\treturn nil\n")
+		c.MethodsCode.WriteString("\t}\n")
+		c.MethodsCode.WriteString("\treturn &" + currentModel.Name + "{}\n")
+		c.MethodsCode.WriteString("}\n")
+
+		c.MethodsCode.WriteString("\nfunc (m *" + currentModel.Name + ") CloneEmptySerializable() Serializable {\n")
 		c.MethodsCode.WriteString("\tif m == nil {\n")
 		c.MethodsCode.WriteString("\t\treturn nil\n")
 		c.MethodsCode.WriteString("\t}\n")
