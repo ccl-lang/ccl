@@ -191,6 +191,15 @@ func (c *GoGenerationContext) GenerateMethods() error {
 		c.MethodsCode.WriteString("\treturn ModelId" + currentModel.Name + "\n")
 		c.MethodsCode.WriteString("}\n")
 
+		// generate CloneEmpty() method
+		c.MethodsCode.WriteString("\nfunc (m *" + currentModel.Name + ") CloneEmpty() *")
+		c.MethodsCode.WriteString(currentModel.Name + " {\n")
+		c.MethodsCode.WriteString("\tif m == nil {\n")
+		c.MethodsCode.WriteString("\t\treturn nil\n")
+		c.MethodsCode.WriteString("\t}\n")
+		c.MethodsCode.WriteString("\treturn &" + currentModel.Name + "{}\n")
+		c.MethodsCode.WriteString("}\n")
+
 		// TODO:
 		// This SerializeBinary method generation HAS TO BE MOVED to a attribute handler
 		// so users can specify different types of attributes for serialize method generation
