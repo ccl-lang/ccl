@@ -74,8 +74,12 @@ func main() {
 		if err != nil {
 			fmt.Printf("Error: failed to generate code: %v\n", err)
 			os.Exit(1)
+		} else if result == nil {
+			fmt.Println("Unknown error: failed to generate code")
+			os.Exit(1)
 		}
-		print(result)
+
+		fmt.Println("\nCode generation completed successfully")
 	case "version":
 		fmt.Printf("ccl version %s %s/%s\n", "1.0.0", runtime.GOOS, runtime.GOARCH)
 	case "help":

@@ -1,11 +1,12 @@
 # ccl-gen
+
 The Common Code Language generator implementation.
 
 ccl is a code generation tool for converting a .ccl source file to certain programming languages. It is mostly used for defining models across servers and clients.
 
 ## Grammar Example
 
-A basic example of the ccl grammar is as follows:
+A basic example of the ccl grammar is as follow:
 
 ```ccl
 // NOTE: Support for attributes is not added as of yet
@@ -35,6 +36,7 @@ model GetUsersResult {
 }
 ```
 
+> NOTE: ccl is a very minimal language, currently we do not have support for complex types such as enums, maps, unions, etc.
 
 ## Installation
 
@@ -45,5 +47,21 @@ go install github.com/ALiwoto/ccl@latest
 ## Usage
 
 ```bash
-ccl generate --source definitions.ccl -o path/to/output -language Go
+ccl generate --source definitions.ccl --output path/to/output --language Go
 ```
+
+## Programming languages
+
+A list of all programming languages that are either supported or we plan to support in the future are shown here:
+
+- [Golang](https://github.com/ALiwoto/ccl/wiki/Programming-Languages#golang)
+- [GDScript](https://github.com/ALiwoto/ccl/wiki/Programming-Languages#gdscript)
+- [Python](https://github.com/ALiwoto/ccl/wiki/Programming-Languages#python)
+- [CSharp](https://github.com/ALiwoto/ccl/wiki/Programming-Languages#csharp)
+- [Rust](https://github.com/ALiwoto/ccl/wiki/Programming-Languages#rust)
+
+If you do not see your desired language in the list, please open an issue and we will consider adding it.
+
+## Contributing
+
+We will be glad to accept any contributions to the project!
