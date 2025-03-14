@@ -20,3 +20,8 @@ const (
 	TypeNameBool     = "bool"
 	TypeNameDateTime = "datetime"
 )
+
+// general ccl keyword names
+const (
+	KeywordNameModel = "model"
+)
