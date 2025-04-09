@@ -3,8 +3,8 @@ package goGenerator
 import (
 	"strings"
 
-	gen "github.com/ALiwoto/ccl/src/cclGenerators"
-	"github.com/ALiwoto/ccl/src/core/cclValues"
+	gen "github.com/ccl-lang/ccl/src/cclGenerators"
+	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
 // CCLModel is a type alias for the model definition type from the CCL library.

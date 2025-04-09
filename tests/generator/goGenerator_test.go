@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ALiwoto/ccl/examples/go_gen/apiTypes_gen"
+	"github.com/ccl-lang/ccl/examples/go_gen/apiTypes_gen"
 )
 
 func TestGoGenerator1(t *testing.T) {

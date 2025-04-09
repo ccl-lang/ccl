@@ -25,3 +25,9 @@ const (
 const (
 	KeywordNameModel = "model"
 )
+
+const (
+	TypeFlagBuiltIn cclTypeFlag = 1 << iota
+	TypeFlagArray
+	TypeFlagMap
+)

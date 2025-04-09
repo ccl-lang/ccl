@@ -1,11 +1,11 @@
 package cclLoader
 
 import (
-	"github.com/ALiwoto/ccl/src/cclGenerators"
-	"github.com/ALiwoto/ccl/src/cclGenerators/csGenerator"
-	"github.com/ALiwoto/ccl/src/cclGenerators/gdGenerator"
-	"github.com/ALiwoto/ccl/src/cclGenerators/goGenerator"
-	"github.com/ALiwoto/ccl/src/cclGenerators/pyGenerator"
+	"github.com/ccl-lang/ccl/src/cclGenerators"
+	"github.com/ccl-lang/ccl/src/cclGenerators/csGenerator"
+	"github.com/ccl-lang/ccl/src/cclGenerators/gdGenerator"
+	"github.com/ccl-lang/ccl/src/cclGenerators/goGenerator"
+	"github.com/ccl-lang/ccl/src/cclGenerators/pyGenerator"
 )
 
 func LoadGenerators() {

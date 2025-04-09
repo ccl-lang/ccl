@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	gen "github.com/ALiwoto/ccl/src/cclGenerators"
 	"github.com/ALiwoto/ssg/ssg"
+	gen "github.com/ccl-lang/ccl/src/cclGenerators"
 )
 
 // GenerateCode generates GDScript code from the provided CCL source file.

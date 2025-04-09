@@ -26,3 +26,53 @@ func GetNormalizedTypeName(value string) string {
 func GetNormalizedKeywordName(value string) string {
 	return keywordNamesToNormalizedValues[value]
 }
+
+// NewTypeInfo creates a new type info.
+func NewTypeInfo(name string) *CCLTypeInfo {
+	if IsTypeName(name) {
+		return &CCLTypeInfo{
+			name:      name,
+			typeFlags: TypeFlagBuiltIn,
+		}
+	}
+
+	return &CCLTypeInfo{
+		name:      name,
+		typeFlags: 0b0,
+	}
+}
+
+// NewTypeInfoWithOperators creates a new type info with operators.
+// TODO: refactor this to handle operators in a better way.
+func NewTypeInfoWithOperators(name string, operators ...string) *CCLTypeInfo {
+	var flags cclTypeFlag = 0b0
+	if IsTypeName(name) {
+		flags |= TypeFlagBuiltIn
+	}
+
+	for _, currentOperator := range operators {
+		if currentOperator == "[]" {
+			flags |= TypeFlagArray
+		}
+	}
+
+	return &CCLTypeInfo{
+		name:      name,
+		typeFlags: flags,
+	}
+}
+
+// NewArrayTypeInfo creates a new array type info.
+func NewArrayTypeInfo(name string) *CCLTypeInfo {
+	if IsTypeName(name) {
+		return &CCLTypeInfo{
+			name:      name,
+			typeFlags: TypeFlagBuiltIn | TypeFlagArray,
+		}
+	}
+
+	return &CCLTypeInfo{
+		name:      name,
+		typeFlags: TypeFlagArray,
+	}
+}

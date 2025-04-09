@@ -3,8 +3,8 @@ package goGenerator
 import (
 	"os"
 
-	gen "github.com/ALiwoto/ccl/src/cclGenerators"
 	"github.com/ALiwoto/ssg/ssg"
+	gen "github.com/ccl-lang/ccl/src/cclGenerators"
 )
 
 // GenerateCode generates Go code from the provided CCL source file.

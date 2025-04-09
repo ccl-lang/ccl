@@ -6,9 +6,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/ALiwoto/ccl/src/cclGenerators"
-	"github.com/ALiwoto/ccl/src/cclLoader"
-	"github.com/ALiwoto/ccl/src/cclParser"
+	"github.com/ccl-lang/ccl/src/cclGenerators"
+	"github.com/ccl-lang/ccl/src/cclLoader"
+	"github.com/ccl-lang/ccl/src/cclParser"
 )
 
 func main() {

@@ -1,6 +1,6 @@
 package cclGenerators
 
-import "github.com/ALiwoto/ccl/src/core/cclValues"
+import "github.com/ccl-lang/ccl/src/core/cclValues"
 
 type GenerateCode func(options *CodeGenerationOptions) (*CodeGenerationResult, error)
 

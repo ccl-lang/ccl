@@ -3,11 +3,12 @@ package cclParser
 import (
 	"os"
 
-	"github.com/ALiwoto/ccl/src/core/cclErrors"
-	"github.com/ALiwoto/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
+	"github.com/ccl-lang/ccl/src/core/cclErrors"
+	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
-func ParseCCLSourceFile(options *CCLParseOptions) (*cclValues.SourceCodeDefinition, error) {
+func ParseCCLSourceFile_OLD(options *CCLParseOptions) (*cclValues.SourceCodeDefinition, error) {
 	content, err := os.ReadFile(options.Source)
 	if err != nil {
 		return nil, err
@@ -40,10 +41,9 @@ func ParseCCLSourceFile(options *CCLParseOptions) (*cclValues.SourceCodeDefiniti
 			}
 
 			currentModel.Fields = append(currentModel.Fields, &cclValues.FieldDefinition{
-				OwnedBy:        currentModel,
-				Name:           fieldName,
-				Type:           fieldType,
-				ExtraOperators: extraOperators,
+				OwnedBy: currentModel,
+				Name:    fieldName,
+				Type:    cclValues.NewTypeInfoWithOperators(fieldType, extraOperators),
 			})
 			definedFields[fieldName] = true
 		}
@@ -59,4 +59,17 @@ func ParseCCLSourceFile(options *CCLParseOptions) (*cclValues.SourceCodeDefiniti
 
 	srcDefinition.Models = parsedModels
 	return srcDefinition, nil
+}
+
+func ParseCCLSourceFile(options *CCLParseOptions) (*cclValues.SourceCodeDefinition, error) {
+	allTokens, err := cclLexer.Lex(options.Source)
+	if err != nil {
+		return nil, err
+	}
+
+	theParser := &CCLParser{
+		Options: options,
+		tokens:  allTokens,
+	}
+	return theParser.ParseAsCCL()
 }

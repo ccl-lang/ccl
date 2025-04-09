@@ -1,4 +1,4 @@
-module github.com/ALiwoto/ccl
+module github.com/ccl-lang/ccl
 
 go 1.22.3
 

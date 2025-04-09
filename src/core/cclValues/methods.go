@@ -1,6 +1,10 @@
 package cclValues
 
-import "github.com/ALiwoto/ssg/ssg"
+import (
+	"fmt"
+
+	"github.com/ALiwoto/ssg/ssg"
+)
 
 //---------------------------------------------------------
 
@@ -48,11 +52,87 @@ func (m *ModelDefinition) GetFieldByName(name string) *FieldDefinition {
 
 //---------------------------------------------------------
 
+// IsArray returns true if the field is an array.
+// If the field does not have any type field assigned to it,
+// it will result in a panic. So be careful before using this
+// method.
 func (f *FieldDefinition) IsArray() bool {
-	// TODO: handle this in a better way to have support for
-	// more complex types like arrays, maps, etc.
-	return f.ExtraOperators == "[]"
+	return f.Type.IsArray()
+}
+
+// HasNoType returns true when the field's type field is not
+// assigned to any value.
+func (f *FieldDefinition) HasNoType() bool {
+	return f.Type == nil
 }
 
 //---------------------------------------------------------
+
+func (p *ParameterDefinition) String() string {
+	return fmt.Sprintf("Parameter %v (%s)", p.value, p.ValueType)
+}
+
+// ChangeValueType changes the value type of the parameter.
+func (p *ParameterDefinition) ChangeValueType(typeInfo *CCLTypeInfo) {
+	p.ValueType = typeInfo
+}
+
+// SetValue sets the value of the parameter.
+func (p *ParameterDefinition) SetValue(value any) {
+	p.value = value
+}
+
+// HasBuiltInType returns true if the parameter is a built-in type.
+func (p *ParameterDefinition) IsBuiltInType() bool {
+	return p.ValueType.IsBuiltIn()
+}
+
+// GetInt returns the integer value of the parameter.
+// If the parameter is not an integer, it returns 0.
+// Before using this method, it's highly recommended to get the value type
+// and making sure the value of this parameter is in fact an integer.
+func (p *ParameterDefinition) GetInt() int {
+	result, ok := p.value.(int)
+	if !ok {
+		return 0
+	}
+
+	return result
+}
+
+// GetString returns the string value of the parameter.
+// If the parameter is not a string, it returns an empty string.
+// Before using this method, it's highly recommended to get the value type
+// and making sure the value of this parameter is in fact a string.
+func (p *ParameterDefinition) GetString() string {
+	result, ok := p.value.(string)
+	if !ok {
+		return ""
+	}
+
+	return result
+}
+
+//---------------------------------------------------------
+
+func (t *CCLTypeInfo) IsBuiltIn() bool {
+	return t.typeFlags&TypeFlagBuiltIn != 0
+}
+
+func (t *CCLTypeInfo) IsArray() bool {
+	return t.typeFlags&TypeFlagArray != 0
+}
+
+func (t *CCLTypeInfo) IsMap() bool {
+	return t.typeFlags&TypeFlagMap != 0
+}
+
+func (t *CCLTypeInfo) String() string {
+	return t.name + " (flags: " + ssg.ToBase10(t.typeFlags) + ")"
+}
+
+func (t *CCLTypeInfo) GetName() string {
+	return t.name
+}
+
 //---------------------------------------------------------

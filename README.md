@@ -41,7 +41,7 @@ model GetUsersResult {
 ## Installation
 
 ```bash
-go install github.com/ALiwoto/ccl@latest
+go install github.com/ccl-lang/ccl@latest
 ```
 
 ## Usage
@@ -54,11 +54,11 @@ ccl generate --source definitions.ccl --output path/to/output --language Go
 
 A list of all programming languages that are either supported or we plan to support in the future are shown here:
 
-- [Golang](https://github.com/ALiwoto/ccl/wiki/Programming-Languages#golang)
-- [GDScript](https://github.com/ALiwoto/ccl/wiki/Programming-Languages#gdscript)
-- [Python](https://github.com/ALiwoto/ccl/wiki/Programming-Languages#python)
-- [CSharp](https://github.com/ALiwoto/ccl/wiki/Programming-Languages#csharp)
-- [Rust](https://github.com/ALiwoto/ccl/wiki/Programming-Languages#rust)
+- [Golang](https://github.com/ccl-lang/ccl/wiki/Programming-Languages#golang)
+- [GDScript](https://github.com/ccl-lang/ccl/wiki/Programming-Languages#gdscript)
+- [Python](https://github.com/ccl-lang/ccl/wiki/Programming-Languages#python)
+- [CSharp](https://github.com/ccl-lang/ccl/wiki/Programming-Languages#csharp)
+- [Rust](https://github.com/ccl-lang/ccl/wiki/Programming-Languages#rust)
 
 If you do not see your desired language in the list, please open an issue and we will consider adding it.
 

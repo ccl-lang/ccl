@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ALiwoto/ccl/src/core/cclErrors"
-	"github.com/ALiwoto/ccl/src/core/cclValues"
 	"github.com/ALiwoto/ssg/ssg"
+	"github.com/ccl-lang/ccl/src/core/cclErrors"
+	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
 func (c *GDScriptGenerationContext) GenerateCode() error {
@@ -63,7 +63,7 @@ func (c *GDScriptGenerationContext) GenerateModelClass(model *CCLModel) error {
 		varType := c.getGDScriptType(field)
 		if varType == "" {
 			return &cclErrors.UnsupportedFieldTypeError{
-				TypeName:       field.Type,
+				TypeName:       field.Type.GetName(),
 				FieldName:      field.Name,
 				ModelName:      field.Name,
 				TargetLanguage: LanguageName,
@@ -105,7 +105,7 @@ func (c *GDScriptGenerationContext) generateSerializeMethod(model *CCLModel, bui
 
 func (c *GDScriptGenerationContext) generateFieldSerialize(field *CCLField, builder *strings.Builder) {
 	fieldName := ToSnakeCase(field.Name)
-	switch field.Type {
+	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
 		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_u32(" + fieldName + ".length())\n")
@@ -149,7 +149,7 @@ func (c *GDScriptGenerationContext) generateFieldSerialize(field *CCLField, buil
 		builder.WriteString("\tbuffer.put_64(" + fieldName + ")\n\n")
 	default:
 		// Custom type handling
-		if c.Options.CCLDefinition.IsCustomType(field.Type) {
+		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
 			builder.WriteString("\t# Write custom type " + fieldName + "\n")
 			builder.WriteString("\tvar " + fieldName + "_bytes = " +
 				fieldName + ".serialize() if " + fieldName + " else PackedByteArray([0])\n")
@@ -165,7 +165,7 @@ func (c *GDScriptGenerationContext) generateArraySerialize(field *CCLField, buil
 	builder.WriteString("\tbuffer.put_u32(" + fieldName + ".size())\n")
 	builder.WriteString("\tfor item in " + fieldName + ":\n")
 
-	switch field.Type {
+	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
 		builder.WriteString("\t\tbuffer.put_u32(item.length())\n")
 		builder.WriteString("\t\tbuffer.put_data(item.to_utf8_buffer())\n")
@@ -190,7 +190,7 @@ func (c *GDScriptGenerationContext) generateArraySerialize(field *CCLField, buil
 	case cclValues.TypeNameBool:
 		builder.WriteString("\t\tbuffer.put_8(1 if item else 0)\n")
 	default:
-		if c.Options.CCLDefinition.IsCustomType(field.Type) {
+		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
 			builder.WriteString("\t\tvar item_bytes = item.serialize() if item else PackedByteArray([0])\n")
 			builder.WriteString("\t\tbuffer.put_u32(item_bytes.size())\n")
 			builder.WriteString("\t\tbuffer.put_data(item_bytes)\n")
@@ -225,7 +225,7 @@ func (c *GDScriptGenerationContext) generateDeserializeMethod(model *CCLModel, b
 func (c *GDScriptGenerationContext) generateFieldDeserialize(field *CCLField, builder *strings.Builder) {
 	fieldName := ToSnakeCase(field.Name)
 	builder.WriteString("\t# Read " + fieldName + "\n")
-	switch field.Type {
+	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
 		builder.WriteString("\t# Read " + fieldName + "\n")
 		builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
@@ -264,12 +264,12 @@ func (c *GDScriptGenerationContext) generateFieldDeserialize(field *CCLField, bu
 		builder.WriteString("\tresult." + fieldName + " = buffer.get_64()\n\n")
 	default:
 		// Custom type handling
-		if c.Options.CCLDefinition.IsCustomType(field.Type) {
+		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
 			builder.WriteString("\t# Read custom type " + fieldName + "\n")
 			builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
 			builder.WriteString("\tvar " + fieldName + "_bytes = buffer.get_data(" +
 				fieldName + "_len)[1]\n")
-			builder.WriteString("\tresult." + fieldName + " = " + field.Type +
+			builder.WriteString("\tresult." + fieldName + " = " + field.Type.GetName() +
 				".deserialize(" + fieldName + "_bytes)\n\n")
 		}
 	}
@@ -282,7 +282,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserialize(field *CCLField, bu
 	builder.WriteString("\tresult." + fieldName + " = []\n")
 	builder.WriteString("\tfor i in range(" + fieldName + "_len):\n")
 
-	switch field.Type {
+	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
 		builder.WriteString("\t\tvar item_len = buffer.get_u32()\n")
 		builder.WriteString("\t\tvar item = buffer.get_data(item_len)[1].get_string_from_utf8()\n")
@@ -308,11 +308,11 @@ func (c *GDScriptGenerationContext) generateArrayDeserialize(field *CCLField, bu
 	case cclValues.TypeNameBool:
 		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_8() != 0)\n")
 	default:
-		if c.Options.CCLDefinition.IsCustomType(field.Type) {
+		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
 			builder.WriteString("\t\tvar item_len = buffer.get_u32()\n")
 			builder.WriteString("\t\tvar item_bytes = buffer.get_data(item_len)[1]\n")
 			builder.WriteString("\t\tresult." + fieldName + ".append(" +
-				field.Type + ".deserialize(item_bytes))\n")
+				field.Type.GetName() + ".deserialize(item_bytes))\n")
 		}
 	}
 	builder.WriteString("\n")
@@ -323,13 +323,14 @@ func (c *GDScriptGenerationContext) IsCustomType(cclType string) bool {
 }
 
 func (c *GDScriptGenerationContext) getGDScriptType(field *cclValues.FieldDefinition) string {
-	gdType := CCLTypesToGdTypes[field.Type]
+	fieldTypeName := field.Type.GetName()
+	gdType := CCLTypesToGdTypes[fieldTypeName]
 	if gdType == "" {
-		if !c.IsCustomType(field.Type) {
+		if !c.IsCustomType(fieldTypeName) {
 			return ""
 		}
 
-		gdType = field.Type
+		gdType = fieldTypeName
 	}
 
 	if field.IsArray() {
