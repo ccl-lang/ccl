@@ -24,7 +24,7 @@ type AttributeDefinition struct {
 	Name string
 
 	// Parameters is the list of parameters for the attribute.
-	Parameters []*ParameterDefinition
+	Parameters []*ParameterInstance
 }
 
 // CCLTypeInfo is a struct that represents a CCL *type*.
@@ -37,12 +37,22 @@ type CCLTypeInfo struct {
 	// typeFlags contains flags applied to the type.
 	// To work with this field, you should use the TypeFlag* constants.
 	typeFlags cclTypeFlag
+
+	// underlyingType is the underlying type of the current type.
+	// This field is used for more complex types, such as slices, maps, etc.
+	underlyingType *CCLTypeInfo
 }
 
-// ParameterDefinition is a struct that represents a parameter definition.
+// ParameterInstance is a struct that represents a passed parameter instance.
 // This parameter is for when the user is passing a parameter to a function or any
 // other place in the source code, such as attributes.
-type ParameterDefinition struct {
+type ParameterInstance struct {
+	// Name is the name of the parameter.
+	// Please note that this field might be empty, if the programmer is
+	// passing a parameter without specifying its name; such as in
+	// functionName(1, 2, 3) or [AttrName(1, 2, 3)]
+	Name string
+
 	// value is the value of the parameter, specified in the source code.
 	// Please note that this field is not exported, you should use the
 	// methods to get or set this field.
@@ -50,6 +60,36 @@ type ParameterDefinition struct {
 
 	// ValueType is the type of the parameter.
 	ValueType *CCLTypeInfo
+}
+
+// VariableUsageInstance is a struct that represents a variable usage instance.
+// This variable is for when the user is using a variable in the source code,
+// such as in function calls, attribute calls, etc.
+type VariableUsageInstance struct {
+	// Name is the name of the variable that is being used
+	Name string
+
+	// Definition points to the specified variable definition.
+	// This could be a global variable or a local variable, or
+	// could be set to nil, so always validate it before using it.
+	Definition *VariableDefinition
+}
+
+// VariableDefinition is a struct that represents a variable definition.
+type VariableDefinition struct {
+	// Name is the name of the variable that is being defined.
+	Name string
+
+	// Type is the type of the variable.
+	Type *CCLTypeInfo
+
+	// Value is the value of the variable.
+	value any
+
+	// isAutomaticVariable is a flag that indicates if the variable is an
+	// automatic variable set by ccl compiler itself.
+	// Automatic variables cannot be overridden by the user.
+	isAutomaticVariable bool
 }
 
 // ModelDefinition is a struct that represents a model definition.

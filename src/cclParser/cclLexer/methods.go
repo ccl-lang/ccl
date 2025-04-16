@@ -2,6 +2,8 @@ package cclLexer
 
 import (
 	"fmt"
+
+	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
 //---------------------------------------------------------
@@ -76,6 +78,33 @@ func (t *CCLToken) GetIdentifier() string {
 	}
 
 	return ""
+}
+
+// IsTokenValue returns true if the token is a value token.
+func (t *CCLToken) IsTokenValue() bool {
+	return valueTokens[t.Type]
+}
+
+func (t *CCLToken) GetLiteralTypeInfo() *cclValues.CCLTypeInfo {
+	if !t.IsTokenValue() {
+		// we don't have a value token
+		return nil
+	}
+
+	// we have a value token, so we need to return the type info
+	// based on the token type
+	return literalValueTypeInfos[t.Type]
+}
+
+// GetLiteralValue returns the literal value of the token.
+func (t *CCLToken) GetLiteralValue() any {
+	if !t.IsTokenValue() {
+		// we don't have a value token
+		return nil
+	}
+
+	// we have a value token, so we need to return the value
+	return t.value
 }
 
 //---------------------------------------------------------

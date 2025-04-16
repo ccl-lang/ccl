@@ -27,7 +27,7 @@ const (
 	TokenTypeDot                                  // .
 	TokenTypeComma                                // ,
 	TokenTypePlus                                 // +
-	TOkenTypePlusPlus                             // ++
+	TokenTypePlusPlus                             // ++
 	TokenTypeMinus                                // -
 	TokenTypeMinusMinus                           // --
 	TokenTypeMultiply                             // *

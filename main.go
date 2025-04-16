@@ -58,7 +58,7 @@ func main() {
 		}
 
 		parsedDefinitions, parseErr := cclParser.ParseCCLSourceFile(&cclParser.CCLParseOptions{
-			Source: *source,
+			SourceFilePath: *source,
 		})
 		if parseErr != nil {
 			fmt.Printf("Error: failed to parse source file %s: %v\n", *source, parseErr)

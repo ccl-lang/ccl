@@ -30,4 +30,5 @@ const (
 	TypeFlagBuiltIn cclTypeFlag = 1 << iota
 	TypeFlagArray
 	TypeFlagMap
+	TypeFlagPointer
 )

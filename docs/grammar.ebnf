@@ -1,0 +1,22 @@
+program         = { global_attribute }, { model_definition } ;
+global_attribute = '#', '[', identifier, [ '(', string_literal, ')' ], ']' ;
+model_definition = { local_attribute }, 'model', identifier, '{', { field_definition }, '}' ;
+local_attribute  = '[', identifier, [ '(', string_literal, ')' ], ']' ;
+field_definition = identifier, ':', type_expression, ';' ;
+type_expression  = identifier, [ '[', ']' ] ;
+string_literal   = STRING_LITERAL ;
+identifier       = IDENTIFIER ;
+
+// Terminal symbols (tokens):
+'#'              = HASH ;
+'['              = LEFT_BRACKET ;
+']'              = RIGHT_BRACKET ;
+'('              = LEFT_PARENTHESIS ;
+')'              = RIGHT_PARENTHESIS ;
+'model'          = KEYWORD_MODEL ;
+':'              = COLON ;
+';'              = SEMICOLON ;
+'{'              = LEFT_BRACE ;
+'}'              = RIGHT_BRACE ;
+STRING_LITERAL   = /* A sequence of characters enclosed in double quotes */ ;
+IDENTIFIER       = /* Any alphanumeric sequence starting with a letter */ ;

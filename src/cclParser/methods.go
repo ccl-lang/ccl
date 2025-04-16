@@ -1,7 +1,10 @@
 package cclParser
 
 import (
-	"fmt"
+	"errors"
+	"strings"
+
+	"slices"
 
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
@@ -10,9 +13,13 @@ import (
 //---------------------------------------------------------
 
 func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
-	program := &cclValues.SourceCodeDefinition{}
+	p.codeDefinition = &cclValues.SourceCodeDefinition{}
 
-	for p.current.Type != cclLexer.TokenTypeEOF {
+	if err := p.initializeParsing(); err != nil {
+		return nil, err
+	}
+
+	for !p.IsAtEnd() {
 		if p.current.Type == cclLexer.TokenTypeHash {
 			// in the future, the '#' token can be used for other things as well
 			attribute, err := p.ParseGlobalAttribute()
@@ -20,7 +27,10 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 				return nil, err
 			}
 
-			program.GlobalAttributes = append(program.GlobalAttributes, attribute)
+			p.codeDefinition.GlobalAttributes = append(
+				p.codeDefinition.GlobalAttributes,
+				attribute,
+			)
 			continue
 		}
 
@@ -30,7 +40,7 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 				return nil, err
 			}
 
-			program.Models = append(program.Models, model)
+			p.codeDefinition.Models = append(p.codeDefinition.Models, model)
 			continue
 		}
 
@@ -56,7 +66,7 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 				}
 
 				model.Attributes = allAttributes
-				program.Models = append(program.Models, model)
+				p.codeDefinition.Models = append(p.codeDefinition.Models, model)
 			} else {
 				// parse other definitions alongside of attributes
 				p.advance()
@@ -81,68 +91,46 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 			Column:   p.current.Column,
 		}
 	}
-	return nil, nil
+
+	return p.codeDefinition, nil
 }
 
-func (p *CCLParser) ParseGlobalAttribute() (*cclValues.AttributeDefinition, error) {
-	if err := p.consume(cclLexer.TokenTypeHash); err != nil {
-		return nil, err
-	}
+func (p *CCLParser) peekHasAssignment() bool {
+	// keep doing a loop until we hit an assignment.
+	// if we hit something other than assignment, we should return false
+	// if we hit comment, we should skip it
+	// if we hit EOF, we should return false
+	currentPos := p.pos + 1
+	for currentPos < len(p.tokens) {
 
-	if err := p.consume(cclLexer.TokenTypeLeftBracket); err != nil {
-		return nil, err
-	}
+		if p.tokens[currentPos].Type == cclLexer.TokenTypeComment {
+			continue
+		}
 
-	name := p.current.GetIdentifier()
-	if err := p.consume(cclLexer.TokenTypeIdentifier); err != nil {
-		return nil, err
-	}
-
-	attrParams := []*cclValues.ParameterDefinition{}
-
-	if p.current.Type == cclLexer.TokenTypeLeftParenthesis {
-		p.advance()
-		var currentParam *cclValues.ParameterDefinition
-		for p.current.Type != cclLexer.TokenTypeRightParenthesis {
-			if p.current.Type == cclLexer.TokenTypeComma {
-				if currentParam == nil {
-					return nil, &UnexpectedTokenError{
-						Expected: cclLexer.TokenTypeIdentifier,
-						Actual:   cclLexer.TokenTypeComma,
-						Line:     p.current.Line,
-						Column:   p.current.Column,
-					}
-				}
-
-				attrParams = append(attrParams, currentParam)
-				currentParam = nil
-				p.advance()
-				continue
-			}
-
-			// I WAS HERE
-
+		if p.tokens[currentPos].Type == cclLexer.TokenTypeAssignment {
+			return true
 		}
 	}
 
-	return &cclValues.AttributeDefinition{
-		Name:       name,
-		Parameters: attrParams,
-	}, nil
+	return false
 }
 
-// ParseAttributes Keeps parsing all of the available attributes in the current position
-// until it hits something other than attribute.
-func (p *CCLParser) ParseAttributes() ([]*cclValues.AttributeDefinition, error) {
-	// TODO
-	return nil, nil
+func (p *CCLParser) initializeParsing() error {
+	if len(p.tokens) == 0 {
+		return errors.New("cclParser: no tokens to parse")
+	}
+
+	if p.current != nil {
+		return errors.New("cclParser: parser already initialized")
+	}
+
+	p.pos = 0
+	p.current = p.tokens[0]
+
+	return nil
 }
 
-func (p *CCLParser) ParseModel() (*cclValues.ModelDefinition, error) {
-	// TODO
-	return nil, nil
-}
-
+// advance advances the parser to the next token.
 func (p *CCLParser) advance() {
 	p.pos++
 	if p.pos < len(p.tokens) {
@@ -152,6 +140,25 @@ func (p *CCLParser) advance() {
 			Type: cclLexer.TokenTypeEOF,
 		}
 	}
+}
+
+// GetCurrent returns the current token being parsed.
+// Please note that this method is exported mostly for tests.
+func (p *CCLParser) GetCurrent() *cclLexer.CCLToken {
+	return p.current
+}
+
+// IsAtEnd checks if the parser has reached the end of the input.
+// Please note that this method is exported mostly for tests.
+func (p *CCLParser) IsAtEnd() bool {
+	return p.current == nil || p.current.Type == cclLexer.TokenTypeEOF
+}
+
+// isCurrentType checks if the current token is of the specified type.
+// You can return multiple token types to check for, and if the current token
+// is any of them, it will return true.
+func (p *CCLParser) isCurrentType(tokenTypes ...cclLexer.CCLTokenType) bool {
+	return slices.Contains(tokenTypes, p.current.Type)
 }
 
 func (p *CCLParser) consume(tokenType cclLexer.CCLTokenType) error {
@@ -168,68 +175,29 @@ func (p *CCLParser) consume(tokenType cclLexer.CCLTokenType) error {
 	}
 }
 
-func (p *CCLParser) isCurrentAttribute() bool {
-	// if we are currently parsing an attribute, we should be having these:
-	// 1. a left bracket
-	// 2. an identifier
-	// 3. a parenthesis
-
-	// first, length safety check
-	if p.pos+2 >= len(p.tokens) {
-		return false
+// getCurrentSourceLine returns the source line for the given line number.
+// Please note that calling this method frequently is expensive, since
+// each time it will split the source code into lines.
+// The reason we are not caching the lines is that we would only need
+// to call this method in case of an error, and we don't want to keep
+// the lines in memory for a long time.
+func (p *CCLParser) getCurrentSourceLine(lineNum int) string {
+	lines := strings.Split(p.Options.SourceContent, "\n")
+	if lineNum > 0 && lineNum <= len(lines) {
+		return lines[lineNum-1]
 	}
-
-	return p.tokens[p.pos].Type == cclLexer.TokenTypeLeftBracket &&
-		p.tokens[p.pos+1].Type == cclLexer.TokenTypeIdentifier &&
-		p.tokens[p.pos+2].Type == cclLexer.TokenTypeLeftParenthesis
+	return ""
 }
 
-func (p *CCLParser) peekAfterAttribute() cclLexer.CCLTokenType {
-	tempPos := p.pos
-
-	// Skip all attributes
-	for p.tokens[tempPos].Type == cclLexer.TokenTypeLeftBracket {
-		// Find the matching right bracket
-		bracketCount := 1
-		tempPos++
-		for tempPos < len(p.tokens) && bracketCount > 0 {
-			if p.tokens[tempPos].Type == cclLexer.TokenTypeLeftBracket {
-				bracketCount++
-			} else if p.tokens[tempPos].Type == cclLexer.TokenTypeRightBracket {
-				bracketCount--
-			}
-			tempPos++
-		}
-
-		if tempPos >= len(p.tokens) {
-			return cclLexer.TokenTypeEOF
-		}
-	}
-
-	if tempPos < len(p.tokens) {
-		return p.tokens[tempPos].Type
-	}
-	return cclLexer.TokenTypeEOF
+// IsCurrentValue checks if the current token is a value token.
+func (p *CCLParser) IsCurrentValue() bool {
+	return p.current.IsTokenValue()
 }
 
-//---------------------------------------------------------
-
-func (e *UnexpectedTokenError) Error() string {
-	return fmt.Sprintf(
-		"cclParser: expected token type %s, got %s at line %d, column %d",
-		e.Expected,
-		e.Actual,
-		e.Line,
-		e.Column,
-	)
-}
-
-func (e *UnexpectedEndOfAttributeError) Error() string {
-	return fmt.Sprintf(
-		"cclParser: unexpected end of attribute at line %d, column %d",
-		e.Line,
-		e.Column,
-	)
+// IsCurrentValue checks if the current token is a value token or an identifier.
+func (p *CCLParser) IsCurrentValueOrIdentifier() bool {
+	return p.current.IsTokenValue() ||
+		p.current.Type == cclLexer.TokenTypeIdentifier
 }
 
 //---------------------------------------------------------

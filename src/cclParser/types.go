@@ -1,13 +1,17 @@
 package cclParser
 
-import "github.com/ccl-lang/ccl/src/cclParser/cclLexer"
+import (
+	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
+	"github.com/ccl-lang/ccl/src/core/cclValues"
+)
 
 //---------------------------------------------------------
 
 // CCLParseOptions is a struct that contains the options for
 // parsing a CCL source file.
 type CCLParseOptions struct {
-	Source string
+	SourceFilePath string
+	SourceContent  string
 }
 
 type CCLParser struct {
@@ -22,20 +26,9 @@ type CCLParser struct {
 
 	// current is the current token that the parser is parsing.
 	current *cclLexer.CCLToken
-}
 
-//---------------------------------------------------------
-
-type UnexpectedTokenError struct {
-	Expected cclLexer.CCLTokenType
-	Actual   cclLexer.CCLTokenType
-	Line     int
-	Column   int
-}
-
-type UnexpectedEndOfAttributeError struct {
-	Line   int
-	Column int
+	// codeDefinition is the definition that this parser is building.
+	codeDefinition *cclValues.SourceCodeDefinition
 }
 
 //---------------------------------------------------------

@@ -62,6 +62,14 @@ func NewTypeInfoWithOperators(name string, operators ...string) *CCLTypeInfo {
 	}
 }
 
+func NewPointerTypeInfo(targetType *CCLTypeInfo) *CCLTypeInfo {
+	return &CCLTypeInfo{
+		name:           targetType.name,
+		typeFlags:      TypeFlagPointer,
+		underlyingType: targetType,
+	}
+}
+
 // NewArrayTypeInfo creates a new array type info.
 func NewArrayTypeInfo(name string) *CCLTypeInfo {
 	if IsTypeName(name) {
@@ -76,3 +84,20 @@ func NewArrayTypeInfo(name string) *CCLTypeInfo {
 		typeFlags: TypeFlagArray,
 	}
 }
+
+//---------------------------------------------------------
+
+// GetGlobalVariable returns the global variable with the given name.
+func GetGlobalVariable(name string) *VariableDefinition {
+	if variable, exists := cclAutomaticVariables[name]; exists {
+		return variable
+	}
+
+	if variable, exists := cclGlobalVariables[name]; exists {
+		return variable
+	}
+
+	return nil
+}
+
+//---------------------------------------------------------

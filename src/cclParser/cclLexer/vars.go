@@ -1,5 +1,7 @@
 package cclLexer
 
+import "github.com/ccl-lang/ccl/src/core/cclValues"
+
 var (
 	tokenTypesToNames = map[CCLTokenType]string{
 		TokenTypeReservedForFuture:  "RESERVED_FOR_FUTURE",
@@ -71,7 +73,7 @@ var (
 		},
 		'+': {
 			'=': TokenTypePlusAssignment,
-			'+': TOkenTypePlusPlus,
+			'+': TokenTypePlusPlus,
 		},
 		'-': {
 			'=': TokenTypeMinusAssignment,
@@ -93,5 +95,21 @@ var (
 		'|': {
 			'|': TokenTypeOr,
 		},
+	}
+)
+
+// maps related to literal value tokens
+var (
+	// valueTokens is a map of token types that are considered value tokens.
+	valueTokens = map[CCLTokenType]bool{
+		TokenTypeStringLiteral: true,
+		TokenTypeIntLiteral:    true,
+		TokenTypeFloatLiteral:  true,
+	}
+
+	literalValueTypeInfos = map[CCLTokenType]*cclValues.CCLTypeInfo{
+		TokenTypeStringLiteral: cclValues.BuiltInTypeInfos[cclValues.TypeNameString],
+		TokenTypeIntLiteral:    cclValues.BuiltInTypeInfos[cclValues.TypeNameInt],
+		TokenTypeFloatLiteral:  cclValues.BuiltInTypeInfos[cclValues.TypeNameFloat],
 	}
 )
