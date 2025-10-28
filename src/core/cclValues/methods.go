@@ -40,7 +40,7 @@ func (m *ModelDefinition) DoesAliasMatch(targetAlias string) bool {
 	return false
 }
 
-func (m *ModelDefinition) GetFieldByName(name string) *FieldDefinition {
+func (m *ModelDefinition) GetFieldByName(name string) *ModelFieldDefinition {
 	for _, field := range m.Fields {
 		if field.Name == name {
 			return field
@@ -56,13 +56,13 @@ func (m *ModelDefinition) GetFieldByName(name string) *FieldDefinition {
 // If the field does not have any type field assigned to it,
 // it will result in a panic. So be careful before using this
 // method.
-func (f *FieldDefinition) IsArray() bool {
+func (f *ModelFieldDefinition) IsArray() bool {
 	return f.Type.IsArray()
 }
 
 // HasNoType returns true when the field's type field is not
 // assigned to any value.
-func (f *FieldDefinition) HasNoType() bool {
+func (f *ModelFieldDefinition) HasNoType() bool {
 	return f.Type == nil
 }
 
@@ -164,6 +164,20 @@ func (t *CCLTypeInfo) GetName() string {
 	return t.name
 }
 
+func (t *CCLTypeInfo) AddGenericParam(targetType *CCLTypeInfo) error {
+	if targetType == nil {
+		return ErrGenericParamCantBeNil
+	}
+
+	// avoid entirely circular generic type
+	if t == targetType {
+		return ErrCircularGenericType
+	}
+
+	t.genericParams = append(t.genericParams, targetType)
+	return nil
+}
+
 //---------------------------------------------------------
 
 func (d *VariableDefinition) String() string {
@@ -180,6 +194,18 @@ func (d *VariableDefinition) GetValue() any {
 
 func (d *VariableDefinition) IsAutomatic() bool {
 	return d.isAutomaticVariable
+}
+
+//---------------------------------------------------------
+
+// ChangeValueType changes the value type of the parameter.
+func (p *ModelFieldDefinition) ChangeValueType(typeInfo *CCLTypeInfo) {
+	p.Type = typeInfo
+}
+
+// ChangeValue sets the value of the parameter.
+func (p *ModelFieldDefinition) ChangeValue(value any) {
+	p.value = value
 }
 
 //---------------------------------------------------------

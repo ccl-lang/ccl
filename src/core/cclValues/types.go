@@ -2,6 +2,8 @@ package cclValues
 
 type cclTypeFlag int
 
+type CCLTypeOperator int
+
 // SourceCodeDefinition is a struct that represents a source code definition
 // and all the information about a cll source file.
 // This struct is NOT thread-safe.
@@ -11,20 +13,26 @@ type SourceCodeDefinition struct {
 
 	// GlobalAttributes is an array of attribute definitions which are applied
 	// to the whole source code.
-	GlobalAttributes []*AttributeDefinition
+	GlobalAttributes []*AttributeUsageInfo
 
 	// modelIdCounter is a counter that is used to generate unique model IDs.
 	modelIdCounter int64
 }
 
-// AttributeDefinition is a struct that represents an attribute definition
+// AttributeUsageInfo is a struct that represents an attribute definition
 // in the source code with its parameters.
-type AttributeDefinition struct {
+type AttributeUsageInfo struct {
 	// Name is the name of the attribute.
 	Name string
 
 	// Parameters is the list of parameters for the attribute.
 	Parameters []*ParameterInstance
+
+	// Line is the line number of the attribute in the source code.
+	Line int
+
+	// Column is the column number of the attribute in the source code.
+	Column int
 }
 
 // CCLTypeInfo is a struct that represents a CCL *type*.
@@ -41,6 +49,12 @@ type CCLTypeInfo struct {
 	// underlyingType is the underlying type of the current type.
 	// This field is used for more complex types, such as slices, maps, etc.
 	underlyingType *CCLTypeInfo
+
+	// genericParams is the parameters passed as generic-types to the
+	// current type.
+	// E.g. MyType<Type1, Type2> (where each of thees could recursively contain
+	// other generic params in them).
+	genericParams []*CCLTypeInfo
 }
 
 // ParameterInstance is a struct that represents a passed parameter instance.
@@ -101,15 +115,15 @@ type ModelDefinition struct {
 	Name string
 
 	// Fields is an array of field definitions.
-	Fields []*FieldDefinition
+	Fields []*ModelFieldDefinition
 
 	// Attributes is an array of attribute definitions which are applied
 	// to the model.
-	Attributes []*AttributeDefinition
+	Attributes []*AttributeUsageInfo
 }
 
-// FieldDefinition is a struct that represents a field definition.
-type FieldDefinition struct {
+// ModelFieldDefinition is a struct that represents a field definition.
+type ModelFieldDefinition struct {
 	// OwnedBy is a reference to the model that owns the field.
 	OwnedBy *ModelDefinition
 
@@ -118,4 +132,11 @@ type FieldDefinition struct {
 
 	// Type is the type of the field.
 	Type *CCLTypeInfo
+
+	// Attributes is an array of attribute definitions which are applied
+	// to this field.
+	Attributes []*AttributeUsageInfo
+
+	// value is the current value of this field.
+	value any
 }

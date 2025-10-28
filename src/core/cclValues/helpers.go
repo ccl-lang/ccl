@@ -42,8 +42,26 @@ func NewTypeInfo(name string) *CCLTypeInfo {
 	}
 }
 
-// NewTypeInfoWithOperators creates a new type info with operators.
+// NewTypeInfoWithOperators_OLD creates a new type info with operators.
 // TODO: refactor this to handle operators in a better way.
+func NewTypeInfoWithOperators_OLD(name string, operators ...string) *CCLTypeInfo {
+	var flags cclTypeFlag = 0b0
+	if IsTypeName(name) {
+		flags |= TypeFlagBuiltIn
+	}
+
+	for _, currentOperator := range operators {
+		if currentOperator == "[]" {
+			flags |= TypeFlagArray
+		}
+	}
+
+	return &CCLTypeInfo{
+		name:      name,
+		typeFlags: flags,
+	}
+}
+
 func NewTypeInfoWithOperators(name string, operators ...string) *CCLTypeInfo {
 	var flags cclTypeFlag = 0b0
 	if IsTypeName(name) {

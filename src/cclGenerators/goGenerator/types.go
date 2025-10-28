@@ -11,7 +11,7 @@ import (
 type CCLModel = cclValues.ModelDefinition
 
 // CCLField is a type alias for the field definition type from the CCL library.
-type CCLField = cclValues.FieldDefinition
+type CCLField = cclValues.ModelFieldDefinition
 
 type GoGenerationContext struct {
 	Options *gen.CodeGenerationOptions

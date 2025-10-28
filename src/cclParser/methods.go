@@ -19,28 +19,22 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 		return nil, err
 	}
 
+	var currentPendingAttributes []*cclValues.AttributeUsageInfo
+
 	for !p.IsAtEnd() {
 		if p.current.Type == cclLexer.TokenTypeHash {
 			// in the future, the '#' token can be used for other things as well
-			attribute, err := p.ParseGlobalAttribute()
-			if err != nil {
-				return nil, err
+			if p.isAttributeAt(p.pos + 1) {
+				attribute, err := p.ParseGlobalAttribute()
+				if err != nil {
+					return nil, err
+				}
+
+				p.codeDefinition.GlobalAttributes = append(
+					p.codeDefinition.GlobalAttributes,
+					attribute,
+				)
 			}
-
-			p.codeDefinition.GlobalAttributes = append(
-				p.codeDefinition.GlobalAttributes,
-				attribute,
-			)
-			continue
-		}
-
-		if p.current.Type == cclLexer.TokenTypeKeywordModel {
-			model, err := p.ParseModel()
-			if err != nil {
-				return nil, err
-			}
-
-			p.codeDefinition.Models = append(p.codeDefinition.Models, model)
 			continue
 		}
 
@@ -49,29 +43,39 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 			afterAttribute := p.peekAfterAttribute()
 			if afterAttribute == cclLexer.TokenTypeEOF {
 				return nil, &UnexpectedEndOfAttributeError{
-					Line:   p.current.Line,
-					Column: p.current.Column,
+					Line:       p.current.Line,
+					Column:     p.current.Column,
+					SourceLine: p.getCurrentSourceLine(p.current.Line),
 				}
 			}
 
-			if afterAttribute == cclLexer.TokenTypeKeywordModel {
-				allAttributes, err := p.ParseAttributes()
-				if err != nil {
-					return nil, err
-				}
+			allAttributes, err := p.ParseAttributes()
+			if err != nil {
+				return nil, err
+			}
+			// since we don't want to make our parser too complex, we will just set
+			// pending attributes here and let other parts of parser handle this.
+			// E.g. if after this, we get a model, we will set the attributes to the model;
+			// or if we get a field, we will set the attributes to the field, etc...
+			currentPendingAttributes = append(currentPendingAttributes, allAttributes...)
+			continue
+		}
 
-				model, err := p.ParseModel()
-				if err != nil {
-					return nil, err
-				}
-
-				model.Attributes = allAttributes
-				p.codeDefinition.Models = append(p.codeDefinition.Models, model)
-			} else {
-				// parse other definitions alongside of attributes
-				p.advance()
+		if p.current.Type == cclLexer.TokenTypeKeywordModel {
+			model, err := p.ParseModelDefinition()
+			if err != nil {
+				return nil, err
 			}
 
+			if len(currentPendingAttributes) > 0 {
+				// we have some pending attributes, we should set them to the model
+				model.Attributes = append(
+					model.Attributes,
+					currentPendingAttributes...,
+				)
+				currentPendingAttributes = nil
+			}
+			p.codeDefinition.Models = append(p.codeDefinition.Models, model)
 			continue
 		}
 
@@ -89,6 +93,16 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 			Actual:   p.current.Type,
 			Line:     p.current.Line,
 			Column:   p.current.Column,
+		}
+	}
+
+	if len(currentPendingAttributes) > 0 {
+		// we have unused *normal* attributes...which is a compiler error
+		lastToken := currentPendingAttributes[len(currentPendingAttributes)-1]
+		return nil, &InvalidAttributeUsageError{
+			Line:       lastToken.Line,
+			Column:     lastToken.Column,
+			SourceLine: p.getCurrentSourceLine(lastToken.Line),
 		}
 	}
 
@@ -161,6 +175,11 @@ func (p *CCLParser) isCurrentType(tokenTypes ...cclLexer.CCLTokenType) bool {
 	return slices.Contains(tokenTypes, p.current.Type)
 }
 
+// isCurrentComment checks if the current token is a comment.
+func (p *CCLParser) isCurrentComment() bool {
+	return p.current.Type == cclLexer.TokenTypeComment
+}
+
 func (p *CCLParser) consume(tokenType cclLexer.CCLTokenType) error {
 	if p.current.Type == tokenType {
 		p.advance()
@@ -182,22 +201,86 @@ func (p *CCLParser) consume(tokenType cclLexer.CCLTokenType) error {
 // to call this method in case of an error, and we don't want to keep
 // the lines in memory for a long time.
 func (p *CCLParser) getCurrentSourceLine(lineNum int) string {
+	result := ""
 	lines := strings.Split(p.Options.SourceContent, "\n")
 	if lineNum > 0 && lineNum <= len(lines) {
-		return lines[lineNum-1]
+		result = lines[lineNum-1]
 	}
-	return ""
+
+	if len(result) > MaxShownSourceLineLen {
+		result = result[:MaxShownSourceLineLen]
+	}
+
+	return result
 }
 
-// IsCurrentValue checks if the current token is a value token.
+// IsCurrentValue checks if the current token is a literal value token.
 func (p *CCLParser) IsCurrentValue() bool {
 	return p.current.IsTokenValue()
+}
+
+// FindTokenPattern peeks in front of the current token to see if the provided
+// patterns match the tokens from now on.
+// Comments are ignored. Tokens which are -1 in the specified arguments, will
+// make this function to accept any token.
+func (p *CCLParser) FindTokenPattern(tokens []cclLexer.CCLTokenType) bool {
+	currentTargetIndex := 0
+	currentPos := p.pos - 1
+	if len(p.tokens)-p.pos < len(tokens) {
+		// general bound-checking before entering the loop
+		return false
+	}
+	for {
+		currentPos++
+		if currentPos >= len(p.tokens) {
+			return false
+		}
+
+		if p.tokens[currentPos].Type == cclLexer.TokenTypeComment {
+			// can be safely ignored
+			continue
+		}
+
+		if tokens[currentTargetIndex] != cclLexer.TokenTypeReservedForFuture &&
+			p.tokens[currentPos].Type != tokens[currentTargetIndex] {
+			return false
+		}
+
+		currentTargetIndex++
+		if currentTargetIndex >= len(tokens) {
+			// everything is matched
+			return true
+		}
+	}
 }
 
 // IsCurrentValue checks if the current token is a value token or an identifier.
 func (p *CCLParser) IsCurrentValueOrIdentifier() bool {
 	return p.current.IsTokenValue() ||
 		p.current.Type == cclLexer.TokenTypeIdentifier
+}
+
+// parseCurrentType tries to parse a ccl type-info from the current lexer tokens.
+// No need to call advance after calling this method, as it will handle all the necessary
+// advance calls by itself.
+func (p *CCLParser) parseCurrentType() (*cclValues.CCLTypeInfo, error) {
+	isDataType := p.isCurrentType(cclLexer.TokenTypeDataType)
+	isIdentifier := p.isCurrentType(cclLexer.TokenTypeIdentifier)
+	if !isDataType && !isIdentifier {
+		return nil, p.ErrInvalidSyntax("Expected built-in data-type or an identifier as first token")
+	}
+
+	typeName := ""
+	if isDataType {
+		typeName = p.current.GetLiteralTypeInfo().GetName()
+	} else {
+
+	}
+	if typeName == "" {
+		return nil, p.ErrInvalidSyntax("Unexpected empty type-name")
+	}
+
+	return nil, nil
 }
 
 //---------------------------------------------------------

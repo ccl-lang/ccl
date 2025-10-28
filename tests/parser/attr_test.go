@@ -16,6 +16,8 @@ type attributeInfo struct {
 	Parameters []attributeParamInfo
 }
 
+//---------------------------------------------------------
+
 const AttrTestInput1 = `
 #[MyAttribute1("Hello")]
 #[MyAttribute2("Param1", "Param2")]
@@ -100,5 +102,56 @@ func TestAttributeParse1(t *testing.T) {
 				)
 			}
 		}
+	}
+}
+
+//---------------------------------------------------------
+
+const AttrTestInput2 = `
+[MyAttribute1("MyParam")]
+model MyModel {
+	[MyAttribute2("Param1", "Param2")]
+	[MyAttribute3("Param1", "Param2", 1234)]
+	myField: string;
+}
+`
+
+// TODO
+var AttrTestInput2Expected = []attributeInfo{}
+
+func TestAttributeParse2(t *testing.T) {
+	cclSource, err := cclParser.ParseCCLSourceContent(&cclParser.CCLParseOptions{
+		SourceContent: AttrTestInput2,
+	})
+	if err != nil {
+		t.Fatalf("Failed to parse CCL source: %v", err)
+		return
+	}
+
+	if len(cclSource.GlobalAttributes) != 1 {
+		t.Fatalf("Expected 1 global attribute, got %d", len(cclSource.GlobalAttributes))
+		return
+	}
+
+	if len(cclSource.Models) != 1 {
+		t.Fatalf("Expected 1 model, got %d", len(cclSource.Models))
+		return
+	}
+
+	model := cclSource.Models[0]
+	if model.Name != "MyModel" {
+		t.Errorf("Expected model name MyModel, got %s", model.Name)
+		return
+	}
+
+	if len(model.Fields) != 1 {
+		t.Fatalf("Expected 1 field, got %d", len(model.Fields))
+		return
+	}
+
+	field := model.Fields[0]
+	if field.Name != "myField" {
+		t.Errorf("Expected field name myField, got %s", field.Name)
+		return
 	}
 }

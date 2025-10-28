@@ -28,7 +28,7 @@ func ParseCCLSourceFile_OLD(options *CCLParseOptions) (*cclValues.SourceCodeDefi
 		currentModel := &cclValues.ModelDefinition{
 			ModelId: srcDefinition.GetNextModelId(),
 			Name:    modelName,
-			Fields:  []*cclValues.FieldDefinition{},
+			Fields:  []*cclValues.ModelFieldDefinition{},
 		}
 
 		for _, fieldMatch := range fieldMatches {
@@ -42,10 +42,10 @@ func ParseCCLSourceFile_OLD(options *CCLParseOptions) (*cclValues.SourceCodeDefi
 				}
 			}
 
-			currentModel.Fields = append(currentModel.Fields, &cclValues.FieldDefinition{
+			currentModel.Fields = append(currentModel.Fields, &cclValues.ModelFieldDefinition{
 				OwnedBy: currentModel,
 				Name:    fieldName,
-				Type:    cclValues.NewTypeInfoWithOperators(fieldType, extraOperators),
+				Type:    cclValues.NewTypeInfoWithOperators_OLD(fieldType, extraOperators),
 			})
 			definedFields[fieldName] = true
 		}

@@ -322,7 +322,7 @@ func (c *GDScriptGenerationContext) IsCustomType(cclType string) bool {
 	return c.Options.CCLDefinition.IsCustomType(cclType)
 }
 
-func (c *GDScriptGenerationContext) getGDScriptType(field *cclValues.FieldDefinition) string {
+func (c *GDScriptGenerationContext) getGDScriptType(field *cclValues.ModelFieldDefinition) string {
 	fieldTypeName := field.Type.GetName()
 	gdType := CCLTypesToGdTypes[fieldTypeName]
 	if gdType == "" {

@@ -3,11 +3,12 @@ package cclParser
 import (
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 //---------------------------------------------------------
 
-func (p *CCLParser) ParseGlobalAttribute() (*cclValues.AttributeDefinition, error) {
+func (p *CCLParser) ParseGlobalAttribute() (*cclValues.AttributeUsageInfo, error) {
 	if err := p.consume(cclLexer.TokenTypeHash); err != nil {
 		return nil, err
 	}
@@ -17,12 +18,34 @@ func (p *CCLParser) ParseGlobalAttribute() (*cclValues.AttributeDefinition, erro
 
 // ParseAttributes Keeps parsing all of the available attributes in the current position
 // until it hits something other than attribute.
-func (p *CCLParser) ParseAttributes() ([]*cclValues.AttributeDefinition, error) {
-	// TODO
-	return nil, nil
+func (p *CCLParser) ParseAttributes() ([]*cclValues.AttributeUsageInfo, error) {
+	// in here, we will keep scanning until we hit something which is not an attribute
+	allAttributes := []*cclValues.AttributeUsageInfo{}
+	for !p.IsAtEnd() && p.isCurrentAttribute() {
+		if p.isCurrentType(cclLexer.TokenTypeComment) {
+			p.advance()
+			continue
+		}
+
+		if p.isCurrentType(cclLexer.TokenTypeLeftBracket) {
+			// we have an attribute here
+			attribute, err := p.parseSingleAttribute()
+			if err != nil {
+				return nil, err
+			}
+			if attribute != nil {
+				allAttributes = append(allAttributes, attribute)
+			}
+			continue
+		}
+	}
+
+	return allAttributes, nil
 }
 
-func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeDefinition, error) {
+func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error) {
+	// cache the starting token, since we are going to need some
+	startingToken := p.current
 	if err := p.consume(cclLexer.TokenTypeLeftBracket); err != nil {
 		return nil, err
 	}
@@ -72,7 +95,17 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeDefinition, erro
 				if !p.peekHasAssignment() {
 					// We have a variable usage here
 					// without assigning any param name
-					targetVariable := cclValues.GetGlobalVariable(p.current.GetIdentifier())
+					targetIdentifier := p.current.GetIdentifier()
+					targetVariable := cclValues.GetGlobalVariable(targetIdentifier)
+					if targetVariable == nil {
+						return nil, &UndefinedIdentifierError{
+							Line:             p.current.Line,
+							Column:           p.current.Column,
+							SourceLine:       p.getCurrentSourceLine(p.current.Line),
+							TargetIdentifier: targetIdentifier,
+							Language:         globalValues.LanguageCCL,
+						}
+					}
 					currentParam = &cclValues.ParameterInstance{}
 					if targetVariable.IsAutomatic() {
 						currentParam.ChangeValueType(cclValues.NewPointerTypeInfo(targetVariable.Type))
@@ -99,9 +132,18 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeDefinition, erro
 				// this loop will only break in these cases:
 				// 1. we reach end of current param by ',' or ')'
 				// 2. we reach EOF
-				for !p.IsAtEnd() {
+				for {
+					// early bound-check
+					if p.IsAtEnd() {
+						return nil, &UnexpectedEOFError{
+							Line:       p.current.Line,
+							Column:     p.current.Column,
+							SourceLine: p.getCurrentSourceLine(p.current.Line),
+						}
+					}
+
 					if p.isCurrentType(cclLexer.TokenTypeComment) {
-						// skip comments
+						// just skip comments
 						p.advance()
 						continue
 					}
@@ -153,7 +195,41 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeDefinition, erro
 							}
 						}
 
-						currentParam.ValueType = &cclValues.CCLTypeInfo{}
+						// is it a literal value?
+						if p.IsCurrentValue() {
+							currentParam.ChangeValueType(p.current.GetLiteralTypeInfo())
+							currentParam.ChangeValue(p.current.GetLiteralValue())
+							p.advance()
+							continue
+						}
+
+						// We have a variable usage here
+						// and the parameter name has previously been assigned
+						targetIdentifier := p.current.GetIdentifier()
+						targetVariable := cclValues.GetGlobalVariable(targetIdentifier)
+						if targetVariable == nil {
+							return nil, &UndefinedIdentifierError{
+								Line:             p.current.Line,
+								Column:           p.current.Column,
+								SourceLine:       p.getCurrentSourceLine(p.current.Line),
+								TargetIdentifier: targetIdentifier,
+								Language:         globalValues.LanguageCCL,
+							}
+						}
+						if targetVariable.IsAutomatic() {
+							currentParam.ChangeValueType(cclValues.NewPointerTypeInfo(targetVariable.Type))
+							currentParam.ChangeValue(&cclValues.VariableUsageInstance{
+								Name:       p.current.GetIdentifier(),
+								Definition: targetVariable,
+							})
+						} else {
+							// since the variable is not an automatic variable, we don't
+							// have to *point* to it.
+							currentParam.ChangeValueType(targetVariable.Type)
+							currentParam.ChangeValue(targetVariable.GetValue()) // copy the value
+						}
+						p.advance()
+						continue
 					}
 				}
 
@@ -196,33 +272,38 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeDefinition, erro
 		return nil, err
 	}
 
-	return &cclValues.AttributeDefinition{
+	return &cclValues.AttributeUsageInfo{
 		Name:       name,
 		Parameters: attrParams,
+		Line:       startingToken.Line,
+		Column:     startingToken.Column,
 	}, nil
 }
 
 func (p *CCLParser) isCurrentAttribute() bool {
+	return p.isAttributeAt(p.pos)
+}
+
+func (p *CCLParser) isAttributeAt(targetPos int) bool {
 	// if we are currently parsing an attribute, we should be having these:
 	// 1. a left bracket
 	// 2. an identifier
 	// 3. a parenthesis
 
 	// first, length safety check
-	if p.pos+2 >= len(p.tokens) {
+	if targetPos+2 >= len(p.tokens) {
 		return false
 	}
 
-	return p.tokens[p.pos].Type == cclLexer.TokenTypeLeftBracket &&
-		p.tokens[p.pos+1].Type == cclLexer.TokenTypeIdentifier &&
-		p.tokens[p.pos+2].Type == cclLexer.TokenTypeLeftParenthesis
+	return p.tokens[targetPos].Type == cclLexer.TokenTypeLeftBracket &&
+		p.tokens[targetPos+1].Type == cclLexer.TokenTypeIdentifier
 }
 
 func (p *CCLParser) peekAfterAttribute() cclLexer.CCLTokenType {
 	tempPos := p.pos
 
 	// Skip all attributes
-	for p.tokens[tempPos].Type == cclLexer.TokenTypeLeftBracket {
+	for p.isAttributeAt(tempPos) {
 		// Find the matching right bracket
 		bracketCount := 1
 		tempPos++
