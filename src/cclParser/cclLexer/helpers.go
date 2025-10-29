@@ -315,7 +315,7 @@ func Lex(input string) ([]*CCLToken, error) {
 			if cclValues.IsKeywordName(identifier) {
 				tokenType = TokenTypeKeywordModel
 				identifier = cclValues.GetNormalizedKeywordName(identifier)
-			} else if cclValues.IsTypeName(identifier) {
+			} else if cclValues.IsBuiltinTypeName(identifier) {
 				tokenType = TokenTypeDataType
 				identifier = cclValues.GetNormalizedTypeName(identifier)
 			}

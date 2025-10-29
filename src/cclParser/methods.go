@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
+	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
@@ -43,9 +44,7 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 			afterAttribute := p.peekAfterAttribute()
 			if afterAttribute == cclLexer.TokenTypeEOF {
 				return nil, &UnexpectedEndOfAttributeError{
-					Line:       p.current.Line,
-					Column:     p.current.Column,
-					SourceLine: p.getCurrentSourceLine(p.current.Line),
+					SourcePosition: p.getSourcePosition(),
 				}
 			}
 
@@ -89,10 +88,9 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 
 		// if we reach here, then we have an unexpected token
 		return nil, &UnexpectedTokenError{
-			Expected: cclLexer.TokenTypeKeywordModel,
-			Actual:   p.current.Type,
-			Line:     p.current.Line,
-			Column:   p.current.Column,
+			Expected:       cclLexer.TokenTypeKeywordModel,
+			Actual:         p.current.Type,
+			SourcePosition: p.getSourcePosition(),
 		}
 	}
 
@@ -100,9 +98,7 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 		// we have unused *normal* attributes...which is a compiler error
 		lastToken := currentPendingAttributes[len(currentPendingAttributes)-1]
 		return nil, &InvalidAttributeUsageError{
-			Line:       lastToken.Line,
-			Column:     lastToken.Column,
-			SourceLine: p.getCurrentSourceLine(lastToken.Line),
+			SourcePosition: lastToken.SourcePosition,
 		}
 	}
 
@@ -187,10 +183,9 @@ func (p *CCLParser) consume(tokenType cclLexer.CCLTokenType) error {
 	}
 
 	return &UnexpectedTokenError{
-		Expected: tokenType,
-		Actual:   p.current.Type,
-		Line:     p.current.Line,
-		Column:   p.current.Column,
+		Expected:       tokenType,
+		Actual:         p.current.Type,
+		SourcePosition: p.getSourcePosition(),
 	}
 }
 
@@ -212,6 +207,15 @@ func (p *CCLParser) getCurrentSourceLine(lineNum int) string {
 	}
 
 	return result
+}
+
+// getSourcePosition returns the current source position.
+func (p *CCLParser) getSourcePosition() *cclUtils.SourceCodePosition {
+	return &cclUtils.SourceCodePosition{
+		Line:       p.current.Line,
+		Column:     p.current.Column,
+		SourceLine: p.getCurrentSourceLine(p.current.Line),
+	}
 }
 
 // IsCurrentValue checks if the current token is a literal value token.
@@ -263,7 +267,7 @@ func (p *CCLParser) IsCurrentValueOrIdentifier() bool {
 // parseCurrentType tries to parse a ccl type-info from the current lexer tokens.
 // No need to call advance after calling this method, as it will handle all the necessary
 // advance calls by itself.
-func (p *CCLParser) parseCurrentType() (*cclValues.CCLTypeInfo, error) {
+func (p *CCLParser) parseCurrentType() (*cclValues.CCLTypeDefinition, error) {
 	isDataType := p.isCurrentType(cclLexer.TokenTypeDataType)
 	isIdentifier := p.isCurrentType(cclLexer.TokenTypeIdentifier)
 	if !isDataType && !isIdentifier {
@@ -271,6 +275,7 @@ func (p *CCLParser) parseCurrentType() (*cclValues.CCLTypeInfo, error) {
 	}
 
 	typeName := ""
+	// I WAS HERE
 	if isDataType {
 		typeName = p.current.GetLiteralTypeInfo().GetName()
 	} else {

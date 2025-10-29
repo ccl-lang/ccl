@@ -2,6 +2,7 @@ package cclParser
 
 import (
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
+	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	"github.com/ccl-lang/ccl/src/core/globalValues"
 )
@@ -44,8 +45,9 @@ func (p *CCLParser) ParseAttributes() ([]*cclValues.AttributeUsageInfo, error) {
 }
 
 func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error) {
-	// cache the starting token, since we are going to need some
+	// cache the starting token, since we are going to need some info from it
 	startingToken := p.current
+	startingSourceLine := p.getCurrentSourceLine(p.current.Line)
 	if err := p.consume(cclLexer.TokenTypeLeftBracket); err != nil {
 		return nil, err
 	}
@@ -57,6 +59,10 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 
 	attrParams := []*cclValues.ParameterInstance{}
 
+	// the current namespace
+	// TODO: implement namespaces later
+	namespace := ""
+
 	if p.current.Type == cclLexer.TokenTypeLeftParenthesis {
 		p.advance()
 		var currentParam *cclValues.ParameterInstance
@@ -65,10 +71,9 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 			if p.current.Type == cclLexer.TokenTypeComma {
 				if currentParam == nil {
 					return nil, &UnexpectedTokenError{
-						Expected: cclLexer.TokenTypeIdentifier,
-						Actual:   cclLexer.TokenTypeComma,
-						Line:     p.current.Line,
-						Column:   p.current.Column,
+						Expected:       cclLexer.TokenTypeIdentifier,
+						Actual:         cclLexer.TokenTypeComma,
+						SourcePosition: p.getSourcePosition(),
 					}
 				}
 
@@ -84,11 +89,9 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 			if p.current.Type == cclLexer.TokenTypeIdentifier {
 				if currentParam != nil {
 					return nil, &UnexpectedTokenAfterParameterError{
-						Line:       p.current.Line,
-						Column:     p.current.Column,
-						SourceLine: p.getCurrentSourceLine(p.current.Line),
-						ParamName:  currentParam.Name,
-						TokenValue: p.current.GetIdentifier(),
+						ParamName:      currentParam.Name,
+						TokenValue:     p.current.GetIdentifier(),
+						SourcePosition: p.getSourcePosition(),
 					}
 				}
 
@@ -99,16 +102,16 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 					targetVariable := cclValues.GetGlobalVariable(targetIdentifier)
 					if targetVariable == nil {
 						return nil, &UndefinedIdentifierError{
-							Line:             p.current.Line,
-							Column:           p.current.Column,
-							SourceLine:       p.getCurrentSourceLine(p.current.Line),
 							TargetIdentifier: targetIdentifier,
 							Language:         globalValues.LanguageCCL,
+							SourcePosition:   p.getSourcePosition(),
 						}
 					}
 					currentParam = &cclValues.ParameterInstance{}
 					if targetVariable.IsAutomatic() {
-						currentParam.ChangeValueType(cclValues.NewPointerTypeInfo(targetVariable.Type))
+						currentParam.ChangeValueType(cclValues.NewPointerTypeUsage(
+							cclValues.NewTypeUsage(targetVariable.Type),
+						))
 						currentParam.ChangeValue(&cclValues.VariableUsageInstance{
 							Name:       p.current.GetIdentifier(),
 							Definition: targetVariable,
@@ -116,7 +119,7 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 					} else {
 						// since the variable is not an automatic variable, we don't
 						// have to *point* to it.
-						currentParam.ChangeValueType(targetVariable.Type)
+						currentParam.ChangeValueType(cclValues.NewTypeUsage(targetVariable.Type))
 						currentParam.ChangeValue(targetVariable.GetValue())
 					}
 					p.advance()
@@ -136,9 +139,7 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 					// early bound-check
 					if p.IsAtEnd() {
 						return nil, &UnexpectedEOFError{
-							Line:       p.current.Line,
-							Column:     p.current.Column,
-							SourceLine: p.getCurrentSourceLine(p.current.Line),
+							SourcePosition: p.getSourcePosition(),
 						}
 					}
 
@@ -156,10 +157,8 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 							// we got an identifier, but no value type
 							// we were expecting some kind of value after this
 							return nil, &ExpectedValueError{
-								SourceLine: p.getCurrentSourceLine(p.current.Line),
-								ParamName:  currentParam.Name,
-								Line:       p.current.Line,
-								Column:     p.current.Column,
+								ParamName:      currentParam.Name,
+								SourcePosition: p.getSourcePosition(),
 							}
 						}
 
@@ -172,11 +171,9 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 					if p.isCurrentType(cclLexer.TokenTypeAssignment) {
 						if gotAssignment {
 							return nil, &UnexpectedTokenAfterAssignmentError{
-								Line:       p.current.Line,
-								Column:     p.current.Column,
-								SourceLine: p.getCurrentSourceLine(p.current.Line),
-								ParamName:  currentParam.Name,
-								TokenValue: p.current.GetIdentifier(),
+								ParamName:      currentParam.Name,
+								TokenValue:     p.current.GetIdentifier(),
+								SourcePosition: p.getSourcePosition(),
 							}
 						}
 						gotAssignment = true
@@ -187,17 +184,15 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 					if p.IsCurrentValueOrIdentifier() {
 						if currentParam.ValueType != nil {
 							return nil, &UnexpectedTokenAfterParameterError{
-								Line:       p.current.Line,
-								Column:     p.current.Column,
-								SourceLine: p.getCurrentSourceLine(p.current.Line),
-								ParamName:  currentParam.Name,
-								TokenValue: p.current.GetIdentifier(),
+								ParamName:      currentParam.Name,
+								TokenValue:     p.current.GetIdentifier(),
+								SourcePosition: p.getSourcePosition(),
 							}
 						}
 
 						// is it a literal value?
 						if p.IsCurrentValue() {
-							currentParam.ChangeValueType(p.current.GetLiteralTypeInfo())
+							currentParam.ChangeValueType(p.current.GetLiteralTypeInfo(namespace))
 							currentParam.ChangeValue(p.current.GetLiteralValue())
 							p.advance()
 							continue
@@ -209,15 +204,17 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 						targetVariable := cclValues.GetGlobalVariable(targetIdentifier)
 						if targetVariable == nil {
 							return nil, &UndefinedIdentifierError{
-								Line:             p.current.Line,
-								Column:           p.current.Column,
-								SourceLine:       p.getCurrentSourceLine(p.current.Line),
 								TargetIdentifier: targetIdentifier,
 								Language:         globalValues.LanguageCCL,
+								SourcePosition:   p.getSourcePosition(),
 							}
 						}
+
+						// TODO: this automatic thingy here needs to be rethought
 						if targetVariable.IsAutomatic() {
-							currentParam.ChangeValueType(cclValues.NewPointerTypeInfo(targetVariable.Type))
+							currentParam.ChangeValueType(cclValues.NewPointerTypeUsage(
+								cclValues.NewTypeUsage(targetVariable.Type),
+							))
 							currentParam.ChangeValue(&cclValues.VariableUsageInstance{
 								Name:       p.current.GetIdentifier(),
 								Definition: targetVariable,
@@ -225,7 +222,7 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 						} else {
 							// since the variable is not an automatic variable, we don't
 							// have to *point* to it.
-							currentParam.ChangeValueType(targetVariable.Type)
+							currentParam.ChangeValueType(cclValues.NewTypeUsage(targetVariable.Type))
 							currentParam.ChangeValue(targetVariable.GetValue()) // copy the value
 						}
 						p.advance()
@@ -239,17 +236,15 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 			if p.IsCurrentValue() {
 				if currentParam != nil {
 					return nil, &UnexpectedTokenAfterParameterError{
-						Line:       p.current.Line,
-						Column:     p.current.Column,
-						SourceLine: p.getCurrentSourceLine(p.current.Line),
-						ParamName:  currentParam.Name,
-						TokenValue: p.current.GetIdentifier(),
+						ParamName:      currentParam.Name,
+						TokenValue:     p.current.GetIdentifier(),
+						SourcePosition: p.getSourcePosition(),
 					}
 				}
 
 				// if we are here, then we have a value without a parameter name
 				currentParam = &cclValues.ParameterInstance{
-					ValueType: p.current.GetLiteralTypeInfo(),
+					ValueType: p.current.GetLiteralTypeInfo(namespace),
 				}
 				currentParam.ChangeValue(p.current.GetLiteralValue())
 				p.advance()
@@ -275,8 +270,11 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 	return &cclValues.AttributeUsageInfo{
 		Name:       name,
 		Parameters: attrParams,
-		Line:       startingToken.Line,
-		Column:     startingToken.Column,
+		SourcePosition: &cclUtils.SourceCodePosition{
+			Line:       startingToken.Line,
+			Column:     startingToken.Column,
+			SourceLine: startingSourceLine,
+		},
 	}, nil
 }
 

@@ -85,7 +85,7 @@ func (t *CCLToken) IsTokenValue() bool {
 	return valueTokens[t.Type]
 }
 
-func (t *CCLToken) GetLiteralTypeInfo() *cclValues.CCLTypeInfo {
+func (t *CCLToken) GetLiteralTypeInfo(namespace string) *cclValues.CCLTypeUsage {
 	if !t.IsTokenValue() {
 		// we don't have a value token
 		return nil
@@ -93,7 +93,9 @@ func (t *CCLToken) GetLiteralTypeInfo() *cclValues.CCLTypeInfo {
 
 	// we have a value token, so we need to return the type info
 	// based on the token type
-	return literalValueTypeInfos[t.Type]
+	return cclValues.NewBuiltinTypeUsage(
+		namespace,
+	)
 }
 
 // GetLiteralValue returns the literal value of the token.

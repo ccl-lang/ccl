@@ -15,11 +15,9 @@ func (p *CCLParser) ParseModelDefinition() (*cclValues.ModelDefinition, error) {
 
 	if !p.isCurrentType(cclLexer.TokenTypeIdentifier) {
 		return nil, &UnexpectedTokenError{
-			Expected:   cclLexer.TokenTypeIdentifier,
-			Actual:     p.current.Type,
-			Line:       p.current.Line,
-			Column:     p.current.Column,
-			SourceLine: p.getCurrentSourceLine(p.current.Line),
+			Expected:       cclLexer.TokenTypeIdentifier,
+			Actual:         p.current.Type,
+			SourcePosition: p.getSourcePosition(),
 		}
 	}
 
@@ -39,11 +37,9 @@ func (p *CCLParser) ParseModelDefinition() (*cclValues.ModelDefinition, error) {
 		if p.isCurrentType(cclLexer.TokenTypeLeftBrace) {
 			if openBraceCount > 0 {
 				return nil, &UnexpectedTokenError{
-					Expected:   cclLexer.TokenTypeRightBrace,
-					Actual:     p.current.Type,
-					Line:       p.current.Line,
-					Column:     p.current.Column,
-					SourceLine: p.getCurrentSourceLine(p.current.Line),
+					Expected:       cclLexer.TokenTypeRightBrace,
+					Actual:         p.current.Type,
+					SourcePosition: p.getSourcePosition(),
 				}
 			}
 
@@ -85,11 +81,9 @@ func (p *CCLParser) ParseModelDefinition() (*cclValues.ModelDefinition, error) {
 
 		// TODO: in future we can have methods inside of the model and other stuff
 		return nil, &UnexpectedTokenError{
-			Expected:   cclLexer.TokenTypeIdentifier,
-			Actual:     p.current.Type,
-			Line:       p.current.Line,
-			Column:     p.current.Column,
-			SourceLine: p.getCurrentSourceLine(p.current.Line),
+			Expected:       cclLexer.TokenTypeIdentifier,
+			Actual:         p.current.Type,
+			SourcePosition: p.getSourcePosition(),
 		}
 	}
 
@@ -109,9 +103,7 @@ func (p *CCLParser) ParseModelField() (*cclValues.ModelFieldDefinition, error) {
 		if p.IsAtEnd() {
 			// we still haven't got any semicolon...
 			return nil, &UnexpectedEOFError{
-				Line:       p.current.Line,
-				Column:     p.current.Column,
-				SourceLine: p.getCurrentSourceLine(p.current.Line),
+				SourcePosition: p.getSourcePosition(),
 			}
 		}
 
@@ -124,9 +116,8 @@ func (p *CCLParser) ParseModelField() (*cclValues.ModelFieldDefinition, error) {
 			if (!gotColon && !gotAssignment) || theField.Type == nil {
 				// return error here
 				return nil, &InvalidSyntaxError{
-					Line:       p.current.Line,
-					Column:     p.current.Column,
-					SourceLine: p.getCurrentSourceLine(p.current.Line),
+					Language:       globalValues.LanguageCCL,
+					SourcePosition: p.getSourcePosition(),
 				}
 			}
 
@@ -158,9 +149,8 @@ func (p *CCLParser) ParseModelField() (*cclValues.ModelFieldDefinition, error) {
 			// accept go-style syntax for fields in ccl.
 			if !gotColon && !gotAssignment {
 				return nil, &InvalidSyntaxError{
-					Line:       p.current.Line,
-					Column:     p.current.Column,
-					SourceLine: p.getCurrentSourceLine(p.current.Line),
+					Language:       globalValues.LanguageCCL,
+					SourcePosition: p.getSourcePosition(),
 				}
 			}
 
@@ -185,15 +175,15 @@ func (p *CCLParser) ParseModelField() (*cclValues.ModelFieldDefinition, error) {
 					targetVariable := cclValues.GetGlobalVariable(targetIdentifier)
 					if targetVariable == nil {
 						return nil, &UndefinedIdentifierError{
-							Line:             p.current.Line,
-							Column:           p.current.Column,
-							SourceLine:       p.getCurrentSourceLine(p.current.Line),
 							TargetIdentifier: targetIdentifier,
 							Language:         globalValues.LanguageCCL,
+							SourcePosition:   p.getSourcePosition(),
 						}
 					}
 					if targetVariable.IsAutomatic() {
-						theField.ChangeValueType(cclValues.NewPointerTypeInfo(targetVariable.Type))
+						theField.ChangeValueType(cclValues.NewPointerTypeUsage(
+							targetVariable.Type,
+						))
 						theField.ChangeValue(&cclValues.VariableUsageInstance{
 							Name:       targetIdentifier,
 							Definition: targetVariable,

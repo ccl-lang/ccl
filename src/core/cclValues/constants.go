@@ -19,6 +19,8 @@ const (
 	TypeNameFloat64  = "float64"
 	TypeNameBool     = "bool"
 	TypeNameDateTime = "datetime"
+	TypeNamePointer  = "pointer"
+	TypeNameArray    = "array"
 )
 
 // general ccl keyword names
@@ -26,9 +28,19 @@ const (
 	KeywordNameModel = "model"
 )
 
+// ccl type flags.
 const (
 	TypeFlagBuiltIn cclTypeFlag = 1 << iota
 	TypeFlagArray
 	TypeFlagMap
 	TypeFlagPointer
+	TypeFlagAlias
+	TypeFlagImmutable
+	TypeFlagCustomModel
+)
+
+// ccl default namespace values
+const (
+	NamespaceBuiltin = "builtin"
+	NamespaceGlobal  = "global"
 )

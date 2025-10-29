@@ -73,8 +73,8 @@ func (p *ParameterInstance) String() string {
 }
 
 // ChangeValueType changes the value type of the parameter.
-func (p *ParameterInstance) ChangeValueType(typeInfo *CCLTypeInfo) {
-	p.ValueType = typeInfo
+func (p *ParameterInstance) ChangeValueType(typeUsage *CCLTypeUsage) {
+	p.ValueType = typeUsage
 }
 
 // ChangeValue sets the value of the parameter.
@@ -134,52 +134,6 @@ func (p *ParameterInstance) GetValue() any {
 
 //---------------------------------------------------------
 
-// IsBuiltIn returns true if the type is a built-in type.
-func (t *CCLTypeInfo) IsBuiltIn() bool {
-	return t.typeFlags&TypeFlagBuiltIn != 0
-}
-
-// IsArray returns true if the type is an array.
-func (t *CCLTypeInfo) IsArray() bool {
-	return t.typeFlags&TypeFlagArray != 0
-}
-
-// IsMap returns true if the type is a map.
-func (t *CCLTypeInfo) IsMap() bool {
-	return t.typeFlags&TypeFlagMap != 0
-}
-
-// String returns the string representation of the type info.
-func (t *CCLTypeInfo) String() string {
-	return t.name + " (flags: " + ssg.ToBase10(t.typeFlags) + ")"
-}
-
-// GetUnderlyingType returns the underlying type of the current type.
-func (t *CCLTypeInfo) GetUnderlyingType() *CCLTypeInfo {
-	return t.underlyingType
-}
-
-// GetName returns the name of the type.
-func (t *CCLTypeInfo) GetName() string {
-	return t.name
-}
-
-func (t *CCLTypeInfo) AddGenericParam(targetType *CCLTypeInfo) error {
-	if targetType == nil {
-		return ErrGenericParamCantBeNil
-	}
-
-	// avoid entirely circular generic type
-	if t == targetType {
-		return ErrCircularGenericType
-	}
-
-	t.genericParams = append(t.genericParams, targetType)
-	return nil
-}
-
-//---------------------------------------------------------
-
 func (d *VariableDefinition) String() string {
 	return d.Name + ": " + d.Type.GetName()
 }
@@ -192,20 +146,14 @@ func (d *VariableDefinition) GetValue() any {
 	return d.value
 }
 
-func (d *VariableDefinition) IsAutomatic() bool {
-	return d.isAutomaticVariable
-}
-
-//---------------------------------------------------------
-
-// ChangeValueType changes the value type of the parameter.
-func (p *ModelFieldDefinition) ChangeValueType(typeInfo *CCLTypeInfo) {
-	p.Type = typeInfo
-}
-
-// ChangeValue sets the value of the parameter.
-func (p *ModelFieldDefinition) ChangeValue(value any) {
-	p.value = value
+// HasImmutableType returns true if the variable's type is immutable.
+// Immutable types are types that their value cannot be changed after
+// being initialized.
+// Such types include:
+//   - Built-in types like int, float, string, bool
+//   - User-defined models that are marked as immutable (if such feature is implemented)
+func (d *VariableDefinition) HasImmutableType() bool {
+	return d.Type.IsImmutable()
 }
 
 //---------------------------------------------------------
