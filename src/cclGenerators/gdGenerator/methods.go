@@ -120,68 +120,57 @@ func (c *GDScriptGenerationContext) generateSerializeMethod(model *CCLModel, bui
 }
 
 func (c *GDScriptGenerationContext) generateFieldSerialize(field *CCLField, builder *strings.Builder) {
-	fieldName := ToSnakeCase(field.Name)
+	fieldRawName := ToSnakeCase(field.Name)
+	fieldName := "self." + fieldRawName
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteString("\t# Write " + fieldName + "\n")
-		builder.WriteString("\tbuffer.put_u32(" + fieldName + ".length())\n")
-		builder.WriteString("\tbuffer.put_data(" + fieldName + ".to_utf8_buffer())\n\n")
+		builder.WriteString("\tvar " + fieldRawName + "_bytes = " + fieldName + ".to_utf8_buffer()\n")
+		builder.WriteString("\tbuffer.put_u32(" + fieldRawName + "_bytes.size())\n")
+		builder.WriteString("\tbuffer.put_data(" + fieldRawName + "_bytes)\n\n")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_32(" + fieldName + ")\n\n")
 	case cclValues.TypeNameInt8:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_8(" + fieldName + ")\n\n")
 	case cclValues.TypeNameInt16:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_16(" + fieldName + ")\n\n")
 	case cclValues.TypeNameInt64:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_64(" + fieldName + ")\n\n")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_u32(" + fieldName + ")\n\n")
 	case cclValues.TypeNameUint8:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_u8(" + fieldName + ")\n\n")
 	case cclValues.TypeNameUint16:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_u16(" + fieldName + ")\n\n")
 	case cclValues.TypeNameUint64:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_u64(" + fieldName + ")\n\n")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_float(" + fieldName + ")\n\n")
 	case cclValues.TypeNameBool:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_8(1 if " + fieldName + " else 0)\n\n")
 	case cclValues.TypeNameBytes:
-		builder.WriteString("\t# Write " + fieldName + "\n")
 		builder.WriteString("\tbuffer.put_u32(" + fieldName + ".size())\n")
 		builder.WriteString("\tbuffer.put_data(" + fieldName + ")\n\n")
 	case cclValues.TypeNameDateTime:
-		builder.WriteString("\t# Write " + fieldName + " as unix timestamp\n")
 		builder.WriteString("\tbuffer.put_64(" + fieldName + ")\n\n")
 	default:
 		// Custom type handling
 		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
-			builder.WriteString("\t# Write custom type " + fieldName + "\n")
-			builder.WriteString("\tvar " + fieldName + "_bytes = " +
-				fieldName + ".serialize() if " + fieldName + " else PackedByteArray([0])\n")
-			builder.WriteString("\tbuffer.put_u32(" + fieldName + "_bytes.size())\n")
-			builder.WriteString("\tbuffer.put_data(" + fieldName + "_bytes)\n\n")
+			builder.WriteString("\tvar " + fieldRawName + "_bytes = " +
+				fieldName + ".serialize() if " + fieldRawName + " else PackedByteArray([0])\n")
+			builder.WriteString("\tbuffer.put_u32(" + fieldRawName + "_bytes.size())\n")
+			builder.WriteString("\tbuffer.put_data(" + fieldRawName + "_bytes)\n\n")
 		}
 	}
 }
 
 func (c *GDScriptGenerationContext) generateArraySerialize(field *CCLField, builder *strings.Builder) {
-	fieldName := ToSnakeCase(field.Name)
+	targetFieldType := field.Type.GetUnderlyingType()
+	fieldName := "self." + ToSnakeCase(field.Name)
 	builder.WriteString("\t# Write array " + fieldName + "\n")
 	builder.WriteString("\tbuffer.put_u32(" + fieldName + ".size())\n")
 	builder.WriteString("\tfor item in " + fieldName + ":\n")
 
-	switch field.Type.GetName() {
+	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
 		builder.WriteString("\t\tbuffer.put_u32(item.length())\n")
 		builder.WriteString("\t\tbuffer.put_data(item.to_utf8_buffer())\n")
@@ -206,7 +195,7 @@ func (c *GDScriptGenerationContext) generateArraySerialize(field *CCLField, buil
 	case cclValues.TypeNameBool:
 		builder.WriteString("\t\tbuffer.put_8(1 if item else 0)\n")
 	default:
-		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
+		if c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName()) {
 			builder.WriteString("\t\tvar item_bytes = item.serialize() if item else PackedByteArray([0])\n")
 			builder.WriteString("\t\tbuffer.put_u32(item_bytes.size())\n")
 			builder.WriteString("\t\tbuffer.put_data(item_bytes)\n")
@@ -219,7 +208,7 @@ func (c *GDScriptGenerationContext) generateDeserializeMethod(model *CCLModel, b
 	builder.WriteString("static func deserialize(data: PackedByteArray) -> " + model.Name + ":\n")
 
 	// null-safety check
-	builder.WriteString("\tif not data or data.is_empty() or (data.size() == 1 and data[1] == 0):\n")
+	builder.WriteString("\tif not data or data.is_empty() or (data.size() == 1 and data[0] == 0):\n")
 	builder.WriteString("\t\treturn null\n\n")
 
 	builder.WriteString("\tvar buffer = StreamPeerBuffer.new()\n")
@@ -240,11 +229,11 @@ func (c *GDScriptGenerationContext) generateDeserializeMethod(model *CCLModel, b
 
 func (c *GDScriptGenerationContext) generateFieldDeserialize(field *CCLField, builder *strings.Builder) {
 	fieldName := ToSnakeCase(field.Name)
-	builder.WriteString("\t# Read " + fieldName + "\n")
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteString("\t# Read " + fieldName + "\n")
 		builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
+		builder.WriteString("\tif " + fieldName + "_len > buffer.get_size() - buffer.get_position():\n")
+		builder.WriteString("\t\treturn null\n")
 		builder.WriteString("\tresult." + fieldName + " = buffer.get_data(" +
 			fieldName + "_len)[1].get_string_from_utf8()\n\n")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
@@ -254,7 +243,6 @@ func (c *GDScriptGenerationContext) generateFieldDeserialize(field *CCLField, bu
 	case cclValues.TypeNameInt16:
 		builder.WriteString("\tresult." + fieldName + " = buffer.get_16()\n\n")
 	case cclValues.TypeNameInt64:
-		builder.WriteString("\t# Read " + fieldName + "\n")
 		builder.WriteString("\tresult." + fieldName + " = buffer.get_64()\n\n")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
 		builder.WriteString("\tresult." + fieldName + " = buffer.get_u32()\n\n")
@@ -265,23 +253,18 @@ func (c *GDScriptGenerationContext) generateFieldDeserialize(field *CCLField, bu
 	case cclValues.TypeNameUint64:
 		builder.WriteString("\tresult." + fieldName + " = buffer.get_u64()\n\n")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
-		builder.WriteString("\t# Read " + fieldName + "\n")
 		builder.WriteString("\tresult." + fieldName + " = buffer.get_float()\n\n")
 	case cclValues.TypeNameBool:
-		builder.WriteString("\t# Read " + fieldName + "\n")
 		builder.WriteString("\tresult." + fieldName + " = buffer.get_8() != 0\n\n")
 	case cclValues.TypeNameBytes:
-		builder.WriteString("\t# Read " + fieldName + "\n")
 		builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
 		builder.WriteString("\tresult." + fieldName + " = buffer.get_data(" +
 			fieldName + "_len)[1]\n\n")
 	case cclValues.TypeNameDateTime:
-		builder.WriteString("\t# Read " + fieldName + " timestamp\n")
 		builder.WriteString("\tresult." + fieldName + " = buffer.get_64()\n\n")
 	default:
 		// Custom type handling
 		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
-			builder.WriteString("\t# Read custom type " + fieldName + "\n")
 			builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
 			builder.WriteString("\tvar " + fieldName + "_bytes = buffer.get_data(" +
 				fieldName + "_len)[1]\n")
@@ -292,15 +275,17 @@ func (c *GDScriptGenerationContext) generateFieldDeserialize(field *CCLField, bu
 }
 
 func (c *GDScriptGenerationContext) generateArrayDeserialize(field *CCLField, builder *strings.Builder) {
+	targetFieldType := field.Type.GetUnderlyingType()
 	fieldName := ToSnakeCase(field.Name)
-	builder.WriteString("\t# Read array " + fieldName + "\n")
 	builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
 	builder.WriteString("\tresult." + fieldName + " = []\n")
 	builder.WriteString("\tfor i in range(" + fieldName + "_len):\n")
 
-	switch field.Type.GetName() {
+	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
 		builder.WriteString("\t\tvar item_len = buffer.get_u32()\n")
+		builder.WriteString("\t\tif item_len > buffer.get_size() - buffer.get_position():\n")
+		builder.WriteString("\t\t\treturn null\n")
 		builder.WriteString("\t\tvar item = buffer.get_data(item_len)[1].get_string_from_utf8()\n")
 		builder.WriteString("\t\tresult." + fieldName + ".append(item)\n")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
@@ -324,11 +309,13 @@ func (c *GDScriptGenerationContext) generateArrayDeserialize(field *CCLField, bu
 	case cclValues.TypeNameBool:
 		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_8() != 0)\n")
 	default:
-		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
+		if c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName()) {
 			builder.WriteString("\t\tvar item_len = buffer.get_u32()\n")
+			builder.WriteString("\t\tif item_len > buffer.get_size() - buffer.get_position():\n")
+			builder.WriteString("\t\t\treturn null\n")
 			builder.WriteString("\t\tvar item_bytes = buffer.get_data(item_len)[1]\n")
 			builder.WriteString("\t\tresult." + fieldName + ".append(" +
-				field.Type.GetName() + ".deserialize(item_bytes))\n")
+				targetFieldType.GetName() + ".deserialize(item_bytes))\n")
 		}
 	}
 	builder.WriteString("\n")

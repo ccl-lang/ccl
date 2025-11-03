@@ -247,7 +247,7 @@ func (c *GoGenerationContext) GenerateMethods() error {
 
 	for _, currentTypeDef := range c.Options.CCLDefinition.TypeDefinitions {
 		if currentTypeDef.IsCustomModel() {
-			err := c.generateMethodsForMode(currentTypeDef.GetModelDefinition())
+			err := c.generateMethodsForModel(currentTypeDef.GetModelDefinition())
 			if err != nil {
 				return err
 			}
@@ -263,13 +263,25 @@ func (c *GoGenerationContext) GenerateMethods() error {
 	return nil
 }
 
-func (c *GoGenerationContext) generateMethodsForMode(currentModel *CCLModel) error {
+func (c *GoGenerationContext) generateMethodsForModel(currentModel *CCLModel) error {
 	c.MethodsCode.WriteString("\n//------------------------------------------------------------\n\n")
 	c.MethodsCode.WriteString("func (m *" + currentModel.Name + ") GetModelId() int {\n")
 	c.MethodsCode.WriteString("\treturn ModelId" + currentModel.Name + "\n")
 	c.MethodsCode.WriteString("}\n")
 
 	// generate CloneEmpty() method
+	addCloneMethods := c.Options.CCLDefinition.HasGlobalAttribute("AddCloneMethods") ||
+		currentModel.HasAttribute("AddCloneMethods")
+	if addCloneMethods {
+		c.generateCloneMethods(currentModel)
+	}
+
+	c.generateSerializeBinaryMethod(currentModel)
+	c.generateDeserializeBinaryMethod(currentModel)
+	return nil
+}
+
+func (c *GoGenerationContext) generateCloneMethods(currentModel *CCLModel) error {
 	c.MethodsCode.WriteString("\nfunc (m *" + currentModel.Name + ") CloneEmpty() *")
 	c.MethodsCode.WriteString(currentModel.Name + " {\n")
 	c.MethodsCode.WriteString("\tif m == nil {\n")
@@ -278,15 +290,14 @@ func (c *GoGenerationContext) generateMethodsForMode(currentModel *CCLModel) err
 	c.MethodsCode.WriteString("\treturn &" + currentModel.Name + "{}\n")
 	c.MethodsCode.WriteString("}\n")
 
-	c.MethodsCode.WriteString("\nfunc (m *" + currentModel.Name + ") CloneEmptySerializable() Serializable {\n")
-	c.MethodsCode.WriteString("\tif m == nil {\n")
-	c.MethodsCode.WriteString("\t\treturn nil\n")
-	c.MethodsCode.WriteString("\t}\n")
-	c.MethodsCode.WriteString("\treturn &" + currentModel.Name + "{}\n")
-	c.MethodsCode.WriteString("}\n")
-
-	c.generateSerializeBinaryMethod(currentModel)
-	c.generateDeserializeBinaryMethod(currentModel)
+	if c.Options.CCLDefinition.HasGlobalAttribute("AddSerializableInterface") {
+		c.MethodsCode.WriteString("\nfunc (m *" + currentModel.Name + ") CloneEmptySerializable() Serializable {\n")
+		c.MethodsCode.WriteString("\tif m == nil {\n")
+		c.MethodsCode.WriteString("\t\treturn nil\n")
+		c.MethodsCode.WriteString("\t}\n")
+		c.MethodsCode.WriteString("\treturn &" + currentModel.Name + "{}\n")
+		c.MethodsCode.WriteString("}\n")
+	}
 	return nil
 }
 
@@ -368,7 +379,8 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 }
 
 func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField) error {
-	isCustomType := c.Options.CCLDefinition.IsCustomType(field.Type.GetName())
+	targetFieldType := field.Type.GetUnderlyingType()
+	isCustomType := c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName())
 	c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {\n")
 	c.MethodsCode.WriteString("\t\treturn nil, err\n")
 	c.MethodsCode.WriteString("\t}\n")
@@ -523,13 +535,14 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 }
 
 func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLField) error {
-	isCustomType := c.Options.CCLDefinition.IsCustomType(field.Type.GetName())
+	targetFieldType := field.Type.GetUnderlyingType()
+	isCustomType := c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName())
 	isPointer := isCustomType //TODO: Find a way to specify this
 	fName := strings.ToLower(string(field.Name[0])) + field.Name[1:]
 	fLenName := fName + "Len"
 	// fNameStrBytes := fName + "StrBytes"
 	// fNameUnix := fName + "Unix"
-	fieldRealType := field.Type.GetName()
+	fieldRealType := targetFieldType.GetName()
 	if isPointer {
 		fieldRealType = "*" + fieldRealType
 	}
@@ -571,7 +584,7 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 		if isCustomType {
 			c.MethodsCode.WriteString("\t\tvar elem " + fieldRealType)
 			if isPointer {
-				c.MethodsCode.WriteString(" = new(" + field.Type.GetName() + ")\n")
+				c.MethodsCode.WriteString(" = new(" + targetFieldType.GetName() + ")\n")
 			} else {
 				c.MethodsCode.WriteString("\n")
 			}

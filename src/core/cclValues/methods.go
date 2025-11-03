@@ -2,6 +2,7 @@ package cclValues
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/ALiwoto/ssg/ssg"
 )
@@ -39,6 +40,18 @@ func (d *SourceCodeDefinition) GetAllModels() []*ModelDefinition {
 	return models
 }
 
+// HasGlobalAttribute returns true if the source code definition
+// has at least one of the given global attributes.
+func (d *SourceCodeDefinition) HasGlobalAttribute(attributeName ...string) bool {
+	for _, attr := range d.GlobalAttributes {
+		if slices.Contains(attributeName, attr.Name) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // IsCustomType returns true if the given type name is a custom type
 // defined in the source code.
 func (d *SourceCodeDefinition) IsCustomType(typeName string) bool {
@@ -53,6 +66,18 @@ func (m *ModelDefinition) String() string {
 
 func (m *ModelDefinition) DoesAliasMatch(targetAlias string) bool {
 	// TODO: implement model aliases in the future
+	return false
+}
+
+// HasAttribute returns true if the model definition has at least one of the
+// given attributes.
+func (m *ModelDefinition) HasAttribute(attributeName ...string) bool {
+	for _, attr := range m.Attributes {
+		if slices.Contains(attributeName, attr.Name) {
+			return true
+		}
+	}
+
 	return false
 }
 
