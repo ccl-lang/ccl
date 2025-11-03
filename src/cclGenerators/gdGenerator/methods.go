@@ -339,14 +339,18 @@ func (c *GDScriptGenerationContext) IsCustomType(cclType string) bool {
 }
 
 func (c *GDScriptGenerationContext) getGDScriptType(field *cclValues.ModelFieldDefinition) string {
-	fieldTypeName := field.Type.GetName()
-	gdType := CCLTypesToGdTypes[fieldTypeName]
+	targetType := field.Type
+	if targetType.IsArray() {
+		targetType = targetType.GetUnderlyingType()
+	}
+
+	gdType := CCLTypesToGdTypes[targetType.GetName()]
 	if gdType == "" {
-		if !c.IsCustomType(fieldTypeName) {
+		if !c.IsCustomType(targetType.GetName()) {
 			return ""
 		}
 
-		gdType = fieldTypeName
+		gdType = targetType.GetName()
 	}
 
 	if field.IsArray() {

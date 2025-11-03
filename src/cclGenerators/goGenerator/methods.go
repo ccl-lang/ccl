@@ -182,12 +182,20 @@ func (c *GoGenerationContext) GenerateTypes() error {
 func (c *GoGenerationContext) generateTypesForModel(currentModel *CCLModel) error {
 	c.TypesCode.WriteString("type " + currentModel.Name + " struct {\n")
 	for _, currentField := range currentModel.Fields {
-		theGoType, ok := CCLTypesToGoTypes[currentField.Type.GetName()]
-		customDefinedType := c.Options.CCLDefinition.GetModelByName(currentField.Type.GetName())
+		targetType := currentField.Type
+
+		// TODO: we have to check for other stuff in here
+		// or maybe just refactor this part to a more clean code
+		if targetType.IsArray() {
+			targetType = targetType.GetUnderlyingType()
+		}
+
+		theGoType, ok := CCLTypesToGoTypes[targetType.GetName()]
+		customDefinedType := c.Options.CCLDefinition.GetModelByName(targetType.GetName())
 		if !ok {
 			if customDefinedType == nil {
 				return &cclErrors.UnsupportedFieldTypeError{
-					TypeName:       currentField.Type.GetName(),
+					TypeName:       targetType.GetName(),
 					FieldName:      currentField.Name,
 					ModelName:      currentModel.Name,
 					TargetLanguage: LanguageName,
