@@ -166,14 +166,14 @@ func (c *GDScriptGenerationContext) generateFieldSerialize(field *CCLField, buil
 func (c *GDScriptGenerationContext) generateArraySerialize(field *CCLField, builder *strings.Builder) {
 	targetFieldType := field.Type.GetUnderlyingType()
 	fieldName := "self." + ToSnakeCase(field.Name)
-	builder.WriteString("\t# Write array " + fieldName + "\n")
 	builder.WriteString("\tbuffer.put_u32(" + fieldName + ".size())\n")
 	builder.WriteString("\tfor item in " + fieldName + ":\n")
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteString("\t\tbuffer.put_u32(item.length())\n")
-		builder.WriteString("\t\tbuffer.put_data(item.to_utf8_buffer())\n")
+		builder.WriteString("\t\tvar item_bytes = item.to_utf8_buffer()\n")
+		builder.WriteString("\t\tbuffer.put_u32(item_bytes.size())\n")
+		builder.WriteString("\t\tbuffer.put_data(item_bytes)\n")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
 		builder.WriteString("\t\tbuffer.put_32(item)\n")
 	case cclValues.TypeNameInt8:

@@ -336,8 +336,9 @@ func (c *GoGenerationContext) generateSerializeBinaryMethod(model *CCLModel) err
 }
 
 func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField) error {
-	isCustomType := c.Options.CCLDefinition.IsCustomType(field.Type.GetName())
-	switch field.Type.GetName() {
+	fieldTypeName := field.Type.GetName()
+	isCustomType := c.Options.CCLDefinition.IsCustomType(fieldTypeName)
+	switch fieldTypeName {
 	case cclValues.TypeNameString:
 		c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {\n")
 		c.MethodsCode.WriteString("\t\treturn nil, err\n")
@@ -370,7 +371,12 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 			c.MethodsCode.WriteString("\t\treturn nil, err\n")
 			c.MethodsCode.WriteString("\t}\n")
 		} else {
-			c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, m." + field.Name + "); err != nil {\n")
+			toWriteStr := "m." + field.Name
+			if fieldTypeName == cclValues.TypeNameInt {
+				// binary.Write does not support int type directly, so we need to convert it to int32
+				toWriteStr = "int32(m." + field.Name + ")"
+			}
+			c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, " + toWriteStr + "); err != nil {\n")
 			c.MethodsCode.WriteString("\t\treturn nil, err\n")
 			c.MethodsCode.WriteString("\t}\n")
 		}
@@ -385,7 +391,7 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField
 	c.MethodsCode.WriteString("\t\treturn nil, err\n")
 	c.MethodsCode.WriteString("\t}\n")
 	c.MethodsCode.WriteString("\tfor _, elem := range m." + field.Name + " {\n")
-	switch field.Type.GetName() {
+	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
 		c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(elem))); err != nil {\n")
 		c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
@@ -437,8 +443,6 @@ func (c *GoGenerationContext) generateDeserializeBinaryMethod(model *CCLModel) e
 	c.MethodsCode.WriteString("\tbuf := bytes.NewReader(data)\n\n")
 
 	for _, field := range model.Fields {
-		println("deserialize current field: ", field.Name)
-
 		if field.IsArray() {
 			err := c.generateArrayDeserializeBinaryMethod(field)
 			if err != nil {
@@ -460,18 +464,15 @@ func (c *GoGenerationContext) generateDeserializeBinaryMethod(model *CCLModel) e
 }
 
 func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLField) error {
-	isCustomType := c.Options.CCLDefinition.IsCustomType(field.Type.GetName())
+	fieldTypeName := field.Type.GetName()
+	isCustomType := c.Options.CCLDefinition.IsCustomType(fieldTypeName)
 	// isPointer := isCustomType //TODO: Find a way to specify this
 	fName := strings.ToLower(string(field.Name[0])) + field.Name[1:]
 	fLenName := fName + "Len"
 	fNameStrBytes := fName + "StrBytes"
 	fNameUnix := fName + "Unix"
-	// fieldRealType := field.Type
-	// if isPointer {
-	// 	fieldRealType = "*" + fieldRealType
-	// }
 
-	switch field.Type.GetName() {
+	switch fieldTypeName {
 	case cclValues.TypeNameString:
 		c.MethodsCode.WriteString("\tvar " + fLenName + " uint32\n")
 		c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &" + fLenName + "); err != nil {\n")
@@ -526,6 +527,18 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 			c.MethodsCode.WriteString("\t\treturn err\n")
 			c.MethodsCode.WriteString("\t}\n")
 		} else {
+			if fieldTypeName == cclValues.TypeNameInt {
+				// binary.Read does not support int type directly, so we need to read it into an int32 first
+				toReadName := "tmp" + field.Name
+				c.MethodsCode.WriteString("\tvar " + toReadName + " int32\n")
+				c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &" + toReadName + "); err != nil {\n")
+				c.MethodsCode.WriteString("\t\treturn err\n")
+				c.MethodsCode.WriteString("\t}\n")
+				c.MethodsCode.WriteString("\tm." + field.Name + " = int(" + toReadName + ")\n")
+				return nil
+			}
+
+			// all other types can be read directly
 			c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &m." + field.Name + "); err != nil {\n")
 			c.MethodsCode.WriteString("\t\treturn err\n")
 			c.MethodsCode.WriteString("\t}\n")
@@ -553,12 +566,12 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 	c.MethodsCode.WriteString("\t}\n")
 	c.MethodsCode.WriteString("\tm." + field.Name + " = make([]" + fieldRealType + ", " + fLenName + ")\n")
 	c.MethodsCode.WriteString("\tfor i := uint32(0); i < " + fLenName + "; i++ {\n")
-	switch field.Type.GetName() {
+	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
 		c.MethodsCode.WriteString("\t\tvar elemLen uint32\n")
-		c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn err\n")
-		c.MethodsCode.WriteString("\t}\n")
+		c.MethodsCode.WriteString("\t\tif err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {\n")
+		c.MethodsCode.WriteString("\t\t\treturn err\n")
+		c.MethodsCode.WriteString("\t\t}\n")
 		c.MethodsCode.WriteString("\t\telemBytes := make([]byte, elemLen)\n")
 		c.MethodsCode.WriteString("\t\tif _, err := buf.Read(elemBytes); err != nil {\n")
 		c.MethodsCode.WriteString("\t\t\treturn err\n")
@@ -566,9 +579,9 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 		c.MethodsCode.WriteString("\t\tm." + field.Name + "[i] = string(elemBytes)\n")
 	case cclValues.TypeNameBytes:
 		c.MethodsCode.WriteString("\t\tvar elemLen uint32\n")
-		c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn err\n")
-		c.MethodsCode.WriteString("\t}\n")
+		c.MethodsCode.WriteString("\t\tif err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {\n")
+		c.MethodsCode.WriteString("\t\t\treturn err\n")
+		c.MethodsCode.WriteString("\t\t}\n")
 		c.MethodsCode.WriteString("\t\telemBytes := make([]byte, elemLen)\n")
 		c.MethodsCode.WriteString("\t\tif _, err := buf.Read(elemBytes); err != nil {\n")
 		c.MethodsCode.WriteString("\t\t\treturn err\n")
