@@ -28,3 +28,11 @@ type UnsupportedFieldTypeError struct {
 	ModelName      string
 	TargetLanguage string
 }
+
+// UnsupportedTypeDefinitionError is an error that is returned when an
+// unsupported type definition is encountered when compiling to a
+// certain target language.
+type UnsupportedTypeDefinitionError struct {
+	TypeName       string
+	TargetLanguage string
+}

@@ -10,7 +10,8 @@ func NewBuiltinTypeUsage(name string) *CCLTypeUsage {
 			TypeName:  name,
 			Namespace: NamespaceBuiltin,
 		},
-		TypeFlagBuiltIn,
+		TypeFlagBuiltIn, // flags
+		0,               // length
 	))
 }
 
@@ -43,9 +44,9 @@ func NewPointerTypeUsage(targetType *CCLTypeUsage) *CCLTypeUsage {
 }
 
 // NewArrayTypeUsage creates a new array type usage that holds elements of the given element type.
-func NewArrayTypeUsage(elementType *CCLTypeUsage) *CCLTypeUsage {
+func NewArrayTypeUsage(elementType *CCLTypeUsage, arrayLength int) *CCLTypeUsage {
 	return &CCLTypeUsage{
-		definition:     getArrayDefinition(),
+		definition:     getArrayDefinition(arrayLength),
 		underlyingType: elementType,
 	}
 }

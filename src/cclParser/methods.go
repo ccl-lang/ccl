@@ -77,7 +77,22 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 				)
 				currentPendingAttributes = nil
 			}
-			p.codeDefinition.Models = append(p.codeDefinition.Models, model)
+
+			modelTypeDef, err := cclValues.NewModelTypeDefinition(
+				&cclValues.SimpleTypeName{
+					TypeName:  model.Name,
+					Namespace: currentNamespace,
+				},
+				model,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			p.codeDefinition.TypeDefinitions = append(
+				p.codeDefinition.TypeDefinitions,
+				modelTypeDef,
+			)
 			continue
 		}
 
@@ -178,11 +193,21 @@ func (p *CCLParser) IsAtEnd() bool {
 	return p.current == nil || p.current.Type == cclLexer.TokenTypeEOF
 }
 
-// isCurrentType checks if the current token is of the specified type.
-// You can return multiple token types to check for, and if the current token
+// isCurrentType checks if the current token is any of the specified type.
+// You can pass multiple token types to check for, and if the current token
 // is any of them, it will return true.
 func (p *CCLParser) isCurrentType(tokenTypes ...cclLexer.CCLTokenType) bool {
 	return slices.Contains(tokenTypes, p.current.Type)
+}
+
+// isNextType checks if the next token is any of the specified type.
+// You can pass multiple token types to check for, and if the next token
+// is any of them, it will return true.
+func (p *CCLParser) isNextType(tokenTypes ...cclLexer.CCLTokenType) bool {
+	if p.pos+1 >= len(p.tokens) {
+		return false
+	}
+	return slices.Contains(tokenTypes, p.tokens[p.pos+1].Type)
 }
 
 // isCurrentComment checks if the current token is a comment.

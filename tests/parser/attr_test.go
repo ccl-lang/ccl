@@ -133,12 +133,14 @@ func TestAttributeParse2(t *testing.T) {
 		return
 	}
 
-	if len(cclSource.Models) != 1 {
-		t.Fatalf("Expected 1 model, got %d", len(cclSource.Models))
+	models := cclSource.GetAllModels()
+
+	if len(models) != 1 {
+		t.Fatalf("Expected 1 model, got %d", len(models))
 		return
 	}
 
-	model := cclSource.Models[0]
+	model := models[0]
 	if model.Name != "MyModel" {
 		t.Errorf("Expected model name MyModel, got %s", model.Name)
 		return

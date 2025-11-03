@@ -35,6 +35,7 @@ func (p *CCLParser) ParseModelDefinition(currentNamespace string) (*cclValues.Mo
 		}
 
 		if p.isCurrentType(cclLexer.TokenTypeLeftBrace) {
+			// maybe reconsider this in future?
 			if openBraceCount > 0 {
 				return nil, &UnexpectedTokenError{
 					Expected:       cclLexer.TokenTypeRightBrace,
@@ -45,6 +46,25 @@ func (p *CCLParser) ParseModelDefinition(currentNamespace string) (*cclValues.Mo
 
 			openBraceCount++
 			p.advance()
+			continue
+		} else if p.isCurrentType(cclLexer.TokenTypeRightBrace) {
+			openBraceCount--
+			if openBraceCount < 0 {
+				return nil, &UnexpectedTokenError{
+					Expected:       cclLexer.TokenTypeEOF,
+					Actual:         p.current.Type,
+					SourcePosition: p.getSourcePosition(),
+				}
+			}
+
+			p.advance()
+
+			if openBraceCount == 0 {
+				// end of model definition
+				break
+			}
+
+			// can we do anything else here?
 			continue
 		}
 
@@ -229,6 +249,14 @@ func (p *CCLParser) ParseModelField(currentNamespace string) (*cclValues.ModelFi
 // isCurrentTokenFieldOfModel returns true only when the current token is at the
 // beginning of field of a model.
 func (p *CCLParser) isCurrentTokenFieldOfModel() bool {
-	// Until we add "func" keyword for function/method definition
-	return true
+	// case1: identifier followed by colon
+	if p.isCurrentType(cclLexer.TokenTypeIdentifier) {
+		// lookahead for colon
+		if p.isNextType(cclLexer.TokenTypeColon) {
+			return true
+		}
+	}
+
+	// maybe add more cases in future
+	return false
 }

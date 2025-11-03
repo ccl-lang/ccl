@@ -65,6 +65,12 @@ func (t *CCLTypeDefinition) GetFullName() string {
 	return t.GetNamespace() + "." + t.name
 }
 
+// GetModelDefinition returns the model definition of the type.
+// It returns nil if the type is not a custom model type.
+func (t *CCLTypeDefinition) GetModelDefinition() *ModelDefinition {
+	return t.model
+}
+
 // IsCustomModel returns true if the type is a custom model.
 // It does NOT necessarily check that model field is set.
 func (t *CCLTypeDefinition) IsCustomModel() bool {
@@ -86,6 +92,15 @@ func (t *CCLTypeDefinition) IsImmutable() bool {
 
 func (t *CCLTypeDefinition) IsIncomplete() bool {
 	return t.isIncomplete
+}
+
+// GetLength returns the length field of the type definition.
+// The meaning of this field depends on the type.
+// For example, for array types, it represents the length of the array.
+// If the type does not use length, it returns 0.
+// If the length is dynamic or not supposed to be considered, it returns -1.
+func (t *CCLTypeDefinition) GetLength() int {
+	return t.length
 }
 
 //---------------------------------------------------------

@@ -6,8 +6,12 @@ import "github.com/ccl-lang/ccl/src/core/cclUtils"
 // and all the information about a cll source file.
 // This struct is NOT thread-safe.
 type SourceCodeDefinition struct {
-	// Models is an array of model definitions.
-	Models []*ModelDefinition
+	// TypeDefinitions is an array of all *custom* type definitions
+	// defined in the source code.
+	// NOTE: built-in types are NOT included in this array.
+	// NOTE: this array can include various different kinds of types,
+	// but for now, only "models" are the supported types.
+	TypeDefinitions []*CCLTypeDefinition
 
 	// GlobalAttributes is an array of attribute definitions which are applied
 	// to the whole source code.
@@ -48,6 +52,14 @@ type CCLTypeDefinition struct {
 	// E.g. MyType<Type1, Type2> (where each of thees could recursively contain
 	// other generic params in them).
 	genericParams []*CCLTypeDefinition
+
+	// length field can have various different meanings based on the current type.
+	// For example, for array types, it represents the length of the array.
+	// For string types, it could represent the maximum length of the string.
+	// For other types, it could be unused and set to 0.
+	// Even in the types that support length, this field could be -1 to indicate
+	// that the length is dynamic or is not supposed to be considered.
+	length int
 
 	// SourcePosition is the position of the type in the source code.
 	// Please note that for built-in types, this field is nil.

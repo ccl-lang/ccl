@@ -14,34 +14,50 @@ func (c *GDScriptGenerationContext) GenerateCode() error {
 	c.ModelClasses = make(map[string]*strings.Builder)
 
 	// Generate each model class
-	for i := range c.Options.CCLDefinition.Models {
-		model := c.Options.CCLDefinition.Models[i]
-		err := c.GenerateModelClass(model)
-		if err != nil {
-			return err
+	for i := range c.Options.CCLDefinition.TypeDefinitions {
+		typeDef := c.Options.CCLDefinition.TypeDefinitions[i]
+		if typeDef.IsCustomModel() {
+			err := c.generateCodeForMode(typeDef.GetModelDefinition())
+			if err != nil {
+				return err
+			}
+		} else {
+			// for now, we only support model types
+			return &cclErrors.UnsupportedTypeDefinitionError{
+				TypeName:       typeDef.GetFullName(),
+				TargetLanguage: LanguageName,
+			}
 		}
-
-		// Get the builder for this model
-		builder := c.ModelClasses[model.Name]
-		if builder == nil {
-			return errors.New("GenerateCode: Unexpected error: model class builder not found after generation")
-		}
-
-		// Generate methods
-		c.generateSerializeMethod(model, builder)
-		c.generateDeserializeMethod(model, builder)
-
-		path := c.Options.OutputPath + string(os.PathSeparator)
-		fileName := ToPascalCase(model.Name) + ".gd"
-		err = ssg.WriteFileStr(path+fileName, builder.String())
-		if err != nil {
-			return err
-		}
-
-		// to not lack memory, we should delete the builder
-		delete(c.ModelClasses, model.Name)
 	}
 
+	return nil
+}
+
+func (c *GDScriptGenerationContext) generateCodeForMode(model *CCLModel) error {
+	err := c.GenerateModelClass(model)
+	if err != nil {
+		return err
+	}
+
+	// Get the builder for this model
+	builder := c.ModelClasses[model.Name]
+	if builder == nil {
+		return errors.New("GenerateCode: Unexpected error: model class builder not found after generation")
+	}
+
+	// Generate methods
+	c.generateSerializeMethod(model, builder)
+	c.generateDeserializeMethod(model, builder)
+
+	path := c.Options.OutputPath + string(os.PathSeparator)
+	fileName := ToPascalCase(model.Name) + ".gd"
+	err = ssg.WriteFileStr(path+fileName, builder.String())
+	if err != nil {
+		return err
+	}
+
+	// to not lack memory, we should delete the builder
+	delete(c.ModelClasses, model.Name)
 	return nil
 }
 

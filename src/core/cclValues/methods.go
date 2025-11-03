@@ -16,15 +16,31 @@ func (d *SourceCodeDefinition) GetNextModelId() int64 {
 
 // GetModelByName returns the model definition by the given name.
 func (d *SourceCodeDefinition) GetModelByName(name string) *ModelDefinition {
-	for _, model := range d.Models {
-		if model.Name == name || model.DoesAliasMatch(name) {
-			return model
+	for _, typeDef := range d.TypeDefinitions {
+		if typeDef.IsCustomModel() {
+			model := typeDef.GetModelDefinition()
+			if model.Name == name || model.DoesAliasMatch(name) {
+				return model
+			}
 		}
 	}
 
 	return nil
 }
 
+// GetAllModels returns all model definitions defined in the source code.
+func (d *SourceCodeDefinition) GetAllModels() []*ModelDefinition {
+	models := []*ModelDefinition{}
+	for _, typeDef := range d.TypeDefinitions {
+		if typeDef.IsCustomModel() {
+			models = append(models, typeDef.GetModelDefinition())
+		}
+	}
+	return models
+}
+
+// IsCustomType returns true if the given type name is a custom type
+// defined in the source code.
 func (d *SourceCodeDefinition) IsCustomType(typeName string) bool {
 	return d.GetModelByName(typeName) != nil
 }

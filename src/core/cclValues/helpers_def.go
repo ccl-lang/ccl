@@ -1,5 +1,7 @@
 package cclValues
 
+import "fmt"
+
 // GetTypeDefinition returns the type definition with the given full name from the cache.
 func GetTypeDefinition(name *SimpleTypeName) *CCLTypeDefinition {
 	typeDefinitionsLock.RLock()
@@ -8,8 +10,17 @@ func GetTypeDefinition(name *SimpleTypeName) *CCLTypeDefinition {
 	return getTypeDefinition(name)
 }
 
+// getTypeDefinition is the internal version of GetTypeDefinition.
+// This function checks both complete and incomplete type definitions caches and
+// it does NOT lock the mutex.
 func getTypeDefinition(name *SimpleTypeName) *CCLTypeDefinition {
+	// 1. check complete type definitions cache
 	if typeDef, exists := typeDefinitionsCache[name.FullName()]; exists {
+		return typeDef
+	}
+
+	// 2. check incomplete type definitions cache
+	if typeDef, exists := incompleteTypeDefinitionsCache[name.FullName()]; exists {
 		return typeDef
 	}
 
@@ -56,7 +67,11 @@ func cacheTypeDefinition(typeDef *CCLTypeDefinition) {
 }
 
 // NewTypeDefinition creates a new type info.
-func NewTypeDefinition(name *SimpleTypeName, flags cclTypeFlag) *CCLTypeDefinition {
+func NewTypeDefinition(
+	name *SimpleTypeName,
+	flags cclTypeFlag,
+	tLength int,
+) *CCLTypeDefinition {
 	typeDefinitionsLock.Lock()
 	defer typeDefinitionsLock.Unlock()
 
@@ -85,9 +100,73 @@ func NewTypeDefinition(name *SimpleTypeName, flags cclTypeFlag) *CCLTypeDefiniti
 		name:      name.TypeName,
 		namespace: name.Namespace,
 		typeFlags: flags,
+		length:    tLength,
 	}
 	cacheTypeDefinition(typeDef)
 	return typeDef
+}
+
+// NewCustomTypeDefinition creates a new custom type definition.
+func NewCustomTypeDefinition(
+	name *SimpleTypeName,
+	flags cclTypeFlag,
+) (*CCLTypeDefinition, error) {
+	typeDefinitionsLock.Lock()
+	defer typeDefinitionsLock.Unlock()
+
+	return newCustomTypeDefinition(name, flags)
+}
+
+// newCustomTypeDefinition is the internal version of NewCustomTypeDefinition
+func newCustomTypeDefinition(
+	name *SimpleTypeName,
+	flags cclTypeFlag,
+) (*CCLTypeDefinition, error) {
+	if IsBuiltinTypeName(name.TypeName) {
+		return nil, fmt.Errorf(
+			StrErrCannotOverrideBuiltInType,
+			name.TypeName,
+			name.Namespace,
+		)
+	}
+
+	typeDef := getTypeDefinition(name)
+	if typeDef != nil {
+		if typeDef.isIncomplete {
+			return markAsCompleteTypeDefinition(name, typeDef, flags), nil
+		}
+
+		return nil, fmt.Errorf(
+			StrErrTypeAlreadyDefined,
+			name.TypeName,
+			name.Namespace,
+		)
+	}
+
+	typeDef = &CCLTypeDefinition{
+		name:      name.TypeName,
+		namespace: name.Namespace,
+		typeFlags: flags,
+		length:    0, // should custom types really be able to use this?
+	}
+	cacheTypeDefinition(typeDef)
+	return typeDef, nil
+}
+
+func NewModelTypeDefinition(
+	name *SimpleTypeName,
+	modelDef *ModelDefinition,
+) (*CCLTypeDefinition, error) {
+	typeDefinitionsLock.Lock()
+	defer typeDefinitionsLock.Unlock()
+
+	typeDef, err := newCustomTypeDefinition(name, TypeFlagCustomModel)
+	if err != nil {
+		return nil, err
+	}
+
+	typeDef.model = modelDef
+	return typeDef, nil
 }
 
 func markAsCompleteTypeDefinition(
@@ -115,15 +194,17 @@ func getPointerDefinition() *CCLTypeDefinition {
 			Namespace: NamespaceBuiltin,
 		},
 		TypeFlagBuiltIn|TypeFlagPointer,
+		0, // length is unused for pointer types
 	)
 }
 
-func getArrayDefinition() *CCLTypeDefinition {
+func getArrayDefinition(arrayLength int) *CCLTypeDefinition {
 	return NewTypeDefinition(
 		&SimpleTypeName{
 			TypeName:  TypeNameArray,
 			Namespace: NamespaceBuiltin,
 		},
-		TypeFlagBuiltIn|TypeFlagArray,
+		TypeFlagBuiltIn|TypeFlagArray, // flags
+		arrayLength,                   // length
 	)
 }
