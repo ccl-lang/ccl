@@ -7,7 +7,7 @@ import (
 )
 
 // ParseModelDefinition parses a model definition from the current position in the source code.
-func (p *CCLParser) ParseModelDefinition() (*cclValues.ModelDefinition, error) {
+func (p *CCLParser) ParseModelDefinition(currentNamespace string) (*cclValues.ModelDefinition, error) {
 	// TODO: optionally add public or private keyword here in future
 	if err := p.consume(cclLexer.TokenTypeKeywordModel); err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (p *CCLParser) ParseModelDefinition() (*cclValues.ModelDefinition, error) {
 		}
 
 		if p.isCurrentTokenFieldOfModel() {
-			currentField, err := p.ParseModelField()
+			currentField, err := p.ParseModelField(currentNamespace)
 			if err != nil {
 				return nil, err
 			}
@@ -94,7 +94,7 @@ func (p *CCLParser) ParseModelDefinition() (*cclValues.ModelDefinition, error) {
 	}, nil
 }
 
-func (p *CCLParser) ParseModelField() (*cclValues.ModelFieldDefinition, error) {
+func (p *CCLParser) ParseModelField(currentNamespace string) (*cclValues.ModelFieldDefinition, error) {
 	theField := &cclValues.ModelFieldDefinition{}
 	gotColon := false
 	gotAssignment := false
@@ -156,9 +156,11 @@ func (p *CCLParser) ParseModelField() (*cclValues.ModelFieldDefinition, error) {
 
 			if theField.Type == nil {
 				if gotColon && !gotAssignment {
-					fieldType, err := p.parseCurrentType()
-					if err == nil {
+					fieldType, err := p.parseCurrentTypeUsage(currentNamespace)
+					if err != nil {
 						return nil, err
+					} else if fieldType == nil {
+						return nil, p.ErrInvalidSyntax("Invalid type usage in field definition")
 					}
 					theField.ChangeValueType(fieldType)
 					continue

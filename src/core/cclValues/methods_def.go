@@ -84,4 +84,14 @@ func (t *CCLTypeDefinition) IsImmutable() bool {
 	return t.typeFlags&TypeFlagImmutable != 0
 }
 
+func (t *CCLTypeDefinition) IsIncomplete() bool {
+	return t.isIncomplete
+}
+
+//---------------------------------------------------------
+
+func (v *VariableDefinition) IsAutomatic() bool {
+	return v.isAutomaticVariable
+}
+
 //---------------------------------------------------------

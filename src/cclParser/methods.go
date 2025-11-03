@@ -9,6 +9,7 @@ import (
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
 	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 //---------------------------------------------------------
@@ -21,6 +22,8 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 	}
 
 	var currentPendingAttributes []*cclValues.AttributeUsageInfo
+
+	currentNamespace := gValues.DefaultMainNamespace
 
 	for !p.IsAtEnd() {
 		if p.current.Type == cclLexer.TokenTypeHash {
@@ -61,7 +64,7 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 		}
 
 		if p.current.Type == cclLexer.TokenTypeKeywordModel {
-			model, err := p.ParseModelDefinition()
+			model, err := p.ParseModelDefinition(currentNamespace)
 			if err != nil {
 				return nil, err
 			}
@@ -152,6 +155,17 @@ func (p *CCLParser) advance() {
 	}
 }
 
+// readUntilSemicolon reads tokens until it hits a semicolon or the end of the input.
+func (p *CCLParser) readUntilSemicolon() []*cclLexer.CCLToken {
+	startPos := p.pos
+
+	for !p.isCurrentType(cclLexer.TokenTypeSemicolon) && !p.IsAtEnd() {
+		p.advance()
+	}
+
+	return p.tokens[startPos:p.pos]
+}
+
 // GetCurrent returns the current token being parsed.
 // Please note that this method is exported mostly for tests.
 func (p *CCLParser) GetCurrent() *cclLexer.CCLToken {
@@ -219,8 +233,8 @@ func (p *CCLParser) getSourcePosition() *cclUtils.SourceCodePosition {
 }
 
 // IsCurrentValue checks if the current token is a literal value token.
-func (p *CCLParser) IsCurrentValue() bool {
-	return p.current.IsTokenValue()
+func (p *CCLParser) IsCurrentLiteralValue() bool {
+	return p.current.IsTokenLiteralValue()
 }
 
 // FindTokenPattern peeks in front of the current token to see if the provided
@@ -258,34 +272,10 @@ func (p *CCLParser) FindTokenPattern(tokens []cclLexer.CCLTokenType) bool {
 	}
 }
 
-// IsCurrentValue checks if the current token is a value token or an identifier.
+// IsCurrentValueOrIdentifier checks if the current token is a literal value
+// token or an identifier.
 func (p *CCLParser) IsCurrentValueOrIdentifier() bool {
-	return p.current.IsTokenValue() ||
-		p.current.Type == cclLexer.TokenTypeIdentifier
-}
-
-// parseCurrentType tries to parse a ccl type-info from the current lexer tokens.
-// No need to call advance after calling this method, as it will handle all the necessary
-// advance calls by itself.
-func (p *CCLParser) parseCurrentType() (*cclValues.CCLTypeDefinition, error) {
-	isDataType := p.isCurrentType(cclLexer.TokenTypeDataType)
-	isIdentifier := p.isCurrentType(cclLexer.TokenTypeIdentifier)
-	if !isDataType && !isIdentifier {
-		return nil, p.ErrInvalidSyntax("Expected built-in data-type or an identifier as first token")
-	}
-
-	typeName := ""
-	// I WAS HERE
-	if isDataType {
-		typeName = p.current.GetLiteralTypeInfo().GetName()
-	} else {
-
-	}
-	if typeName == "" {
-		return nil, p.ErrInvalidSyntax("Unexpected empty type-name")
-	}
-
-	return nil, nil
+	return p.current.IsTokenLiteralValue() || p.current.IsIdentifier()
 }
 
 //---------------------------------------------------------

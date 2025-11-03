@@ -30,6 +30,9 @@ type CCLTypeDefinition struct {
 	// if no namespace is defined, it will be set to "global".
 	namespace string
 
+	// isIncomplete indicates whether the type definition is incomplete.
+	isIncomplete bool
+
 	// model is a reference to the model definition if the type is a custom model
 	// type defined by the user.
 	// For built-in and alias types, this field is nil.

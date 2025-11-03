@@ -7,6 +7,8 @@ var (
 	// This is used to avoid creating multiple instances of the same type definition.
 	// Key: full-name of the type definition (including namespace).
 	// Value: type definition.
-	typeDefinitionsCache = make(map[string]*CCLTypeDefinition)
+	typeDefinitionsCache = map[string]*CCLTypeDefinition{}
 	typeDefinitionsLock  = &sync.RWMutex{}
+
+	incompleteTypeDefinitionsCache = map[string]*CCLTypeDefinition{}
 )

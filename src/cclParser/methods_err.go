@@ -6,10 +6,8 @@ import "github.com/ccl-lang/ccl/src/core/globalValues"
 // message (can be empty).
 func (p *CCLParser) ErrInvalidSyntax(hint string) *InvalidSyntaxError {
 	return &InvalidSyntaxError{
-		Line:        p.current.Line,
-		Column:      p.current.Column,
-		SourceLine:  p.getCurrentSourceLine(p.current.Line),
-		Language:    globalValues.LanguageCCL,
-		HintMessage: hint,
+		Language:       globalValues.LanguageCCL,
+		HintMessage:    hint,
+		SourcePosition: p.getSourcePosition(),
 	}
 }

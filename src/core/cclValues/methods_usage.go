@@ -26,6 +26,14 @@ func (u *CCLTypeUsage) IsImmutable() bool {
 	return u.definition.IsImmutable()
 }
 
+func (u *CCLTypeUsage) GetName() string {
+	return u.definition.GetName()
+}
+
+func (u CCLTypeUsage) IsArray() bool {
+	return u.definition.IsArray()
+}
+
 //---------------------------------------------------------
 
 // ChangeValueType changes the value type of the parameter.

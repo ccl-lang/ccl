@@ -45,3 +45,13 @@ type ParameterInstance struct {
 	// SourcePosition is the position of the attribute in the source code.
 	SourcePosition *cclUtils.SourceCodePosition
 }
+
+// SimpleTypeName is a struct that represents a simple type name
+// with its namespace.
+type SimpleTypeName struct {
+	// TypeName is the normalized type name.
+	TypeName string
+
+	// Namespace is the namespace of the type.
+	Namespace string
+}

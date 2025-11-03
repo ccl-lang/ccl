@@ -1,5 +1,7 @@
 package cclLexer
 
+import "github.com/ccl-lang/ccl/src/core/cclValues"
+
 var (
 	tokenTypesToNames = map[CCLTokenType]string{
 		TokenTypeReservedForFuture:  "RESERVED_FOR_FUTURE",
@@ -103,5 +105,11 @@ var (
 		TokenTypeStringLiteral: true,
 		TokenTypeIntLiteral:    true,
 		TokenTypeFloatLiteral:  true,
+	}
+
+	literalValueTokenToTypeUsage = map[CCLTokenType]*cclValues.CCLTypeUsage{
+		TokenTypeStringLiteral: cclValues.NewBuiltinTypeUsage(cclValues.TypeNameString),
+		TokenTypeIntLiteral:    cclValues.NewBuiltinTypeUsage(cclValues.TypeNameInt),
+		TokenTypeFloatLiteral:  cclValues.NewBuiltinTypeUsage(cclValues.TypeNameFloat),
 	}
 )

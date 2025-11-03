@@ -16,3 +16,14 @@ func GetGlobalVariable(name string) *VariableDefinition {
 }
 
 //---------------------------------------------------------
+
+func newStringAutomaticVariable(name string, value string) *VariableDefinition {
+	return &VariableDefinition{
+		Name:                name,
+		value:               value,
+		isAutomaticVariable: true,
+		Type:                NewBuiltinTypeUsage(TypeNameString),
+	}
+}
+
+//---------------------------------------------------------

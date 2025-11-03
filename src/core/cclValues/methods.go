@@ -157,3 +157,9 @@ func (d *VariableDefinition) HasImmutableType() bool {
 }
 
 //---------------------------------------------------------
+
+func (n *SimpleTypeName) FullName() string {
+	return n.Namespace + "." + n.TypeName
+}
+
+//---------------------------------------------------------

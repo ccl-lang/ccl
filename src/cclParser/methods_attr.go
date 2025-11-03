@@ -59,10 +59,6 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 
 	attrParams := []*cclValues.ParameterInstance{}
 
-	// the current namespace
-	// TODO: implement namespaces later
-	namespace := ""
-
 	if p.current.Type == cclLexer.TokenTypeLeftParenthesis {
 		p.advance()
 		var currentParam *cclValues.ParameterInstance
@@ -86,7 +82,7 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 			// This can actually bring us two possibilities:
 			// 1. ParameterName = Value
 			// 2. VariableName (which is defined somewhere else)
-			if p.current.Type == cclLexer.TokenTypeIdentifier {
+			if p.current.IsIdentifier() {
 				if currentParam != nil {
 					return nil, &UnexpectedTokenAfterParameterError{
 						ParamName:      currentParam.Name,
@@ -108,20 +104,11 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 						}
 					}
 					currentParam = &cclValues.ParameterInstance{}
-					if targetVariable.IsAutomatic() {
-						currentParam.ChangeValueType(cclValues.NewPointerTypeUsage(
-							cclValues.NewTypeUsage(targetVariable.Type),
-						))
-						currentParam.ChangeValue(&cclValues.VariableUsageInstance{
-							Name:       p.current.GetIdentifier(),
-							Definition: targetVariable,
-						})
-					} else {
-						// since the variable is not an automatic variable, we don't
-						// have to *point* to it.
-						currentParam.ChangeValueType(cclValues.NewTypeUsage(targetVariable.Type))
-						currentParam.ChangeValue(targetVariable.GetValue())
-					}
+					currentParam.ChangeValueType(targetVariable.Type)
+					currentParam.ChangeValue(&cclValues.VariableUsageInstance{
+						Name:       p.current.GetIdentifier(),
+						Definition: targetVariable,
+					})
 					p.advance()
 					continue
 				}
@@ -191,8 +178,8 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 						}
 
 						// is it a literal value?
-						if p.IsCurrentValue() {
-							currentParam.ChangeValueType(p.current.GetLiteralTypeInfo(namespace))
+						if p.IsCurrentLiteralValue() {
+							currentParam.ChangeValueType(p.current.GetLiteralTypeInfo())
 							currentParam.ChangeValue(p.current.GetLiteralValue())
 							p.advance()
 							continue
@@ -210,21 +197,11 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 							}
 						}
 
-						// TODO: this automatic thingy here needs to be rethought
-						if targetVariable.IsAutomatic() {
-							currentParam.ChangeValueType(cclValues.NewPointerTypeUsage(
-								cclValues.NewTypeUsage(targetVariable.Type),
-							))
-							currentParam.ChangeValue(&cclValues.VariableUsageInstance{
-								Name:       p.current.GetIdentifier(),
-								Definition: targetVariable,
-							})
-						} else {
-							// since the variable is not an automatic variable, we don't
-							// have to *point* to it.
-							currentParam.ChangeValueType(cclValues.NewTypeUsage(targetVariable.Type))
-							currentParam.ChangeValue(targetVariable.GetValue()) // copy the value
-						}
+						currentParam.ChangeValueType(targetVariable.Type)
+						currentParam.ChangeValue(&cclValues.VariableUsageInstance{
+							Name:       p.current.GetIdentifier(),
+							Definition: targetVariable,
+						})
 						p.advance()
 						continue
 					}
@@ -233,7 +210,7 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 				continue
 			}
 
-			if p.IsCurrentValue() {
+			if p.IsCurrentLiteralValue() {
 				if currentParam != nil {
 					return nil, &UnexpectedTokenAfterParameterError{
 						ParamName:      currentParam.Name,
@@ -244,7 +221,7 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 
 				// if we are here, then we have a value without a parameter name
 				currentParam = &cclValues.ParameterInstance{
-					ValueType: p.current.GetLiteralTypeInfo(namespace),
+					ValueType: p.current.GetLiteralTypeInfo(),
 				}
 				currentParam.ChangeValue(p.current.GetLiteralValue())
 				p.advance()
@@ -306,9 +283,10 @@ func (p *CCLParser) peekAfterAttribute() cclLexer.CCLTokenType {
 		bracketCount := 1
 		tempPos++
 		for tempPos < len(p.tokens) && bracketCount > 0 {
-			if p.tokens[tempPos].Type == cclLexer.TokenTypeLeftBracket {
+			switch p.tokens[tempPos].Type {
+			case cclLexer.TokenTypeLeftBracket:
 				bracketCount++
-			} else if p.tokens[tempPos].Type == cclLexer.TokenTypeRightBracket {
+			case cclLexer.TokenTypeRightBracket:
 				bracketCount--
 			}
 			tempPos++

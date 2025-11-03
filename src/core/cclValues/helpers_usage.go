@@ -1,15 +1,30 @@
 package cclValues
 
-func NewBuiltinTypeUsage(typeName string) *CCLTypeUsage {
-	if !IsBuiltinTypeName(typeName) {
+func NewBuiltinTypeUsage(name string) *CCLTypeUsage {
+	if !IsBuiltinTypeName(name) {
 		return nil
 	}
 
 	return NewTypeUsage(NewTypeDefinition(
-		typeName,
-		NamespaceBuiltin,
+		&SimpleTypeName{
+			TypeName:  name,
+			Namespace: NamespaceBuiltin,
+		},
 		TypeFlagBuiltIn,
 	))
+}
+
+// NewCustomTypeUsage returns a custom type usage for the given full type name.
+func NewCustomTypeUsage(name *SimpleTypeName) *CCLTypeUsage {
+	typeDefinitionsLock.Lock()
+	defer typeDefinitionsLock.Unlock()
+
+	typeDef := getTypeDefinition(name)
+	if typeDef == nil {
+		typeDef = getOrNewIncompleteTypeDef(name)
+	}
+
+	return NewTypeUsage(typeDef)
 }
 
 // NewTypeUsage creates a new type usage for the given type definition.
