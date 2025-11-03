@@ -40,7 +40,7 @@ func snakeToTitle(s string) string {
 	bd := strings.Builder{}
 
 	for _, split := range strings.Split(s, "_") {
-		bd.WriteString(strings.Title(split))
+		bd.WriteString(ssg.Title(split))
 	}
 
 	return bd.String()

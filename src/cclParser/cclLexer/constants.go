@@ -10,6 +10,11 @@ const (
 	TokenTypeComment                              // a comment
 	TokenTypeHash                                 // #
 	TokenTypeKeywordModel                         // model
+	TokenTypeKeywordRequired                      // required
+	TokenTypeKeywordPublic                        // public
+	TokenTypeKeywordPrivate                       // private
+	TokenTypeKeywordInternal                      // internal
+	TokenTypeKeywordProtected                     // protected
 	TokenTypeIdentifier                           // an identifier
 	TokenTypeColon                                // :
 	TokenTypeSemicolon                            // ;

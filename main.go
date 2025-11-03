@@ -9,6 +9,7 @@ import (
 	"github.com/ccl-lang/ccl/src/cclGenerators"
 	"github.com/ccl-lang/ccl/src/cclLoader"
 	"github.com/ccl-lang/ccl/src/cclParser"
+	"github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 func main() {
@@ -81,7 +82,7 @@ func main() {
 
 		fmt.Println("\nCode generation completed successfully")
 	case "version":
-		fmt.Printf("ccl version %s %s/%s\n", "1.0.0", runtime.GOOS, runtime.GOARCH)
+		fmt.Printf("ccl version %s %s/%s\n", globalValues.CurrentCCLVersion, runtime.GOOS, runtime.GOARCH)
 	case "help":
 		fmt.Println("ccl is a tool for managing ccl source code.\n\n" +
 			"Usage:\n" +

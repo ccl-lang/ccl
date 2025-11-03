@@ -28,3 +28,10 @@ func (u *UnsupportedFieldTypeError) Error() string {
 }
 
 //---------------------------------------------------------
+
+func (u *UnsupportedTypeDefinitionError) Error() string {
+	return "Unsupported type definition: " + u.TypeName +
+		" when compiling to " + u.TargetLanguage
+}
+
+//---------------------------------------------------------

@@ -81,24 +81,61 @@ func (t *CCLToken) GetIdentifier() string {
 }
 
 // IsTokenValue returns true if the token is a value token.
-func (t *CCLToken) IsTokenValue() bool {
+func (t *CCLToken) IsTokenLiteralValue() bool {
 	return valueTokens[t.Type]
 }
 
-func (t *CCLToken) GetLiteralTypeInfo() *cclValues.CCLTypeInfo {
-	if !t.IsTokenValue() {
-		// we don't have a value token
-		return nil
+// IsIdentifier returns true if the token is an identifier.
+func (t *CCLToken) IsIdentifier() bool {
+	return t.Type == TokenTypeIdentifier
+}
+
+func (t *CCLToken) IsBuiltinDataType() bool {
+	return t.Type == TokenTypeDataType
+}
+
+// GetLiteralTypeInfo returns type info of the current literal token.
+// a literal token is for example: string literal, int literal, float literal, bool literal, etc.
+// so for a "hello"" token, it will return the type info for string type.
+func (t *CCLToken) GetLiteralTypeInfo() *cclValues.CCLTypeUsage {
+	if t.IsTokenLiteralValue() {
+		// we have a value token, so we need to return the type info
+		// based on the token type
+		return literalValueTokenToTypeUsage[t.Type]
 	}
 
-	// we have a value token, so we need to return the type info
-	// based on the token type
-	return literalValueTypeInfos[t.Type]
+	return nil
+}
+
+// GetBuiltInDataTypeUsage returns the built-in data type usage if the token is a built-in data type.
+func (t *CCLToken) GetBuiltInDataTypeUsage() *cclValues.CCLTypeUsage {
+	if t.IsBuiltinDataType() {
+		nameStr, ok := t.value.(string)
+		if !ok {
+			return nil
+		}
+
+		return cclValues.NewBuiltinTypeUsage(nameStr)
+	}
+
+	return nil
+}
+
+func (t *CCLToken) GetCustomTypeUsage(currentNamespace string) *cclValues.CCLTypeUsage {
+	if t.IsIdentifier() {
+		return cclValues.NewCustomTypeUsage(&cclValues.SimpleTypeName{
+			TypeName:  t.GetIdentifier(),
+			Namespace: currentNamespace,
+		})
+	}
+
+	// maybe some other thing? I don't know
+	return nil
 }
 
 // GetLiteralValue returns the literal value of the token.
 func (t *CCLToken) GetLiteralValue() any {
-	if !t.IsTokenValue() {
+	if !t.IsTokenLiteralValue() {
 		// we don't have a value token
 		return nil
 	}

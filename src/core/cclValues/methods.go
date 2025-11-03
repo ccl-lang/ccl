@@ -2,6 +2,7 @@ package cclValues
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/ALiwoto/ssg/ssg"
 )
@@ -16,15 +17,43 @@ func (d *SourceCodeDefinition) GetNextModelId() int64 {
 
 // GetModelByName returns the model definition by the given name.
 func (d *SourceCodeDefinition) GetModelByName(name string) *ModelDefinition {
-	for _, model := range d.Models {
-		if model.Name == name || model.DoesAliasMatch(name) {
-			return model
+	for _, typeDef := range d.TypeDefinitions {
+		if typeDef.IsCustomModel() {
+			model := typeDef.GetModelDefinition()
+			if model.Name == name || model.DoesAliasMatch(name) {
+				return model
+			}
 		}
 	}
 
 	return nil
 }
 
+// GetAllModels returns all model definitions defined in the source code.
+func (d *SourceCodeDefinition) GetAllModels() []*ModelDefinition {
+	models := []*ModelDefinition{}
+	for _, typeDef := range d.TypeDefinitions {
+		if typeDef.IsCustomModel() {
+			models = append(models, typeDef.GetModelDefinition())
+		}
+	}
+	return models
+}
+
+// HasGlobalAttribute returns true if the source code definition
+// has at least one of the given global attributes.
+func (d *SourceCodeDefinition) HasGlobalAttribute(attributeName ...string) bool {
+	for _, attr := range d.GlobalAttributes {
+		if slices.Contains(attributeName, attr.Name) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsCustomType returns true if the given type name is a custom type
+// defined in the source code.
 func (d *SourceCodeDefinition) IsCustomType(typeName string) bool {
 	return d.GetModelByName(typeName) != nil
 }
@@ -40,7 +69,19 @@ func (m *ModelDefinition) DoesAliasMatch(targetAlias string) bool {
 	return false
 }
 
-func (m *ModelDefinition) GetFieldByName(name string) *FieldDefinition {
+// HasAttribute returns true if the model definition has at least one of the
+// given attributes.
+func (m *ModelDefinition) HasAttribute(attributeName ...string) bool {
+	for _, attr := range m.Attributes {
+		if slices.Contains(attributeName, attr.Name) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (m *ModelDefinition) GetFieldByName(name string) *ModelFieldDefinition {
 	for _, field := range m.Fields {
 		if field.Name == name {
 			return field
@@ -56,13 +97,13 @@ func (m *ModelDefinition) GetFieldByName(name string) *FieldDefinition {
 // If the field does not have any type field assigned to it,
 // it will result in a panic. So be careful before using this
 // method.
-func (f *FieldDefinition) IsArray() bool {
+func (f *ModelFieldDefinition) IsArray() bool {
 	return f.Type.IsArray()
 }
 
 // HasNoType returns true when the field's type field is not
 // assigned to any value.
-func (f *FieldDefinition) HasNoType() bool {
+func (f *ModelFieldDefinition) HasNoType() bool {
 	return f.Type == nil
 }
 
@@ -73,8 +114,8 @@ func (p *ParameterInstance) String() string {
 }
 
 // ChangeValueType changes the value type of the parameter.
-func (p *ParameterInstance) ChangeValueType(typeInfo *CCLTypeInfo) {
-	p.ValueType = typeInfo
+func (p *ParameterInstance) ChangeValueType(typeUsage *CCLTypeUsage) {
+	p.ValueType = typeUsage
 }
 
 // ChangeValue sets the value of the parameter.
@@ -134,38 +175,6 @@ func (p *ParameterInstance) GetValue() any {
 
 //---------------------------------------------------------
 
-// IsBuiltIn returns true if the type is a built-in type.
-func (t *CCLTypeInfo) IsBuiltIn() bool {
-	return t.typeFlags&TypeFlagBuiltIn != 0
-}
-
-// IsArray returns true if the type is an array.
-func (t *CCLTypeInfo) IsArray() bool {
-	return t.typeFlags&TypeFlagArray != 0
-}
-
-// IsMap returns true if the type is a map.
-func (t *CCLTypeInfo) IsMap() bool {
-	return t.typeFlags&TypeFlagMap != 0
-}
-
-// String returns the string representation of the type info.
-func (t *CCLTypeInfo) String() string {
-	return t.name + " (flags: " + ssg.ToBase10(t.typeFlags) + ")"
-}
-
-// GetUnderlyingType returns the underlying type of the current type.
-func (t *CCLTypeInfo) GetUnderlyingType() *CCLTypeInfo {
-	return t.underlyingType
-}
-
-// GetName returns the name of the type.
-func (t *CCLTypeInfo) GetName() string {
-	return t.name
-}
-
-//---------------------------------------------------------
-
 func (d *VariableDefinition) String() string {
 	return d.Name + ": " + d.Type.GetName()
 }
@@ -178,8 +187,20 @@ func (d *VariableDefinition) GetValue() any {
 	return d.value
 }
 
-func (d *VariableDefinition) IsAutomatic() bool {
-	return d.isAutomaticVariable
+// HasImmutableType returns true if the variable's type is immutable.
+// Immutable types are types that their value cannot be changed after
+// being initialized.
+// Such types include:
+//   - Built-in types like int, float, string, bool
+//   - User-defined models that are marked as immutable (if such feature is implemented)
+func (d *VariableDefinition) HasImmutableType() bool {
+	return d.Type.IsImmutable()
+}
+
+//---------------------------------------------------------
+
+func (n *SimpleTypeName) FullName() string {
+	return n.Namespace + "." + n.TypeName
 }
 
 //---------------------------------------------------------
