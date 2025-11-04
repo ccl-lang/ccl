@@ -15,6 +15,30 @@ func (d *SourceCodeDefinition) GetNextModelId() int64 {
 	return d.modelIdCounter
 }
 
+// FindGlobalAttributes returns all global attributes with the given name.
+func (d *SourceCodeDefinition) FindGlobalAttributes(name string) []*AttributeUsageInfo {
+	attributes := []*AttributeUsageInfo{}
+
+	for _, attr := range d.GlobalAttributes {
+		if attr.Name == name {
+			attributes = append(attributes, attr)
+		}
+	}
+
+	return attributes
+}
+
+// FindGlobalAttributes returns the first global attribute with the given name.
+func (d *SourceCodeDefinition) FindGlobalAttribute(name string) *AttributeUsageInfo {
+	for _, attr := range d.GlobalAttributes {
+		if attr.Name == name {
+			return attr
+		}
+	}
+
+	return nil
+}
+
 // GetModelByName returns the model definition by the given name.
 func (d *SourceCodeDefinition) GetModelByName(name string) *ModelDefinition {
 	for _, typeDef := range d.TypeDefinitions {
@@ -81,6 +105,7 @@ func (m *ModelDefinition) HasAttribute(attributeName ...string) bool {
 	return false
 }
 
+// GetFieldByName returns the field definition by the given name.
 func (m *ModelDefinition) GetFieldByName(name string) *ModelFieldDefinition {
 	for _, field := range m.Fields {
 		if field.Name == name {
@@ -88,6 +113,28 @@ func (m *ModelDefinition) GetFieldByName(name string) *ModelFieldDefinition {
 		}
 	}
 
+	return nil
+}
+
+// FindAttributes returns all attributes with the given name.
+func (m *ModelDefinition) FindAttributes(name string) []*AttributeUsageInfo {
+	attributes := []*AttributeUsageInfo{}
+	for _, attr := range m.Attributes {
+		if attr.Name == name {
+			attributes = append(attributes, attr)
+		}
+	}
+
+	return attributes
+}
+
+// FindAttribute returns the first attribute with the given name.
+func (m *ModelDefinition) FindAttribute(name string) *AttributeUsageInfo {
+	for _, attr := range m.Attributes {
+		if attr.Name == name {
+			return attr
+		}
+	}
 	return nil
 }
 
@@ -153,6 +200,45 @@ func (p *ParameterInstance) GetInt() int {
 	}
 
 	return result
+}
+
+// GetAsBool tries to convert the parameter value to a boolean.
+// It supports bool, int, and string types for conversion.
+// For int, any non-zero value is considered true.
+// For string, "true" and "1" are considered true; all other values are false.
+func (p *ParameterInstance) GetAsBool() bool {
+	if p == nil || p.value == nil {
+		return false
+	}
+
+	switch v := p.value.(type) {
+	case bool:
+		return v
+	case int:
+		return v != 0
+	case string:
+		return v == "true" || v == "1"
+	default:
+		return false
+	}
+}
+
+// GetAsString tries to convert the parameter value to a string.
+// It supports string types and types implementing the fmt.Stringer interface.
+// For other types, it uses fmt.Sprintf to convert the value to a string.
+func (p *ParameterInstance) GetAsString() string {
+	if p == nil || p.value == nil {
+		return ""
+	}
+
+	switch v := p.value.(type) {
+	case string:
+		return v
+	case fmt.Stringer:
+		return v.String()
+	default:
+		return fmt.Sprintf("%v", p.value)
+	}
 }
 
 // GetString returns the string value of the parameter.

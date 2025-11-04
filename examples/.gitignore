@@ -1,4 +1,2 @@
 
-go_gen2
-gd_gen
-definitions.ccl
+*.go

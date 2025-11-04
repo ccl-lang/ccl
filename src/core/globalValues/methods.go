@@ -7,6 +7,6 @@ func (l LanguageType) String() string {
 
 // GetShortName returns the short name of the current language
 // type.
-func (l LanguageType) GetShortName() string {
+func (l LanguageType) GetShortName() NormalizedLangName {
 	return langsToShortName[l]
 }

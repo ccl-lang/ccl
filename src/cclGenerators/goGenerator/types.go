@@ -14,7 +14,7 @@ type CCLModel = cclValues.ModelDefinition
 type CCLField = cclValues.ModelFieldDefinition
 
 type GoGenerationContext struct {
-	Options *gen.CodeGenerationOptions
+	gen.CodeGenerationBase
 
 	// MethodsCode is a string builder that contains the generated Go code for the methods.
 	MethodsCode   *strings.Builder

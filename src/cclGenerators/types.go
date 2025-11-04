@@ -13,3 +13,7 @@ type CodeGenerationOptions struct {
 
 type CodeGenerationResult struct {
 }
+
+type CodeGenerationBase struct {
+	Options *CodeGenerationOptions
+}

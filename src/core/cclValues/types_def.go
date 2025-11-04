@@ -1,6 +1,8 @@
 package cclValues
 
-import "github.com/ccl-lang/ccl/src/core/cclUtils"
+import (
+	"github.com/ccl-lang/ccl/src/core/cclUtils"
+)
 
 // SourceCodeDefinition is a struct that represents a source code definition
 // and all the information about a cll source file.
@@ -19,19 +21,6 @@ type SourceCodeDefinition struct {
 
 	// modelIdCounter is a counter that is used to generate unique model IDs.
 	modelIdCounter int64
-}
-
-// AttributeUsageInfo is a struct that represents an attribute definition
-// in the source code with its parameters.
-type AttributeUsageInfo struct {
-	// Name is the name of the attribute.
-	Name string
-
-	// Parameters is the list of parameters for the attribute.
-	Parameters []*ParameterInstance
-
-	// SourcePosition is the position of the attribute in the source code.
-	SourcePosition *cclUtils.SourceCodePosition
 }
 
 // CCLTypeDefinition is a struct that represents a CCL *type*.
