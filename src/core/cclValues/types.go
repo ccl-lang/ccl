@@ -6,19 +6,6 @@ type cclTypeFlag int
 
 type CCLTypeOperator int
 
-// AttributeUsageInfo is a struct that represents an attribute definition
-// in the source code with its parameters.
-type AttributeUsageInfo struct {
-	// Name is the name of the attribute.
-	Name string
-
-	// Parameters is the list of parameters for the attribute.
-	Parameters []*ParameterInstance
-
-	// SourcePosition is the position of the attribute in the source code.
-	SourcePosition *cclUtils.SourceCodePosition
-}
-
 // ParameterInstance is a struct that represents a passed parameter instance.
 // This parameter is for when the user is passing a parameter to a function or any
 // other place in the source code, such as attributes.

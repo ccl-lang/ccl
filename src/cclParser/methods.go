@@ -78,7 +78,7 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 				currentPendingAttributes = nil
 			}
 
-			modelTypeDef, err := cclValues.NewModelTypeDefinition(
+			modelTypeDef, err := p.ctx.NewModelTypeDefinition(
 				&cclValues.SimpleTypeName{
 					TypeName:  model.Name,
 					Namespace: currentNamespace,

@@ -21,6 +21,19 @@ type SourceCodeDefinition struct {
 	modelIdCounter int64
 }
 
+// AttributeUsageInfo is a struct that represents an attribute definition
+// in the source code with its parameters.
+type AttributeUsageInfo struct {
+	// Name is the name of the attribute.
+	Name string
+
+	// Parameters is the list of parameters for the attribute.
+	Parameters []*ParameterInstance
+
+	// SourcePosition is the position of the attribute in the source code.
+	SourcePosition *cclUtils.SourceCodePosition
+}
+
 // CCLTypeDefinition is a struct that represents a CCL *type*.
 // Now this type can be a built-in type or a custom type defined by the user.
 // NOTE: This struct only holds general info about a type, NOT its values, etc.

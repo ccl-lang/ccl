@@ -107,9 +107,15 @@ var (
 		TokenTypeFloatLiteral:  true,
 	}
 
-	literalValueTokenToTypeUsage = map[CCLTokenType]*cclValues.CCLTypeUsage{
-		TokenTypeStringLiteral: cclValues.NewBuiltinTypeUsage(cclValues.TypeNameString),
-		TokenTypeIntLiteral:    cclValues.NewBuiltinTypeUsage(cclValues.TypeNameInt),
-		TokenTypeFloatLiteral:  cclValues.NewBuiltinTypeUsage(cclValues.TypeNameFloat),
+	literalValueTokenToTypeUsage = map[CCLTokenType]cclValues.SpecificCCLTypeUsageGenerator{
+		TokenTypeStringLiteral: func(c *cclValues.CCLCodeContext) *cclValues.CCLTypeUsage {
+			return c.NewBuiltinTypeUsage(cclValues.TypeNameString)
+		},
+		TokenTypeIntLiteral: func(c *cclValues.CCLCodeContext) *cclValues.CCLTypeUsage {
+			return c.NewBuiltinTypeUsage(cclValues.TypeNameInt)
+		},
+		TokenTypeFloatLiteral: func(c *cclValues.CCLCodeContext) *cclValues.CCLTypeUsage {
+			return c.NewBuiltinTypeUsage(cclValues.TypeNameFloat)
+		},
 	}
 )

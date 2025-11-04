@@ -41,15 +41,15 @@ func (p *CCLParser) parseCurrentTypeUsage(currentNamespace string) (*cclValues.C
 	// I WAS HERE
 	switch allTokens[0].Type {
 	case cclLexer.TokenTypeDataType:
-		baseTypeUsage = allTokens[0].GetBuiltInDataTypeUsage()
+		baseTypeUsage = allTokens[0].GetBuiltInDataTypeUsage(p.ctx)
 	case cclLexer.TokenTypeIdentifier:
-		baseTypeUsage = allTokens[0].GetCustomTypeUsage(currentNamespace)
+		baseTypeUsage = allTokens[0].GetCustomTypeUsage(p.ctx, currentNamespace)
 	default:
 		return nil, p.ErrInvalidSyntax("Expected builtin data-type or an identifier as first token")
 	}
 
 	if isArray {
-		return cclValues.NewArrayTypeUsage(baseTypeUsage, arrayLength), nil
+		return p.ctx.NewArrayTypeUsage(baseTypeUsage, arrayLength), nil
 	}
 	return baseTypeUsage, nil
 }

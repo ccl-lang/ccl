@@ -15,7 +15,7 @@ model MyModel {
 	[MyAttribute2("Param1", "Param2")]
 	[MyAttribute3("Param1", "Param2", 1234)]
 	myField: string[];
-	}
+}
 	`
 
 func TestModelTestInput1(t *testing.T) {

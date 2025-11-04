@@ -128,8 +128,8 @@ func TestAttributeParse2(t *testing.T) {
 		return
 	}
 
-	if len(cclSource.GlobalAttributes) != 1 {
-		t.Fatalf("Expected 1 global attribute, got %d", len(cclSource.GlobalAttributes))
+	if len(cclSource.GlobalAttributes) != 0 {
+		t.Fatalf("Expected 0 global attribute, got %d", len(cclSource.GlobalAttributes))
 		return
 	}
 

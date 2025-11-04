@@ -31,9 +31,19 @@ func ParseCCLSourceContent(options *CCLParseOptions) (*cclValues.SourceCodeDefin
 		return nil, err
 	}
 
+	ctx := cclValues.NewCCLCodeContext()
+	return ParseCCL(ctx, allTokens, options)
+}
+
+func ParseCCL(
+	ctx *cclValues.CCLCodeContext,
+	tokens []*cclLexer.CCLToken,
+	options *CCLParseOptions,
+) (*cclValues.SourceCodeDefinition, error) {
 	theParser := &CCLParser{
 		Options: options,
-		tokens:  allTokens,
+		tokens:  tokens,
+		ctx:     ctx,
 	}
 	return theParser.ParseAsCCL()
 }

@@ -194,7 +194,7 @@ func (p *CCLParser) ParseModelField(currentNamespace string) (*cclValues.ModelFi
 					}
 
 					targetIdentifier := p.current.GetIdentifier()
-					targetVariable := cclValues.GetGlobalVariable(targetIdentifier)
+					targetVariable := p.ctx.GetGlobalVariable(targetIdentifier)
 					if targetVariable == nil {
 						return nil, &UndefinedIdentifierError{
 							TargetIdentifier: targetIdentifier,
@@ -203,7 +203,7 @@ func (p *CCLParser) ParseModelField(currentNamespace string) (*cclValues.ModelFi
 						}
 					}
 					if targetVariable.IsAutomatic() {
-						theField.ChangeValueType(cclValues.NewPointerTypeUsage(
+						theField.ChangeValueType(p.ctx.NewPointerTypeUsage(
 							targetVariable.Type,
 						))
 						theField.ChangeValue(&cclValues.VariableUsageInstance{

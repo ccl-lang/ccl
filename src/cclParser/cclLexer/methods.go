@@ -97,33 +97,42 @@ func (t *CCLToken) IsBuiltinDataType() bool {
 // GetLiteralTypeInfo returns type info of the current literal token.
 // a literal token is for example: string literal, int literal, float literal, bool literal, etc.
 // so for a "hello"" token, it will return the type info for string type.
-func (t *CCLToken) GetLiteralTypeInfo() *cclValues.CCLTypeUsage {
+func (t *CCLToken) GetLiteralTypeInfo(ctx *cclValues.CCLCodeContext) *cclValues.CCLTypeUsage {
 	if t.IsTokenLiteralValue() {
 		// we have a value token, so we need to return the type info
 		// based on the token type
-		return literalValueTokenToTypeUsage[t.Type]
+		generator := literalValueTokenToTypeUsage[t.Type]
+		if generator == nil {
+			return nil
+		}
+		return generator(ctx)
 	}
 
 	return nil
 }
 
 // GetBuiltInDataTypeUsage returns the built-in data type usage if the token is a built-in data type.
-func (t *CCLToken) GetBuiltInDataTypeUsage() *cclValues.CCLTypeUsage {
+func (t *CCLToken) GetBuiltInDataTypeUsage(ctx *cclValues.CCLCodeContext) *cclValues.CCLTypeUsage {
 	if t.IsBuiltinDataType() {
 		nameStr, ok := t.value.(string)
 		if !ok {
 			return nil
 		}
 
-		return cclValues.NewBuiltinTypeUsage(nameStr)
+		return ctx.NewBuiltinTypeUsage(nameStr)
 	}
 
 	return nil
 }
 
-func (t *CCLToken) GetCustomTypeUsage(currentNamespace string) *cclValues.CCLTypeUsage {
+// GetCustomTypeUsage returns the custom type usage if the token is an identifier
+// representing a custom type, in the specified ccl code context and namespace.
+func (t *CCLToken) GetCustomTypeUsage(
+	ctx *cclValues.CCLCodeContext,
+	currentNamespace string,
+) *cclValues.CCLTypeUsage {
 	if t.IsIdentifier() {
-		return cclValues.NewCustomTypeUsage(&cclValues.SimpleTypeName{
+		return ctx.NewCustomTypeUsage(&cclValues.SimpleTypeName{
 			TypeName:  t.GetIdentifier(),
 			Namespace: currentNamespace,
 		})
@@ -142,31 +151,6 @@ func (t *CCLToken) GetLiteralValue() any {
 
 	// we have a value token, so we need to return the value
 	return t.value
-}
-
-//---------------------------------------------------------
-//---------------------------------------------------------
-
-// Error returns the string representation of the unexpected character error.
-func (e *UnexpectedCharacterError) Error() string {
-	errStr := fmt.Sprintf("cclParser: unexpected character '%c' at line %d, column %d", e.Character,
-		e.Line, e.Column)
-
-	if e.InnerError != nil {
-		errStr += fmt.Sprintf(": %s", e.InnerError.Error())
-	}
-
-	return errStr
-}
-
-// Error returns the string representation of the unexpected end of attribute error.
-func (e *UnexpectedEndOfAttributeError) Error() string {
-	return fmt.Sprintf("unexpected end of attribute at line %d, column %d", e.Line, e.Column)
-}
-
-// Error returns the string representation of the unexpected end of string literal error.
-func (e *UnexpectedEndOfStringLiteralError) Error() string {
-	return fmt.Sprintf("unexpected end of string literal at line %d, column %d", e.Line, e.Column)
 }
 
 //---------------------------------------------------------

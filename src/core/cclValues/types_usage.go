@@ -1,5 +1,9 @@
 package cclValues
 
+// SpecificCCLTypeUsageGenerator is a function type that generates a specific CCLTypeUsage
+// given a CCLCodeContext.
+type SpecificCCLTypeUsageGenerator func(c *CCLCodeContext) *CCLTypeUsage
+
 // CCLTypeUsage is a struct that represents a CCL type usage instance.
 // This type is for when the user is using a type in the source code,
 // such as in variable definitions, function parameters, etc.

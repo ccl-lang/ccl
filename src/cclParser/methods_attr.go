@@ -95,7 +95,7 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 					// We have a variable usage here
 					// without assigning any param name
 					targetIdentifier := p.current.GetIdentifier()
-					targetVariable := cclValues.GetGlobalVariable(targetIdentifier)
+					targetVariable := p.ctx.GetGlobalVariable(targetIdentifier)
 					if targetVariable == nil {
 						return nil, &UndefinedIdentifierError{
 							TargetIdentifier: targetIdentifier,
@@ -179,7 +179,7 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 
 						// is it a literal value?
 						if p.IsCurrentLiteralValue() {
-							currentParam.ChangeValueType(p.current.GetLiteralTypeInfo())
+							currentParam.ChangeValueType(p.current.GetLiteralTypeInfo(p.ctx))
 							currentParam.ChangeValue(p.current.GetLiteralValue())
 							p.advance()
 							continue
@@ -188,7 +188,7 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 						// We have a variable usage here
 						// and the parameter name has previously been assigned
 						targetIdentifier := p.current.GetIdentifier()
-						targetVariable := cclValues.GetGlobalVariable(targetIdentifier)
+						targetVariable := p.ctx.GetGlobalVariable(targetIdentifier)
 						if targetVariable == nil {
 							return nil, &UndefinedIdentifierError{
 								TargetIdentifier: targetIdentifier,
@@ -221,7 +221,7 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 
 				// if we are here, then we have a value without a parameter name
 				currentParam = &cclValues.ParameterInstance{
-					ValueType: p.current.GetLiteralTypeInfo(),
+					ValueType: p.current.GetLiteralTypeInfo(p.ctx),
 				}
 				currentParam.ChangeValue(p.current.GetLiteralValue())
 				p.advance()
