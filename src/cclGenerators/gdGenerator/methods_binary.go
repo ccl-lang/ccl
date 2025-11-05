@@ -111,7 +111,7 @@ func (c *GDScriptGenerationContext) generateArraySerializeBinary(field *CCLField
 }
 
 func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *strings.Builder) error {
-	builder.WriteString("static func deserialize(data: PackedByteArray) -> " + model.Name + ":\n")
+	builder.WriteString("static func deserialize_binary(data: PackedByteArray) -> " + model.Name + ":\n")
 
 	// null-safety check
 	builder.WriteString("\tif not data or data.is_empty() or (data.size() == 1 and data[0] == 0):\n")
