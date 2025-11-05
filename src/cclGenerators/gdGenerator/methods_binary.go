@@ -119,73 +119,88 @@ func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLMo
 
 	builder.WriteString("\tvar buffer = StreamPeerBuffer.new()\n")
 	builder.WriteString("\tbuffer.data_array = data\n")
-	builder.WriteString("\tvar result = " + model.Name + ".new()\n\n")
+
+	// TODO: maybe dynamically generate this later?
+	resultName := "model_result"
+	builder.WriteString("\tvar " + resultName + " = " + model.Name + ".new()\n\n")
 
 	for _, field := range model.Fields {
 		if field.IsArray() {
-			c.generateArrayDeserializeBinary(field, builder)
+			c.generateArrayDeserializeBinary(resultName, field, builder)
 			continue
 		}
 
-		c.generateFieldDeserializeBinary(field, builder)
+		c.generateFieldDeserializeBinary(resultName, field, builder)
 	}
 
-	builder.WriteString("\treturn result\n")
+	builder.WriteString("\treturn " + resultName + "\n")
 	return nil
 }
 
-func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(field *CCLField, builder *strings.Builder) {
+func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
+	resultName string,
+	field *CCLField,
+	builder *strings.Builder,
+) {
 	fieldName := ToSnakeCase(field.Name)
+	resultField := resultName + "." + fieldName
+
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
 		builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
 		builder.WriteString("\tif " + fieldName + "_len > buffer.get_size() - buffer.get_position():\n")
 		builder.WriteString("\t\treturn null\n")
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_data(" +
+		builder.WriteString("\t" + resultField + " = buffer.get_data(" +
 			fieldName + "_len)[1].get_string_from_utf8()\n\n")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_32()\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_32()\n\n")
 	case cclValues.TypeNameInt8:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_8()\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_8()\n\n")
 	case cclValues.TypeNameInt16:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_16()\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_16()\n\n")
 	case cclValues.TypeNameInt64:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_64()\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_64()\n\n")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_u32()\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_u32()\n\n")
 	case cclValues.TypeNameUint8:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_u8()\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_u8()\n\n")
 	case cclValues.TypeNameUint16:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_u16()\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_u16()\n\n")
 	case cclValues.TypeNameUint64:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_u64()\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_u64()\n\n")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_float()\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_float()\n\n")
 	case cclValues.TypeNameBool:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_8() != 0\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_8() != 0\n\n")
 	case cclValues.TypeNameBytes:
 		builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_data(" +
+		builder.WriteString("\t" + fieldName + " = buffer.get_data(" +
 			fieldName + "_len)[1]\n\n")
 	case cclValues.TypeNameDateTime:
-		builder.WriteString("\tresult." + fieldName + " = buffer.get_64()\n\n")
+		builder.WriteString("\t" + resultField + " = buffer.get_64()\n\n")
 	default:
 		// Custom type handling
 		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
 			builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
 			builder.WriteString("\tvar " + fieldName + "_bytes = buffer.get_data(" +
 				fieldName + "_len)[1]\n")
-			builder.WriteString("\tresult." + fieldName + " = " + field.Type.GetName() +
+			builder.WriteString("\t" + resultField + " = " + field.Type.GetName() +
 				".deserialize_binary(" + fieldName + "_bytes)\n\n")
 		}
 	}
 }
 
-func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(field *CCLField, builder *strings.Builder) {
+func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
+	resultName string,
+	field *CCLField,
+	builder *strings.Builder,
+) {
 	targetFieldType := field.Type.GetUnderlyingType()
 	fieldName := ToSnakeCase(field.Name)
+	resultField := resultName + "." + fieldName
+
 	builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
-	builder.WriteString("\tresult." + fieldName + " = []\n")
+	builder.WriteString("\t" + resultField + " = []\n")
 	builder.WriteString("\tfor i in range(" + fieldName + "_len):\n")
 
 	switch targetFieldType.GetName() {
@@ -194,34 +209,34 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(field *CCLFie
 		builder.WriteString("\t\tif item_len > buffer.get_size() - buffer.get_position():\n")
 		builder.WriteString("\t\t\treturn null\n")
 		builder.WriteString("\t\tvar item = buffer.get_data(item_len)[1].get_string_from_utf8()\n")
-		builder.WriteString("\t\tresult." + fieldName + ".append(item)\n")
+		builder.WriteString("\t\t" + resultField + ".append(item)\n")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_32())\n")
+		builder.WriteString("\t\t" + resultField + ".append(buffer.get_32())\n")
 	case cclValues.TypeNameInt8:
-		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_8())\n")
+		builder.WriteString("\t\t" + resultField + ".append(buffer.get_8())\n")
 	case cclValues.TypeNameInt16:
-		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_16())\n")
+		builder.WriteString("\t\t" + resultField + ".append(buffer.get_16())\n")
 	case cclValues.TypeNameInt64:
-		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_64())\n")
+		builder.WriteString("\t\t" + resultField + ".append(buffer.get_64())\n")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_u32())\n")
+		builder.WriteString("\t\t" + resultField + ".append(buffer.get_u32())\n")
 	case cclValues.TypeNameUint8:
-		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_u8())\n")
+		builder.WriteString("\t\t" + resultField + ".append(buffer.get_u8())\n")
 	case cclValues.TypeNameUint16:
-		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_u16())\n")
+		builder.WriteString("\t\t" + resultField + ".append(buffer.get_u16())\n")
 	case cclValues.TypeNameUint64:
-		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_u64())\n")
+		builder.WriteString("\t\t" + resultField + ".append(buffer.get_u64())\n")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
-		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_float())\n")
+		builder.WriteString("\t\t" + resultField + ".append(buffer.get_float())\n")
 	case cclValues.TypeNameBool:
-		builder.WriteString("\t\tresult." + fieldName + ".append(buffer.get_8() != 0)\n")
+		builder.WriteString("\t\t" + resultField + ".append(buffer.get_8() != 0)\n")
 	default:
 		if c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName()) {
 			builder.WriteString("\t\tvar item_len = buffer.get_u32()\n")
 			builder.WriteString("\t\tif item_len > buffer.get_size() - buffer.get_position():\n")
 			builder.WriteString("\t\t\treturn null\n")
 			builder.WriteString("\t\tvar item_bytes = buffer.get_data(item_len)[1]\n")
-			builder.WriteString("\t\tresult." + fieldName + ".append(" +
+			builder.WriteString("\t\t" + resultField + ".append(" +
 				targetFieldType.GetName() + ".deserialize_binary(item_bytes))\n")
 		}
 	}
