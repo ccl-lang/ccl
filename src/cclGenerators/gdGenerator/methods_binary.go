@@ -176,7 +176,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(field *CCLFie
 			builder.WriteString("\tvar " + fieldName + "_bytes = buffer.get_data(" +
 				fieldName + "_len)[1]\n")
 			builder.WriteString("\tresult." + fieldName + " = " + field.Type.GetName() +
-				".deserialize(" + fieldName + "_bytes)\n\n")
+				".deserialize_binary(" + fieldName + "_bytes)\n\n")
 		}
 	}
 }
@@ -222,7 +222,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(field *CCLFie
 			builder.WriteString("\t\t\treturn null\n")
 			builder.WriteString("\t\tvar item_bytes = buffer.get_data(item_len)[1]\n")
 			builder.WriteString("\t\tresult." + fieldName + ".append(" +
-				targetFieldType.GetName() + ".deserialize(item_bytes))\n")
+				targetFieldType.GetName() + ".deserialize_binary(item_bytes))\n")
 		}
 	}
 	builder.WriteString("\n")
