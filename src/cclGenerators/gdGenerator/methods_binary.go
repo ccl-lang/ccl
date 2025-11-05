@@ -174,7 +174,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
 		builder.WriteString("\t" + resultField + " = buffer.get_8() != 0\n\n")
 	case cclValues.TypeNameBytes:
 		builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
-		builder.WriteString("\t" + fieldName + " = buffer.get_data(" +
+		builder.WriteString("\t" + resultField + " = buffer.get_data(" +
 			fieldName + "_len)[1]\n\n")
 	case cclValues.TypeNameDateTime:
 		builder.WriteString("\t" + resultField + " = buffer.get_64()\n\n")
