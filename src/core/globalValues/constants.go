@@ -5,9 +5,10 @@ const (
 )
 
 const (
-	LanguageUnknown LanguageType = iota
+	LanguageUnknown LanguageType = 1 << iota
 	LanguageCCL
 	LanguageGo
+	LanguageGd
 	LanguageCS
 	LanguagePy
 	LanguageJS

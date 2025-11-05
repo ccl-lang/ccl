@@ -14,7 +14,7 @@ type AttributeUsageInfo struct {
 	// Language specifies which language this attribute should
 	// get applied to.
 	// it can be an empty string to indicate all languages.
-	Language gValues.NormalizedLangName
+	Language gValues.LanguageType
 
 	// Parameters is the list of parameters for the attribute.
 	Parameters []*ParameterInstance

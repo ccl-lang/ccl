@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/ALiwoto/ssg/ssg"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 //---------------------------------------------------------
@@ -16,11 +17,14 @@ func (d *SourceCodeDefinition) GetNextModelId() int64 {
 }
 
 // FindGlobalAttributes returns all global attributes with the given name.
-func (d *SourceCodeDefinition) FindGlobalAttributes(name string) []*AttributeUsageInfo {
+func (d *SourceCodeDefinition) FindGlobalAttributes(
+	targetLang gValues.LanguageType,
+	name string,
+) []*AttributeUsageInfo {
 	attributes := []*AttributeUsageInfo{}
 
 	for _, attr := range d.GlobalAttributes {
-		if attr.Name == name {
+		if attr.Name == name && attr.IsForLanguage(targetLang) {
 			attributes = append(attributes, attr)
 		}
 	}
@@ -29,9 +33,12 @@ func (d *SourceCodeDefinition) FindGlobalAttributes(name string) []*AttributeUsa
 }
 
 // FindGlobalAttributes returns the first global attribute with the given name.
-func (d *SourceCodeDefinition) FindGlobalAttribute(name string) *AttributeUsageInfo {
+func (d *SourceCodeDefinition) FindGlobalAttribute(
+	targetLang gValues.LanguageType,
+	name string,
+) *AttributeUsageInfo {
 	for _, attr := range d.GlobalAttributes {
-		if attr.Name == name {
+		if attr.Name == name && attr.IsForLanguage(targetLang) {
 			return attr
 		}
 	}
@@ -117,10 +124,13 @@ func (m *ModelDefinition) GetFieldByName(name string) *ModelFieldDefinition {
 }
 
 // FindAttributes returns all attributes with the given name.
-func (m *ModelDefinition) FindAttributes(name string) []*AttributeUsageInfo {
+func (m *ModelDefinition) FindAttributes(
+	targetLang gValues.LanguageType,
+	name string,
+) []*AttributeUsageInfo {
 	attributes := []*AttributeUsageInfo{}
 	for _, attr := range m.Attributes {
-		if attr.Name == name {
+		if attr.Name == name && attr.IsForLanguage(targetLang) {
 			attributes = append(attributes, attr)
 		}
 	}

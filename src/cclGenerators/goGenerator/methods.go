@@ -8,6 +8,7 @@ import (
 	"github.com/ALiwoto/ssg/ssg"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 //---------------------------------------------------------
@@ -270,11 +271,11 @@ func (c *GoGenerationContext) generateMethodsForModel(currentModel *CCLModel) er
 	c.MethodsCode.WriteString("}\n")
 
 	// generate CloneEmpty() method
-	if c.NeedsCloneMethods(currentModel) {
+	if c.NeedsCloneMethods(gValues.LanguageGo, currentModel) {
 		c.generateCloneMethods(currentModel)
 	}
 
-	if c.NeedsBinarySerialization(currentModel) {
+	if c.NeedsBinarySerialization(gValues.LanguageGo, currentModel) {
 		c.generateSerializeBinaryMethod(currentModel)
 		c.generateDeserializeBinaryMethod(currentModel)
 	}

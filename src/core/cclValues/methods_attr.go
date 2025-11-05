@@ -4,13 +4,22 @@ import gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 
 //---------------------------------------------------------
 
+// IsForLanguageStr checks if the attribute usage info is for the given language.
+func (a *AttributeUsageInfo) IsForLanguageStr(lang string) bool {
+	return a.IsForLanguage(gValues.GetLanguageTypeFromName(lang))
+}
+
 // IsForLanguage checks if the attribute usage info is for the given language.
-func (a *AttributeUsageInfo) IsForLanguage(lang string) bool {
-	if a.Language == "" {
+func (a *AttributeUsageInfo) IsForLanguage(lang gValues.LanguageType) bool {
+	if a.Language == 0 {
+		// This attribute can be used for all target languages.
 		return true
+	} else if lang.IsUnsupported() {
+		// The target language is unsupported, so we cannot match it.
+		return false
 	}
 
-	return a.Language == gValues.GetNormalizedLanguageName(lang)
+	return a.Language&lang != 0
 }
 
 // GetParamAt returns the parameter at the specified index.

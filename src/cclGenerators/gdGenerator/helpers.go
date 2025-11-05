@@ -26,7 +26,9 @@ func GenerateCode(options *gen.CodeGenerationOptions) (*gen.CodeGenerationResult
 	}
 
 	goCtx := &GDScriptGenerationContext{
-		Options: options,
+		CodeGenerationBase: gen.CodeGenerationBase{
+			Options: options,
+		},
 	}
 	err := goCtx.GenerateCode()
 	if err != nil {
@@ -69,7 +71,7 @@ func ToSnakeCase(camel string) (snake string) {
 			continue
 		}
 		// v is capital letter here
-		// irregard first letter
+		// disregard first letter
 		// add underscore if last letter is capital letter
 		// add underscore when previous letter is lowercase
 		// add underscore when next letter is lowercase

@@ -10,3 +10,8 @@ func (l LanguageType) String() string {
 func (l LanguageType) GetShortName() NormalizedLangName {
 	return langsToShortName[l]
 }
+
+func (l LanguageType) IsUnsupported() bool {
+	_, ok := langsToShortName[l]
+	return !ok
+}
