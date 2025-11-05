@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	goSource1 = "..\\..\\examples\\definitions.ccl"
-	goOutput1 = "..\\..\\examples\\go_gen3"
+	goSource1 = "../../examples/definitions.ccl"
+	goOutput1 = "../../examples/go_gen3"
 )
 
 func TestGoGenerator1(t *testing.T) {
