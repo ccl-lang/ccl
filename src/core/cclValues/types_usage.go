@@ -24,7 +24,7 @@ type CCLTypeUsage struct {
 }
 
 // VariableUsageInstance is a struct that represents a variable usage instance.
-// This variable is for when the user is using a variable in the source code,
+// This type is for when the user is using a variable in the source code,
 // such as in function calls, attribute calls, etc.
 type VariableUsageInstance struct {
 	// Name is the name of the variable that is being used

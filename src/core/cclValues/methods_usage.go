@@ -43,7 +43,7 @@ func (u *CCLTypeUsage) GetName() string {
 }
 
 // IsArray returns true if the type usage is of an array type.
-func (u CCLTypeUsage) IsArray() bool {
+func (u *CCLTypeUsage) IsArray() bool {
 	return u.definition.IsArray()
 }
 

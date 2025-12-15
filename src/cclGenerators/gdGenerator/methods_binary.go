@@ -200,7 +200,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	resultField := resultName + "." + fieldName
 
 	builder.WriteString("\tvar " + fieldName + "_len = buffer.get_u32()\n")
-	builder.WriteString("\t" + resultField + " = []\n")
+	builder.WriteString("\t" + resultField + " = []" + " as " + c.getGDScriptType(field) + "\n")
 	builder.WriteString("\tfor i in range(" + fieldName + "_len):\n")
 
 	switch targetFieldType.GetName() {

@@ -7,10 +7,12 @@ import (
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
-// CCLModel is a type alias for the model definition type from the CCL library.
+// CCLModel is a type alias for the model definition type from the CCL's
+// internal packages.
 type CCLModel = cclValues.ModelDefinition
 
-// CCLField is a type alias for the field definition type from the CCL library.
+// CCLField is a type alias for the field definition type from the CCL's
+// internal packages.
 type CCLField = cclValues.ModelFieldDefinition
 
 type GDScriptGenerationContext struct {

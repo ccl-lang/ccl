@@ -2,9 +2,8 @@ package cclValues
 
 import "github.com/ccl-lang/ccl/src/core/cclUtils"
 
+// cclTypeFlag represents flags for a specific ccl type definition.
 type cclTypeFlag int
-
-type CCLTypeOperator int
 
 // ParameterInstance is a struct that represents a passed parameter instance.
 // This parameter is for when the user is passing a parameter to a function or any

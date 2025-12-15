@@ -26,6 +26,10 @@ type SourceCodeDefinition struct {
 // CCLTypeDefinition is a struct that represents a CCL *type*.
 // Now this type can be a built-in type or a custom type defined by the user.
 // NOTE: This struct only holds general info about a type, NOT its values, etc.
+// A type definition for a specific type HAS to be cached and reused throughout
+// the codebase to ensure type equality checks work as expected.
+// e.g. if you have two type definitions for "int", they MUST point to the same
+// CCLTypeDefinition instance.
 type CCLTypeDefinition struct {
 	// name is the name of the type.
 	name string
@@ -37,6 +41,7 @@ type CCLTypeDefinition struct {
 	namespace string
 
 	// isIncomplete indicates whether the type definition is incomplete.
+	// An incomplete type means the type is being used,
 	isIncomplete bool
 
 	// model is a reference to the model definition if the type is a custom model
