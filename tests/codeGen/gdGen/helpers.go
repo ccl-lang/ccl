@@ -5,7 +5,21 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 )
+
+// Helper function to create the command based on OS
+func getGodotCmd(args ...string) *exec.Cmd {
+	if runtime.GOOS == "windows" {
+		// On Windows, wrap the call in "cmd /C"
+		// This helps resolve symlinks and PATH issues that Go's raw exec misses
+		cmdArgs := append([]string{"/C", "godot"}, args...)
+		return exec.Command("cmd", cmdArgs...)
+	}
+
+	// On Linux/Mac, call godot directly
+	return exec.Command("godot", args...)
+}
 
 // RunGodotProject runs a Godot project located at targetPath with the provided runnerContent script.
 func RunGodotProject(opts *RunGodotOptions) (string, error) {
@@ -29,7 +43,7 @@ config/features=PackedStringArray("4.5", "Forward Plus")
 		return "", fmt.Errorf("failed to write runner.gd: %v", err)
 	}
 
-	cmd := exec.Command("godot", "--headless", "--import", "--path", opts.TargetPath)
+	cmd := getGodotCmd("--headless", "--import", "--path", opts.TargetPath)
 	cmd.Dir = opts.TargetPath
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -37,7 +51,7 @@ config/features=PackedStringArray("4.5", "Forward Plus")
 	}
 	// Run the generated code using Godot headless
 	// Assuming 'godot' is in PATH.
-	cmd = exec.Command("godot", "--headless", "--script", "runner.gd")
+	cmd = getGodotCmd("--headless", "--script", "runner.gd")
 	cmd.Dir = opts.TargetPath
 	output, err := cmd.CombinedOutput()
 	if err != nil {
