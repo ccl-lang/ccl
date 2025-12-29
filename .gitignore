@@ -25,3 +25,8 @@ go.work.sum
 .env
 
 experiment_files
+
+tests/codeGen/gdGen/ccl_gd_test_*
+tests/codeGen/goGen/ccl_go_test_*
+
+

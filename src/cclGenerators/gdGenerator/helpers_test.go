@@ -1,4 +1,4 @@
-package generator_test
+package gdGenerator_test
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/ccl-lang/ccl/src/cclGenerators/gdGenerator"
 )
 
-func TestGdGenerator1(t *testing.T) {
+func TestSnakeCase1(t *testing.T) {
 	fieldName := gdGenerator.ToSnakeCase("RpcId")
 	print(fieldName)
 
