@@ -6,10 +6,10 @@ import (
 )
 
 func (c *GDScriptGenerationContext) generateSerializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
-	builder.WriteLine("func serialize_binary() -> PackedByteArray:")
-	builder.Indent()
-	builder.WriteLine("var buffer = StreamPeerBuffer.new()")
-	builder.NewLine()
+	builder.WriteLine("func serialize_binary() -> PackedByteArray:").
+		Indent().
+		WriteLine("var buffer = StreamPeerBuffer.new()").
+		NewLine()
 
 	for i := range model.Fields {
 		field := model.Fields[i]
@@ -21,8 +21,8 @@ func (c *GDScriptGenerationContext) generateSerializeBinaryMethod(model *CCLMode
 		c.generateFieldSerializeBinary(field, builder)
 	}
 
-	builder.WriteLine("return buffer.data_array")
-	builder.UnindentLine()
+	builder.WriteLine("return buffer.data_array").
+		UnindentLine()
 
 	return nil
 }
@@ -32,9 +32,9 @@ func (c *GDScriptGenerationContext) generateFieldSerializeBinary(field *CCLField
 	fieldName := "self." + fieldRawName
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine("var " + fieldRawName + "_bytes = " + fieldName + ".to_utf8_buffer()")
-		builder.WriteLine("buffer.put_u32(" + fieldRawName + "_bytes.size())")
-		builder.WriteLine("buffer.put_data(" + fieldRawName + "_bytes)")
+		builder.WriteLine("var " + fieldRawName + "_bytes = " + fieldName + ".to_utf8_buffer()").
+			WriteLine("buffer.put_u32(" + fieldRawName + "_bytes.size())").
+			WriteLine("buffer.put_data(" + fieldRawName + "_bytes)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
 		builder.WriteLine("buffer.put_32(" + fieldName + ")")
 	case cclValues.TypeNameInt8:
@@ -56,17 +56,17 @@ func (c *GDScriptGenerationContext) generateFieldSerializeBinary(field *CCLField
 	case cclValues.TypeNameBool:
 		builder.WriteLine("buffer.put_8(1 if " + fieldName + " else 0)")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("buffer.put_u32(" + fieldName + ".size())")
-		builder.WriteLine("buffer.put_data(" + fieldName + ")")
+		builder.WriteLine("buffer.put_u32(" + fieldName + ".size())").
+			WriteLine("buffer.put_data(" + fieldName + ")")
 	case cclValues.TypeNameDateTime:
 		builder.WriteLine("buffer.put_64(" + fieldName + ")")
 	default:
 		// Custom type handling
 		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
 			builder.WriteLine("var " + fieldRawName + "_bytes = " +
-				fieldName + ".serialize_binary() if " + fieldRawName + " else PackedByteArray([0])")
-			builder.WriteLine("buffer.put_u32(" + fieldRawName + "_bytes.size())")
-			builder.WriteLine("buffer.put_data(" + fieldRawName + "_bytes)")
+				fieldName + ".serialize_binary() if " + fieldRawName + " else PackedByteArray([0])").
+				WriteLine("buffer.put_u32(" + fieldRawName + "_bytes.size())").
+				WriteLine("buffer.put_data(" + fieldRawName + "_bytes)")
 		}
 	}
 	builder.NewLine()
@@ -75,15 +75,15 @@ func (c *GDScriptGenerationContext) generateFieldSerializeBinary(field *CCLField
 func (c *GDScriptGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
 	targetFieldType := field.Type.GetUnderlyingType()
 	fieldName := "self." + ToSnakeCase(field.Name)
-	builder.WriteLine("buffer.put_u32(" + fieldName + ".size())")
-	builder.WriteLine("for item in " + fieldName + ":")
-	builder.Indent()
+	builder.WriteLine("buffer.put_u32(" + fieldName + ".size())").
+		WriteLine("for item in " + fieldName + ":").
+		Indent()
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine("var item_bytes = item.to_utf8_buffer()")
-		builder.WriteLine("buffer.put_u32(item_bytes.size())")
-		builder.WriteLine("buffer.put_data(item_bytes)")
+		builder.WriteLine("var item_bytes = item.to_utf8_buffer()").
+			WriteLine("buffer.put_u32(item_bytes.size())").
+			WriteLine("buffer.put_data(item_bytes)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
 		builder.WriteLine("buffer.put_32(item)")
 	case cclValues.TypeNameInt8:
@@ -106,31 +106,29 @@ func (c *GDScriptGenerationContext) generateArraySerializeBinary(field *CCLField
 		builder.WriteLine("buffer.put_8(1 if item else 0)")
 	default:
 		if c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName()) {
-			builder.WriteLine("var item_bytes = item.serialize_binary() if item else PackedByteArray([0])")
-			builder.WriteLine("buffer.put_u32(item_bytes.size())")
-			builder.WriteLine("buffer.put_data(item_bytes)")
+			builder.WriteLine("var item_bytes = item.serialize_binary() if item else PackedByteArray([0])").
+				WriteLine("buffer.put_u32(item_bytes.size())").
+				WriteLine("buffer.put_data(item_bytes)")
 		}
 	}
 	builder.UnindentLine()
 }
 
 func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
-	builder.WriteLine("static func deserialize_binary(data: PackedByteArray) -> " + model.Name + ":")
-	builder.Indent()
-
-	// null-safety check
-	builder.WriteLine("if not data or data.is_empty() or (data.size() == 1 and data[0] == 0):")
-	builder.Indent()
-	builder.WriteLine("return null")
-	builder.UnindentLine()
-
-	builder.WriteLine("var buffer = StreamPeerBuffer.new()")
-	builder.WriteLine("buffer.data_array = data")
+	builder.WriteLine("static func deserialize_binary(data: PackedByteArray) -> " + model.Name + ":").
+		Indent().
+		// null-safety check
+		WriteLine("if not data or data.is_empty() or (data.size() == 1 and data[0] == 0):").
+		Indent().
+		WriteLine("return null").
+		UnindentLine().
+		WriteLine("var buffer = StreamPeerBuffer.new()").
+		WriteLine("buffer.data_array = data")
 
 	// TODO: maybe dynamically generate this later?
 	resultName := "model_result"
-	builder.WriteLine("var " + resultName + " = " + model.Name + ".new()")
-	builder.NewLine()
+	builder.WriteLine("var " + resultName + " = " + model.Name + ".new()").
+		NewLine()
 
 	for _, field := range model.Fields {
 		if field.IsArray() {
@@ -141,8 +139,8 @@ func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLMo
 		c.generateFieldDeserializeBinary(resultName, field, builder)
 	}
 
-	builder.WriteLine("return " + resultName)
-	builder.UnindentLine()
+	builder.WriteLine("return " + resultName).
+		UnindentLine()
 	return nil
 }
 
@@ -156,13 +154,13 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine("var " + fieldName + "_len = buffer.get_u32()")
-		builder.WriteLine("if " + fieldName + "_len > buffer.get_size() - buffer.get_position():")
-		builder.Indent()
-		builder.WriteLine("return null")
-		builder.Unindent()
-		builder.WriteLine(resultField + " = buffer.get_data(" +
-			fieldName + "_len)[1].get_string_from_utf8()")
+		builder.WriteLine("var " + fieldName + "_len = buffer.get_u32()").
+			WriteLine("if " + fieldName + "_len > buffer.get_size() - buffer.get_position():").
+			Indent().
+			WriteLine("return null").
+			Unindent().
+			WriteLine(resultField + " = buffer.get_data(" +
+				fieldName + "_len)[1].get_string_from_utf8()")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
 		builder.WriteLine(resultField + " = buffer.get_32()")
 	case cclValues.TypeNameInt8:
@@ -184,19 +182,19 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
 	case cclValues.TypeNameBool:
 		builder.WriteLine(resultField + " = buffer.get_8() != 0")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("var " + fieldName + "_len = buffer.get_u32()")
-		builder.WriteLine(resultField + " = buffer.get_data(" +
-			fieldName + "_len)[1]")
+		builder.WriteLine("var " + fieldName + "_len = buffer.get_u32()").
+			WriteLine(resultField + " = buffer.get_data(" +
+				fieldName + "_len)[1]")
 	case cclValues.TypeNameDateTime:
 		builder.WriteLine(resultField + " = buffer.get_64()")
 	default:
 		// Custom type handling
 		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
-			builder.WriteLine("var " + fieldName + "_len = buffer.get_u32()")
-			builder.WriteLine("var " + fieldName + "_bytes = buffer.get_data(" +
-				fieldName + "_len)[1]")
-			builder.WriteLine(resultField + " = " + field.Type.GetName() +
-				".deserialize_binary(" + fieldName + "_bytes)")
+			builder.WriteLine("var " + fieldName + "_len = buffer.get_u32()").
+				WriteLine("var " + fieldName + "_bytes = buffer.get_data(" +
+					fieldName + "_len)[1]").
+				WriteLine(resultField + " = " + field.Type.GetName() +
+					".deserialize_binary(" + fieldName + "_bytes)")
 		}
 	}
 	builder.NewLine()
@@ -211,20 +209,20 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	fieldName := ToSnakeCase(field.Name)
 	resultField := resultName + "." + fieldName
 
-	builder.WriteLine("var " + fieldName + "_len = buffer.get_u32()")
-	builder.WriteLine(resultField + " = []" + " as " + c.getGDScriptType(field))
-	builder.WriteLine("for i in range(" + fieldName + "_len):")
-	builder.Indent()
+	builder.WriteLine("var " + fieldName + "_len = buffer.get_u32()").
+		WriteLine(resultField + " = []" + " as " + c.getGDScriptType(field)).
+		WriteLine("for i in range(" + fieldName + "_len):").
+		Indent()
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine("var item_len = buffer.get_u32()")
-		builder.WriteLine("if item_len > buffer.get_size() - buffer.get_position():")
-		builder.Indent()
-		builder.WriteLine("return null")
-		builder.Unindent()
-		builder.WriteLine("var item = buffer.get_data(item_len)[1].get_string_from_utf8()")
-		builder.WriteLine(resultField + ".append(item)")
+		builder.WriteLine("var item_len = buffer.get_u32()").
+			WriteLine("if item_len > buffer.get_size() - buffer.get_position():").
+			Indent().
+			WriteLine("return null").
+			Unindent().
+			WriteLine("var item = buffer.get_data(item_len)[1].get_string_from_utf8()").
+			WriteLine(resultField + ".append(item)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
 		builder.WriteLine(resultField + ".append(buffer.get_32())")
 	case cclValues.TypeNameInt8:
@@ -247,14 +245,14 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 		builder.WriteLine(resultField + ".append(buffer.get_8() != 0)")
 	default:
 		if c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName()) {
-			builder.WriteLine("var item_len = buffer.get_u32()")
-			builder.WriteLine("if item_len > buffer.get_size() - buffer.get_position():")
-			builder.Indent()
-			builder.WriteLine("return null")
-			builder.Unindent()
-			builder.WriteLine("var item_bytes = buffer.get_data(item_len)[1]")
-			builder.WriteLine(resultField + ".append(" +
-				targetFieldType.GetName() + ".deserialize_binary(item_bytes))")
+			builder.WriteLine("var item_len = buffer.get_u32()").
+				WriteLine("if item_len > buffer.get_size() - buffer.get_position():").
+				Indent().
+				WriteLine("return null").
+				Unindent().
+				WriteLine("var item_bytes = buffer.get_data(item_len)[1]").
+				WriteLine(resultField + ".append(" +
+					targetFieldType.GetName() + ".deserialize_binary(item_bytes))")
 		}
 	}
 	builder.UnindentLine()
