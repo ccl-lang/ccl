@@ -8,16 +8,32 @@ import (
 	"runtime"
 )
 
-// Helper function to create the command based on OS
+// Helper function to create the command based on OS and environment
 func getGodotCmd(args ...string) *exec.Cmd {
+	// 1. Try to find 'godot' in the system PATH directly.
+	// This handles Linux/Mac and correctly configured Windows machines
+	path, err := exec.LookPath("godot")
+	if err == nil {
+		return exec.Command(path, args...)
+	}
+
+	// 2. If LookPath failed, we might be in a complex Windows environment.
 	if runtime.GOOS == "windows" {
-		// On Windows, wrap the call in "cmd /C"
-		// This helps resolve symlinks and PATH issues that Go's raw exec misses
+		// Check if 'bash' is available (GitHub Actions and Git Bash users have this).
+		// This solves the "godot not recognized" error on GH Actions.
+		if _, err := exec.LookPath("bash"); err == nil {
+			// We use bash to run godot.
+			// "-c", "godot \"$@\"", "--" allows us to pass arguments safely.
+			bashArgs := append([]string{"-c", "godot \"$@\"", "--"}, args...)
+			return exec.Command("bash", bashArgs...)
+		}
+
+		// 3. Fallback to 'cmd' if bash is missing (Original fallback).
 		cmdArgs := append([]string{"/C", "godot"}, args...)
 		return exec.Command("cmd", cmdArgs...)
 	}
 
-	// On Linux/Mac, call godot directly
+	// Default for Linux/Mac if not found in PATH (will likely fail execution later)
 	return exec.Command("godot", args...)
 }
 
