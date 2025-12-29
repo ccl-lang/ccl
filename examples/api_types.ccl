@@ -8,6 +8,12 @@
 
 // hello there, this is a comment test
 
+// map is not supported yet
+// model UserCollection {
+//     Users: map<int64, UserInfo>;
+// }
+
+
 [SerializationType("binary")]
 model AuthRequest {
     Username: string;

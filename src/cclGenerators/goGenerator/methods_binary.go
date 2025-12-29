@@ -13,14 +13,20 @@ func (c *GoGenerationContext) generateSerializeBinaryMethod(model *CCLModel) err
 	// This SerializeBinary method generation HAS TO BE MOVED to an attribute handler
 	// so users can specify different types of attributes for serialize method generation
 	// like JSON, XML, etc.
-	c.MethodsCode.WriteString("\nfunc (m *" + model.Name + ") SerializeBinary() ([]byte, error) {\n")
+	c.MethodsCode.NewLine()
+	c.MethodsCode.WriteLine("func (m *" + model.Name + ") SerializeBinary() ([]byte, error) {")
+	c.MethodsCode.Indent()
 
 	// handle m is nil by returning []byte(0) and nil
-	c.MethodsCode.WriteString("\tif m == nil {\n")
-	c.MethodsCode.WriteString("\t\treturn []byte{0}, nil\n")
-	c.MethodsCode.WriteString("\t}\n\n")
+	c.MethodsCode.WriteLine("if m == nil {")
+	c.MethodsCode.Indent()
+	c.MethodsCode.WriteLine("return []byte{0}, nil")
+	c.MethodsCode.Unindent()
+	c.MethodsCode.WriteLine("}")
+	c.MethodsCode.NewLine()
 
-	c.MethodsCode.WriteString("\tbuf := new(bytes.Buffer)\n\n")
+	c.MethodsCode.WriteLine("buf := new(bytes.Buffer)")
+	c.MethodsCode.NewLine()
 	for _, field := range model.Fields {
 		if field.IsArray() {
 			err := c.generateArraySerializeBinaryMethod(field)
@@ -37,8 +43,10 @@ func (c *GoGenerationContext) generateSerializeBinaryMethod(model *CCLModel) err
 		}
 	}
 
-	c.MethodsCode.WriteString("\treturn buf.Bytes(), nil\n")
-	c.MethodsCode.WriteString("}\n\n")
+	c.MethodsCode.WriteLine("return buf.Bytes(), nil")
+	c.MethodsCode.Unindent()
+	c.MethodsCode.WriteLine("}")
+	c.MethodsCode.NewLine()
 	return nil
 }
 
@@ -47,45 +55,63 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 	isCustomType := c.Options.CCLDefinition.IsCustomType(fieldTypeName)
 	switch fieldTypeName {
 	case cclValues.TypeNameString:
-		c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn nil, err\n")
-		c.MethodsCode.WriteString("\t}\n")
-		c.MethodsCode.WriteString("\tif _, err := buf.WriteString(m." + field.Name + "); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn nil, err\n")
-		c.MethodsCode.WriteString("\t}\n")
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return nil, err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("if _, err := buf.WriteString(m." + field.Name + "); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return nil, err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
 	case cclValues.TypeNameBytes:
-		c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn nil, err\n")
-		c.MethodsCode.WriteString("\t}\n")
-		c.MethodsCode.WriteString("\tif _, err := buf.Write(m." + field.Name + "); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn nil, err\n")
-		c.MethodsCode.WriteString("\t}\n")
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return nil, err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("if _, err := buf.Write(m." + field.Name + "); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return nil, err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
 	case cclValues.TypeNameDateTime:
-		c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, m." + field.Name + ".UnixNano()); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn nil, err\n")
-		c.MethodsCode.WriteString("\t}\n")
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, m." + field.Name + ".UnixNano()); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return nil, err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
 	default:
 		if isCustomType {
 			currentBytesName := "current_" + field.Name + "Bytes"
-			c.MethodsCode.WriteString("\t" + currentBytesName + ", err := m." + field.Name + ".SerializeBinary()\n")
-			c.MethodsCode.WriteString("\tif err != nil {\n")
-			c.MethodsCode.WriteString("\t\treturn nil, err\n")
-			c.MethodsCode.WriteString("\t}\n")
-			c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(" + currentBytesName + "))); err != nil {\n")
-			c.MethodsCode.WriteString("\t\treturn nil, err\n")
-			c.MethodsCode.WriteString("\t}\n")
-			c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, " + currentBytesName + "); err != nil {\n")
-			c.MethodsCode.WriteString("\t\treturn nil, err\n")
-			c.MethodsCode.WriteString("\t}\n")
+			c.MethodsCode.WriteLine(currentBytesName + ", err := m." + field.Name + ".SerializeBinary()")
+			c.MethodsCode.WriteLine("if err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return nil, err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
+			c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(" + currentBytesName + "))); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return nil, err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
+			c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, " + currentBytesName + "); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return nil, err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
 		} else {
 			toWriteStr := "m." + field.Name
 			if fieldTypeName == cclValues.TypeNameInt {
 				// binary.Write does not support int type directly, so we need to convert it to int32
 				toWriteStr = "int32(m." + field.Name + ")"
 			}
-			c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, " + toWriteStr + "); err != nil {\n")
-			c.MethodsCode.WriteString("\t\treturn nil, err\n")
-			c.MethodsCode.WriteString("\t}\n")
+			c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, " + toWriteStr + "); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return nil, err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
 		}
 	}
 	return nil
@@ -94,60 +120,87 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField) error {
 	targetFieldType := field.Type.GetUnderlyingType()
 	isCustomType := c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName())
-	c.MethodsCode.WriteString("\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {\n")
-	c.MethodsCode.WriteString("\t\treturn nil, err\n")
-	c.MethodsCode.WriteString("\t}\n")
-	c.MethodsCode.WriteString("\tfor _, elem := range m." + field.Name + " {\n")
+	c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {")
+	c.MethodsCode.Indent()
+	c.MethodsCode.WriteLine("return nil, err")
+	c.MethodsCode.Unindent()
+	c.MethodsCode.WriteLine("}")
+	c.MethodsCode.WriteLine("for _, elem := range m." + field.Name + " {")
+	c.MethodsCode.Indent()
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
-		c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(elem))); err != nil {\n")
-		c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
-		c.MethodsCode.WriteString("\t\t}\n")
-		c.MethodsCode.WriteString("\t\tif _, err := buf.WriteString(elem); err != nil {\n")
-		c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
-		c.MethodsCode.WriteString("\t\t}\n")
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(elem))); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return nil, err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("if _, err := buf.WriteString(elem); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return nil, err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
 	case cclValues.TypeNameBytes:
-		c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(elem))); err != nil {\n")
-		c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
-		c.MethodsCode.WriteString("\t\t}\n")
-		c.MethodsCode.WriteString("\t\tif _, err := buf.Write(elem); err != nil {\n")
-		c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
-		c.MethodsCode.WriteString("\t\t}\n")
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(elem))); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return nil, err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("if _, err := buf.Write(elem); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return nil, err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
 	case cclValues.TypeNameDateTime:
-		c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, elem.UnixNano()); err != nil {\n")
-		c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
-		c.MethodsCode.WriteString("\t\t}\n")
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, elem.UnixNano()); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return nil, err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
 	default:
 		if isCustomType {
 			currentBytesName := "current_" + field.Name + "Bytes"
-			c.MethodsCode.WriteString("\t\t" + currentBytesName + ", err := elem.SerializeBinary()\n")
-			c.MethodsCode.WriteString("\t\tif err != nil {\n")
-			c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
-			c.MethodsCode.WriteString("\t\t}\n")
-			c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, uint32(len(" + currentBytesName + "))); err != nil {\n")
-			c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
-			c.MethodsCode.WriteString("\t\t}\n")
-			c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, " + currentBytesName + "); err != nil {\n")
-			c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
-			c.MethodsCode.WriteString("\t\t}\n")
+			c.MethodsCode.WriteLine(currentBytesName + ", err := elem.SerializeBinary()")
+			c.MethodsCode.WriteLine("if err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return nil, err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
+			c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(" + currentBytesName + "))); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return nil, err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
+			c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, " + currentBytesName + "); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return nil, err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
 		} else {
-			c.MethodsCode.WriteString("\t\tif err := binary.Write(buf, binary.LittleEndian, elem); err != nil {\n")
-			c.MethodsCode.WriteString("\t\t\treturn nil, err\n")
-			c.MethodsCode.WriteString("\t\t}\n")
+			c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, elem); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return nil, err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
 		}
 	}
 
-	c.MethodsCode.WriteString("\t}\n")
+	c.MethodsCode.Unindent()
+	c.MethodsCode.WriteLine("}")
 	return nil
 }
 
 func (c *GoGenerationContext) generateDeserializeBinaryMethod(model *CCLModel) error {
-	c.MethodsCode.WriteString("func (m *" + model.Name + ") DeserializeBinary(data []byte) error {\n")
+	c.MethodsCode.WriteLine("func (m *" + model.Name + ") DeserializeBinary(data []byte) error {")
+	c.MethodsCode.Indent()
 	// add nil checker or when the len(data) is 0 or (len(data) == 1 and data[0] == 0)
-	c.MethodsCode.WriteString("\tif m == nil || len(data) == 0 || (len(data) == 1 && data[0] == 0) {\n")
-	c.MethodsCode.WriteString("\t\treturn nil\n")
-	c.MethodsCode.WriteString("\t}\n\n")
-	c.MethodsCode.WriteString("\tbuf := bytes.NewReader(data)\n\n")
+	c.MethodsCode.WriteLine("if m == nil || len(data) == 0 || (len(data) == 1 && data[0] == 0) {")
+	c.MethodsCode.Indent()
+	c.MethodsCode.WriteLine("return nil")
+	c.MethodsCode.Unindent()
+	c.MethodsCode.WriteLine("}")
+	c.MethodsCode.NewLine()
+	c.MethodsCode.WriteLine("buf := bytes.NewReader(data)")
+	c.MethodsCode.NewLine()
 
 	for _, field := range model.Fields {
 		if field.IsArray() {
@@ -165,8 +218,10 @@ func (c *GoGenerationContext) generateDeserializeBinaryMethod(model *CCLModel) e
 		}
 	}
 
-	c.MethodsCode.WriteString("\treturn nil\n")
-	c.MethodsCode.WriteString("}\n\n")
+	c.MethodsCode.WriteLine("return nil")
+	c.MethodsCode.Unindent()
+	c.MethodsCode.WriteLine("}")
+	c.MethodsCode.NewLine()
 	return nil
 }
 
@@ -181,31 +236,41 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 
 	switch fieldTypeName {
 	case cclValues.TypeNameString:
-		c.MethodsCode.WriteString("\tvar " + fLenName + " uint32\n")
-		c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &" + fLenName + "); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn err\n")
-		c.MethodsCode.WriteString("\t}\n")
-		c.MethodsCode.WriteString("\t" + fNameStrBytes + " := make([]byte, " + fLenName + ")\n")
-		c.MethodsCode.WriteString("\tif _, err := buf.Read(" + fNameStrBytes + "); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn err\n")
-		c.MethodsCode.WriteString("\t}\n")
-		c.MethodsCode.WriteString("\tm." + field.Name + " = string(" + fNameStrBytes + ")\n")
+		c.MethodsCode.WriteLine("var " + fLenName + " uint32")
+		c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + fLenName + "); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine(fNameStrBytes + " := make([]byte, " + fLenName + ")")
+		c.MethodsCode.WriteLine("if _, err := buf.Read(" + fNameStrBytes + "); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("m." + field.Name + " = string(" + fNameStrBytes + ")")
 	case cclValues.TypeNameBytes:
-		c.MethodsCode.WriteString("\tvar " + fLenName + " uint32\n")
-		c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &" + fLenName + "); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn err\n")
-		c.MethodsCode.WriteString("\t}\n")
-		c.MethodsCode.WriteString("\tbytesData := make([]byte, " + fLenName + ")\n")
-		c.MethodsCode.WriteString("\tif _, err := buf.Read(bytesData); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn err\n")
-		c.MethodsCode.WriteString("\t}\n")
-		c.MethodsCode.WriteString("\tm." + field.Name + " = bytesData\n")
+		c.MethodsCode.WriteLine("var " + fLenName + " uint32")
+		c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + fLenName + "); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("bytesData := make([]byte, " + fLenName + ")")
+		c.MethodsCode.WriteLine("if _, err := buf.Read(bytesData); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("m." + field.Name + " = bytesData")
 	case cclValues.TypeNameDateTime:
-		c.MethodsCode.WriteString("\tvar " + fNameUnix + " int64\n")
-		c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &" + fNameUnix + "); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn err\n")
-		c.MethodsCode.WriteString("\t}\n")
-		c.MethodsCode.WriteString("\tm." + field.Name + " = time.Unix(0, " + fNameUnix + ")\n")
+		c.MethodsCode.WriteLine("var " + fNameUnix + " int64")
+		c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + fNameUnix + "); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("m." + field.Name + " = time.Unix(0, " + fNameUnix + ")")
 	default:
 		if isCustomType {
 			// read the length of the next buffer that we need
@@ -214,41 +279,53 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 			// 	return err
 			// }
 			lenVarName := fName + "BytesLen"
-			c.MethodsCode.WriteString("\tvar " + lenVarName + " uint32\n")
-			c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &" + lenVarName + "); err != nil {\n")
-			c.MethodsCode.WriteString("\t\treturn err\n")
-			c.MethodsCode.WriteString("\t}\n")
+			c.MethodsCode.WriteLine("var " + lenVarName + " uint32")
+			c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + lenVarName + "); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
 
 			bytesVarName := fName + "Bytes"
-			c.MethodsCode.WriteString("\t" + bytesVarName + " := make([]byte, " + lenVarName + ")\n")
-			c.MethodsCode.WriteString("\tif _, err := buf.Read(" + bytesVarName + "); err != nil {\n")
-			c.MethodsCode.WriteString("\t\treturn err\n")
-			c.MethodsCode.WriteString("\t}\n")
+			c.MethodsCode.WriteLine(bytesVarName + " := make([]byte, " + lenVarName + ")")
+			c.MethodsCode.WriteLine("if _, err := buf.Read(" + bytesVarName + "); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
 
 			// make sure m.field is not nil ONLY when len(bytesVarName) != 0 and !(len(bytesVarName) == 1 and bytesVarName[0] == 0)
-			c.MethodsCode.WriteString("\tif m." + field.Name + " == nil && len(" + bytesVarName + ") != 0 && !(len(" + bytesVarName + ") == 1 && " + bytesVarName + "[0] == 0) {\n")
-			c.MethodsCode.WriteString("\t\tm." + field.Name + " = new(" + field.Type.GetName() + ")\n")
-			c.MethodsCode.WriteString("\t}\n")
+			c.MethodsCode.WriteLine("if m." + field.Name + " == nil && len(" + bytesVarName + ") != 0 && !(len(" + bytesVarName + ") == 1 && " + bytesVarName + "[0] == 0) {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("m." + field.Name + " = new(" + field.Type.GetName() + ")")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
 
-			c.MethodsCode.WriteString("\tif err := m." + field.Name + ".DeserializeBinary(" + bytesVarName + "); err != nil {\n")
-			c.MethodsCode.WriteString("\t\treturn err\n")
-			c.MethodsCode.WriteString("\t}\n")
+			c.MethodsCode.WriteLine("if err := m." + field.Name + ".DeserializeBinary(" + bytesVarName + "); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
 		} else {
 			if fieldTypeName == cclValues.TypeNameInt {
 				// binary.Read does not support int type directly, so we need to read it into an int32 first
 				toReadName := "tmp" + field.Name
-				c.MethodsCode.WriteString("\tvar " + toReadName + " int32\n")
-				c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &" + toReadName + "); err != nil {\n")
-				c.MethodsCode.WriteString("\t\treturn err\n")
-				c.MethodsCode.WriteString("\t}\n")
-				c.MethodsCode.WriteString("\tm." + field.Name + " = int(" + toReadName + ")\n")
+				c.MethodsCode.WriteLine("var " + toReadName + " int32")
+				c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + toReadName + "); err != nil {")
+				c.MethodsCode.Indent()
+				c.MethodsCode.WriteLine("return err")
+				c.MethodsCode.Unindent()
+				c.MethodsCode.WriteLine("}")
+				c.MethodsCode.WriteLine("m." + field.Name + " = int(" + toReadName + ")")
 				return nil
 			}
 
 			// all other types can be read directly
-			c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &m." + field.Name + "); err != nil {\n")
-			c.MethodsCode.WriteString("\t\treturn err\n")
-			c.MethodsCode.WriteString("\t}\n")
+			c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &m." + field.Name + "); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
 		}
 	}
 	return nil
@@ -267,69 +344,91 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 		fieldRealType = "*" + fieldRealType
 	}
 
-	c.MethodsCode.WriteString("\tvar " + fLenName + " uint32\n")
-	c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &" + fLenName + "); err != nil {\n")
-	c.MethodsCode.WriteString("\t\treturn err\n")
-	c.MethodsCode.WriteString("\t}\n")
-	c.MethodsCode.WriteString("\tm." + field.Name + " = make([]" + fieldRealType + ", " + fLenName + ")\n")
-	c.MethodsCode.WriteString("\tfor i := uint32(0); i < " + fLenName + "; i++ {\n")
+	c.MethodsCode.WriteLine("var " + fLenName + " uint32")
+	c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + fLenName + "); err != nil {")
+	c.MethodsCode.Indent()
+	c.MethodsCode.WriteLine("return err")
+	c.MethodsCode.Unindent()
+	c.MethodsCode.WriteLine("}")
+	c.MethodsCode.WriteLine("m." + field.Name + " = make([]" + fieldRealType + ", " + fLenName + ")")
+	c.MethodsCode.WriteLine("for i := uint32(0); i < " + fLenName + "; i++ {")
+	c.MethodsCode.Indent()
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
-		c.MethodsCode.WriteString("\t\tvar elemLen uint32\n")
-		c.MethodsCode.WriteString("\t\tif err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {\n")
-		c.MethodsCode.WriteString("\t\t\treturn err\n")
-		c.MethodsCode.WriteString("\t\t}\n")
-		c.MethodsCode.WriteString("\t\telemBytes := make([]byte, elemLen)\n")
-		c.MethodsCode.WriteString("\t\tif _, err := buf.Read(elemBytes); err != nil {\n")
-		c.MethodsCode.WriteString("\t\t\treturn err\n")
-		c.MethodsCode.WriteString("\t\t}\n")
-		c.MethodsCode.WriteString("\t\tm." + field.Name + "[i] = string(elemBytes)\n")
+		c.MethodsCode.WriteLine("var elemLen uint32")
+		c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("elemBytes := make([]byte, elemLen)")
+		c.MethodsCode.WriteLine("if _, err := buf.Read(elemBytes); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("m." + field.Name + "[i] = string(elemBytes)")
 	case cclValues.TypeNameBytes:
-		c.MethodsCode.WriteString("\t\tvar elemLen uint32\n")
-		c.MethodsCode.WriteString("\t\tif err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {\n")
-		c.MethodsCode.WriteString("\t\t\treturn err\n")
-		c.MethodsCode.WriteString("\t\t}\n")
-		c.MethodsCode.WriteString("\t\telemBytes := make([]byte, elemLen)\n")
-		c.MethodsCode.WriteString("\t\tif _, err := buf.Read(elemBytes); err != nil {\n")
-		c.MethodsCode.WriteString("\t\t\treturn err\n")
-		c.MethodsCode.WriteString("\t\t}\n")
-		c.MethodsCode.WriteString("\t\tm." + field.Name + "[i] = elemBytes\n")
+		c.MethodsCode.WriteLine("var elemLen uint32")
+		c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("elemBytes := make([]byte, elemLen)")
+		c.MethodsCode.WriteLine("if _, err := buf.Read(elemBytes); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("m." + field.Name + "[i] = elemBytes")
 	case cclValues.TypeNameDateTime:
-		c.MethodsCode.WriteString("\t\tvar elemUnix int64\n")
-		c.MethodsCode.WriteString("\tif err := binary.Read(buf, binary.LittleEndian, &elemUnix); err != nil {\n")
-		c.MethodsCode.WriteString("\t\treturn err\n")
-		c.MethodsCode.WriteString("\t}\n")
-		c.MethodsCode.WriteString("\t\tm." + field.Name + "[i] = time.Unix(0, elemUnix)\n")
+		c.MethodsCode.WriteLine("var elemUnix int64")
+		c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &elemUnix); err != nil {")
+		c.MethodsCode.Indent()
+		c.MethodsCode.WriteLine("return err")
+		c.MethodsCode.Unindent()
+		c.MethodsCode.WriteLine("}")
+		c.MethodsCode.WriteLine("m." + field.Name + "[i] = time.Unix(0, elemUnix)")
 	default:
 		if isCustomType {
-			c.MethodsCode.WriteString("\t\tvar elem " + fieldRealType)
+			c.MethodsCode.WriteStr("var elem " + fieldRealType)
 			if isPointer {
-				c.MethodsCode.WriteString(" = new(" + targetFieldType.GetName() + ")\n")
+				c.MethodsCode.AppendLine(" = new(" + targetFieldType.GetName() + ")")
 			} else {
-				c.MethodsCode.WriteString("\n")
+				c.MethodsCode.NewLine()
 			}
 			// we need to read the bytes from the buffer
 			// and then deserialize the element
-			c.MethodsCode.WriteString("\t\tvar elemLen uint32\n")
-			c.MethodsCode.WriteString("\t\tif err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {\n")
-			c.MethodsCode.WriteString("\t\t\treturn err\n")
-			c.MethodsCode.WriteString("\t\t}\n")
-			c.MethodsCode.WriteString("\t\telemBytes := make([]byte, elemLen)\n")
-			c.MethodsCode.WriteString("\t\tif _, err := buf.Read(elemBytes); err != nil {\n")
-			c.MethodsCode.WriteString("\t\t\treturn err\n")
-			c.MethodsCode.WriteString("\t\t}\n")
-			c.MethodsCode.WriteString("\t\tif err := elem.DeserializeBinary(elemBytes); err != nil {\n")
-			c.MethodsCode.WriteString("\t\t\treturn err\n")
-			c.MethodsCode.WriteString("\t\t}\n")
-			c.MethodsCode.WriteString("\t\tm." + field.Name + "[i] = elem\n")
+			c.MethodsCode.WriteLine("var elemLen uint32")
+			c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
+			c.MethodsCode.WriteLine("elemBytes := make([]byte, elemLen)")
+			c.MethodsCode.WriteLine("if _, err := buf.Read(elemBytes); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
+			c.MethodsCode.WriteLine("if err := elem.DeserializeBinary(elemBytes); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
+			c.MethodsCode.WriteLine("m." + field.Name + "[i] = elem")
 		} else {
-			c.MethodsCode.WriteString("\t\tif err := binary.Read(buf, binary.LittleEndian, &m." + field.Name + "[i]); err != nil {\n")
-			c.MethodsCode.WriteString("\t\t\treturn err\n")
-			c.MethodsCode.WriteString("\t\t}\n")
+			c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &m." + field.Name + "[i]); err != nil {")
+			c.MethodsCode.Indent()
+			c.MethodsCode.WriteLine("return err")
+			c.MethodsCode.Unindent()
+			c.MethodsCode.WriteLine("}")
 		}
 	}
 
-	c.MethodsCode.WriteString("\t}\n")
+	c.MethodsCode.Unindent()
+	c.MethodsCode.WriteLine("}")
 	return nil
 }
 

@@ -1,9 +1,8 @@
 package gdGenerator
 
 import (
-	"strings"
-
 	gen "github.com/ccl-lang/ccl/src/cclGenerators"
+	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
@@ -19,5 +18,5 @@ type GDScriptGenerationContext struct {
 	gen.CodeGenerationBase
 
 	// One builder per model class file
-	ModelClasses map[string]*strings.Builder
+	ModelClasses map[string]*codeBuilder.CodeBuilder
 }

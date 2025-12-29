@@ -1,9 +1,8 @@
 package goGenerator
 
 import (
-	"strings"
-
 	gen "github.com/ccl-lang/ccl/src/cclGenerators"
+	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
@@ -17,9 +16,9 @@ type GoGenerationContext struct {
 	gen.CodeGenerationBase
 
 	// MethodsCode is a string builder that contains the generated Go code for the methods.
-	MethodsCode   *strings.Builder
-	TypesCode     *strings.Builder
-	HelpersCode   *strings.Builder
-	VarsCode      *strings.Builder
-	ConstantsCode *strings.Builder
+	MethodsCode   *codeBuilder.CodeBuilder
+	TypesCode     *codeBuilder.CodeBuilder
+	HelpersCode   *codeBuilder.CodeBuilder
+	VarsCode      *codeBuilder.CodeBuilder
+	ConstantsCode *codeBuilder.CodeBuilder
 }

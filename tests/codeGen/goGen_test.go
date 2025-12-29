@@ -11,7 +11,7 @@ import (
 
 const (
 	goSource1 = "../../examples/definitions.ccl"
-	goOutput1 = "../../examples/go_gen3"
+	goOutput1 = "../../examples/go_gen1"
 )
 
 func TestGoGenerator1(t *testing.T) {
