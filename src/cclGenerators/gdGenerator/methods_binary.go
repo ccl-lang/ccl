@@ -22,8 +22,7 @@ func (c *GDScriptGenerationContext) generateSerializeBinaryMethod(model *CCLMode
 	}
 
 	builder.WriteLine("return buffer.data_array")
-	builder.Unindent()
-	builder.NewLine()
+	builder.UnindentLine()
 
 	return nil
 }
@@ -112,8 +111,7 @@ func (c *GDScriptGenerationContext) generateArraySerializeBinary(field *CCLField
 			builder.WriteLine("buffer.put_data(item_bytes)")
 		}
 	}
-	builder.Unindent()
-	builder.NewLine()
+	builder.UnindentLine()
 }
 
 func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
@@ -124,8 +122,7 @@ func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLMo
 	builder.WriteLine("if not data or data.is_empty() or (data.size() == 1 and data[0] == 0):")
 	builder.Indent()
 	builder.WriteLine("return null")
-	builder.Unindent()
-	builder.NewLine()
+	builder.UnindentLine()
 
 	builder.WriteLine("var buffer = StreamPeerBuffer.new()")
 	builder.WriteLine("buffer.data_array = data")
@@ -145,8 +142,7 @@ func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLMo
 	}
 
 	builder.WriteLine("return " + resultName)
-	builder.Unindent()
-	builder.NewLine()
+	builder.UnindentLine()
 	return nil
 }
 
@@ -261,6 +257,5 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 				targetFieldType.GetName() + ".deserialize_binary(item_bytes))")
 		}
 	}
-	builder.Unindent()
-	builder.NewLine()
+	builder.UnindentLine()
 }

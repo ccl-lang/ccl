@@ -106,15 +106,13 @@ func (c *GDScriptGenerationContext) GenerateModelClass(model *CCLModel) error {
 	builder.WriteLine("func get_model_id() -> int:")
 	builder.Indent()
 	builder.WriteLine("return " + modelIdConstName)
-	builder.Unindent()
-	builder.NewLine()
+	builder.UnindentLine()
 
 	// Add clone_empty method
 	builder.WriteLine("func clone_empty() -> " + model.Name + ":")
 	builder.Indent()
 	builder.WriteLine("return " + model.Name + ".new()")
-	builder.Unindent()
-	builder.NewLine()
+	builder.UnindentLine()
 
 	return nil
 }
