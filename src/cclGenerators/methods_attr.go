@@ -1,0 +1,170 @@
+package cclGenerators
+
+import (
+	"slices"
+
+	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/core/globalValues"
+)
+
+//---------------------------------------------------------
+
+// GetGlobalAttribute retrieves a global attribute with the specified name.
+func (c *CodeGenerationBase) GetGlobalAttribute(
+	targetLang globalValues.LanguageType,
+	name string,
+) *cclValues.AttributeUsageInfo {
+	return c.Options.CCLDefinition.FindGlobalAttribute(targetLang, name)
+}
+
+// GetGlobalAttributes retrieves all global attributes with the specified name.
+func (c *CodeGenerationBase) GetGlobalAttributes(
+	targetLang globalValues.LanguageType,
+	name string,
+) []*cclValues.AttributeUsageInfo {
+	return c.Options.CCLDefinition.FindGlobalAttributes(targetLang, name)
+}
+
+// GetGlobalOrModelAttribute retrieves an attribute with the specified name
+// from global attributes or the current model.
+func (c *CodeGenerationBase) GetGlobalOrModelAttribute(
+	targetLang globalValues.LanguageType,
+	name string,
+	currentModel *cclValues.ModelDefinition,
+) *cclValues.AttributeUsageInfo {
+	attr := c.GetGlobalAttribute(targetLang, name)
+	if attr == nil {
+		attr = currentModel.FindAttribute(name)
+	}
+
+	return attr
+}
+
+// GetGlobalOrModelAttributes retrieves all attributes with the specified name
+// from global attributes or the current model.
+func (c *CodeGenerationBase) GetGlobalOrModelAttributes(
+	targetLang globalValues.LanguageType,
+	name string,
+	currentModel *cclValues.ModelDefinition,
+) *cclValues.AttributesCollection {
+	attrs := c.GetGlobalAttributes(targetLang, name)
+	if len(attrs) == 0 {
+		attrs = currentModel.FindAttributes(targetLang, name)
+	}
+	return cclValues.NewAttrsCollection(attrs)
+}
+
+// GetGlobalAndModelAttributes retrieves all attributes with the specified name
+// from both global attributes and the current model.
+func (c *CodeGenerationBase) GetGlobalAndModelAttributes(
+	targetLang globalValues.LanguageType,
+	name string,
+	currentModel *cclValues.ModelDefinition,
+) *cclValues.AttributesCollection {
+	attrs := c.GetGlobalAttributes(targetLang, name)
+	attrs = append(attrs, currentModel.FindAttributes(targetLang, name)...)
+	return cclValues.NewAttrsCollection(attrs)
+}
+
+// GetModelOrGlobalAttribute retrieves an attribute with the specified name
+// from the current model or global attributes.
+func (c *CodeGenerationBase) GetModelOrGlobalAttribute(
+	targetLang globalValues.LanguageType,
+	name string,
+	currentModel *cclValues.ModelDefinition,
+) *cclValues.AttributeUsageInfo {
+	attr := currentModel.FindAttribute(name)
+	if attr == nil {
+		attr = c.GetGlobalAttribute(targetLang, name)
+	}
+
+	return attr
+}
+
+// GetModelAndGlobalAttributes retrieves all attributes with the specified name
+// from both global attributes and the current model.
+func (c *CodeGenerationBase) GetModelAndGlobalAttributes(
+	targetLang globalValues.LanguageType,
+	name string,
+	currentModel *cclValues.ModelDefinition,
+) *cclValues.AttributesCollection {
+	attrs := c.GetGlobalAttributes(targetLang, name)
+	attrs = append(attrs, currentModel.FindAttributes(targetLang, name)...)
+	return cclValues.NewAttrsCollection(attrs)
+}
+
+// GetModelOrGlobalAttributes retrieves all attributes with the specified name
+// from the current model or global attributes.
+func (c *CodeGenerationBase) GetModelOrGlobalAttributes(
+	targetLang globalValues.LanguageType,
+	name string,
+	currentModel *cclValues.ModelDefinition,
+) *cclValues.AttributesCollection {
+	attrs := currentModel.FindAttributes(targetLang, name)
+	if len(attrs) == 0 {
+		attrs = c.GetGlobalAttributes(targetLang, name)
+	}
+	return cclValues.NewAttrsCollection(attrs)
+}
+
+//---------------------------------------------------------
+
+// NeedsCloneMethods returns true if the current model or global attributes
+// indicate that clone methods are needed.
+func (c *CodeGenerationBase) NeedsCloneMethods(
+	targetLang globalValues.LanguageType,
+	currentModel *cclValues.ModelDefinition,
+) bool {
+	attr := c.GetModelOrGlobalAttribute(
+		targetLang,
+		"AddCloneMethods",
+		currentModel,
+	)
+	if attr != nil {
+		return attr.GetParamAt(0).GetAsBool()
+	}
+	return false
+}
+
+// NeedsBinarySerialization returns true if the current model or global attributes
+// indicate that binary serialization is needed.
+func (c *CodeGenerationBase) NeedsBinarySerialization(
+	targetLang globalValues.LanguageType,
+	currentModel *cclValues.ModelDefinition,
+) bool {
+	return c.NeedsSerializationType(
+		targetLang,
+		currentModel,
+		"binary",
+	)
+}
+
+// NeedsJsonSerialization returns true if the current model or global attributes
+// indicate that JSON serialization is needed.
+func (c *CodeGenerationBase) NeedsJsonSerialization(
+	targetLang globalValues.LanguageType,
+	currentModel *cclValues.ModelDefinition,
+) bool {
+	return c.NeedsSerializationType(
+		targetLang,
+		currentModel,
+		"json",
+	)
+}
+
+// NeedsSerializationType checks if the specified serialization type is needed
+// based on global attributes and model-specific attributes.
+func (c *CodeGenerationBase) NeedsSerializationType(
+	targetLang globalValues.LanguageType,
+	currentModel *cclValues.ModelDefinition,
+	sType string,
+) bool {
+	collection := c.GetGlobalOrModelAttributes(
+		targetLang,
+		"SerializationType",
+		currentModel,
+	)
+	return slices.Contains(collection.GetParamsAtAsStrings(0), sType)
+}
+
+//---------------------------------------------------------

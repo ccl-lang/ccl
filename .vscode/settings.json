@@ -1,8 +1,11 @@
 {
     "cSpell.words": [
+        "bytearray",
         "chickensoft",
         "gdscript",
         "getcwd",
-        "Linef"
+        "Linef",
+        "memoryview",
+        "staticmethod"
     ]
 }

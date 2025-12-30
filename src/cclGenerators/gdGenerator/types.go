@@ -15,8 +15,9 @@ type CCLModel = cclValues.ModelDefinition
 type CCLField = cclValues.ModelFieldDefinition
 
 type GDScriptGenerationContext struct {
-	gen.CodeGenerationBase
+	*gen.CodeGenerationBase
 
 	// One builder per model class file
-	ModelClasses map[string]*codeBuilder.CodeBuilder
+	ModelClasses  map[string]*codeBuilder.CodeBuilder
+	ModelSections map[string][]string
 }

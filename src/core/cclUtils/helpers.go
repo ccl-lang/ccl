@@ -6,6 +6,7 @@ import (
 	"github.com/ALiwoto/ssg/ssg"
 )
 
+// SnakeToTitle converts a snake_case string to TitleCase.
 func SnakeToTitle(s string) string {
 	bd := strings.Builder{}
 
@@ -16,18 +17,21 @@ func SnakeToTitle(s string) string {
 	return bd.String()
 }
 
+// ToCamelCase converts a string to camelCase.
 func ToCamelCase(s string) string {
 	title := SnakeToTitle(s)
 
 	return strings.ToLower(title[:1]) + title[1:]
 }
 
+// ToPascalCase converts a string to PascalCase.
 func ToPascalCase(str string) string {
 	title := SnakeToTitle(str)
 
 	return strings.ToUpper(title[:1]) + title[1:]
 }
 
+// ToSnakeCase converts a CamelCase string to snake_case.
 func ToSnakeCase(camel string) (snake string) {
 	var b strings.Builder
 	diff := 'a' - 'A'

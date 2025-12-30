@@ -42,5 +42,4 @@ const (
 // ccl default namespace values
 const (
 	NamespaceBuiltin = "builtin"
-	NamespaceGlobal  = "global"
 )

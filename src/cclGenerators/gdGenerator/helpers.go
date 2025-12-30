@@ -25,7 +25,7 @@ func GenerateCode(options *gen.CodeGenerationOptions) (*gen.CodeGenerationResult
 	}
 
 	goCtx := &GDScriptGenerationContext{
-		CodeGenerationBase: gen.CodeGenerationBase{
+		CodeGenerationBase: &gen.CodeGenerationBase{
 			Options: options,
 		},
 	}

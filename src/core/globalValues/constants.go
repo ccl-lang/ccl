@@ -1,7 +1,7 @@
 package globalValues
 
 const (
-	CurrentCCLVersion = "v0.0.2"
+	CurrentCCLVersion = "v0.0.3"
 )
 
 const (
@@ -15,6 +15,15 @@ const (
 	LanguageTS
 )
 
+// naming styles
+const (
+	StylePascalCase = "PascalCase"
+	StyleCamelCase  = "camelCase"
+	StyleSnakeCase  = "snake_case"
+	StyleKebabCase  = "kebab-case"
+)
+
+// namespaces constants
 const (
 	DefaultMainNamespace = "main"
 )

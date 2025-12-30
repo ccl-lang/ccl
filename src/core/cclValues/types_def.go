@@ -107,6 +107,9 @@ type ModelDefinition struct {
 	// Name is the name of the model.
 	Name string
 
+	// Namespace is the namespace of the model.
+	Namespace string
+
 	// Fields is an array of field definitions.
 	Fields []*ModelFieldDefinition
 

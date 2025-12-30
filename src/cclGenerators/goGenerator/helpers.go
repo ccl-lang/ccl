@@ -25,7 +25,7 @@ func GenerateCode(options *gen.CodeGenerationOptions) (*gen.CodeGenerationResult
 	}
 
 	goCtx := &GoGenerationContext{
-		CodeGenerationBase: gen.CodeGenerationBase{
+		CodeGenerationBase: &gen.CodeGenerationBase{
 			Options: options,
 		},
 	}

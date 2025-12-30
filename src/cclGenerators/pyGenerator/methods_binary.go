@@ -33,7 +33,7 @@ func (c *PythonGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 	fieldName := "self." + fieldRawName
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(fieldRawName + "_bytes = " + fieldName + ".encode('utf-8')").
+		builder.WriteLine(fieldRawName + "_bytes = " + fieldName + ".encode(\"utf-8\")").
 			WriteLine("buffer.extend(struct.pack('<I', len(" + fieldRawName + "_bytes)))").
 			WriteLine("buffer.extend(" + fieldRawName + "_bytes)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
@@ -65,7 +65,7 @@ func (c *PythonGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 		builder.WriteLine("buffer.extend(struct.pack('<q', " + fieldName + "))")
 	default:
 		// Custom type handling
-		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
+		if field.IsCustomTypeModel() {
 			builder.WriteLine("if " + fieldName + ":").
 				Indent().
 				WriteLine(fieldRawName + "_bytes = " + fieldName + ".serialize_binary()").
@@ -90,7 +90,7 @@ func (c *PythonGenerationContext) generateArraySerializeBinary(field *CCLField, 
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine("item_bytes = item.encode('utf-8')").
+		builder.WriteLine("item_bytes = item.encode(\"utf-8\")").
 			WriteLine("buffer.extend(struct.pack('<I', len(item_bytes)))").
 			WriteLine("buffer.extend(item_bytes)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
@@ -116,7 +116,7 @@ func (c *PythonGenerationContext) generateArraySerializeBinary(field *CCLField, 
 	case cclValues.TypeNameBool:
 		builder.WriteLine("buffer.extend(struct.pack('<b', 1 if item else 0))")
 	default:
-		if c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName()) {
+		if targetFieldType.IsCustomTypeModel() {
 			builder.WriteLine("if item:").
 				Indent().
 				WriteLine("item_bytes = item.serialize_binary()").
@@ -180,7 +180,7 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 			Indent().
 			WriteLine("return None").
 			Unindent().
-			WriteLine(resultField + " = bytes(buffer[offset:offset+" + fieldName + "_len]).decode('utf-8')").
+			WriteLine(resultField + " = bytes(buffer[offset:offset+" + fieldName + "_len]).decode(\"utf-8\")").
 			WriteLine("offset += " + fieldName + "_len")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
 		builder.WriteLine(resultField + " = struct.unpack_from('<i', buffer, offset)[0]").
@@ -225,7 +225,7 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 			WriteLine("offset += 8")
 	default:
 		// Custom type handling
-		if c.Options.CCLDefinition.IsCustomType(field.Type.GetName()) {
+		if field.IsCustomTypeModel() {
 			builder.WriteLine(fieldName + "_len = struct.unpack_from('<I', buffer, offset)[0]").
 				WriteLine("offset += 4").
 				WriteLine(fieldName + "_bytes = bytes(buffer[offset:offset+" + fieldName + "_len])").
@@ -259,7 +259,7 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 			Indent().
 			WriteLine("return None").
 			Unindent().
-			WriteLine("item = bytes(buffer[offset:offset+item_len]).decode('utf-8')").
+			WriteLine("item = bytes(buffer[offset:offset+item_len]).decode(\"utf-8\")").
 			WriteLine("offset += item_len").
 			WriteLine(resultField + ".append(item)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
@@ -296,7 +296,7 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 		builder.WriteLine(resultField + ".append(struct.unpack_from('<b', buffer, offset)[0] != 0)").
 			WriteLine("offset += 1")
 	default:
-		if c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName()) {
+		if targetFieldType.IsCustomTypeModel() {
 			builder.WriteLine("item_len = struct.unpack_from('<I', buffer, offset)[0]").
 				WriteLine("offset += 4").
 				WriteLine("if item_len > len(buffer) - offset:").

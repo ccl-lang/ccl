@@ -62,4 +62,9 @@ func (c *AttributesCollection) GetParamsAtAsStrings(index int) []string {
 	return params
 }
 
+// IsEmpty returns true if the attributes collection is empty.
+func (c *AttributesCollection) IsEmpty() bool {
+	return c == nil || len(c.Attrs) == 0
+}
+
 //---------------------------------------------------------

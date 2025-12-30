@@ -12,53 +12,8 @@ import (
 )
 
 const (
-	pySource1 = "definitions1.ccl"
-)
-
-func TestPythonGenerator1(t *testing.T) {
-	// Setup output directory
-	tmpDir, err := filepath.Abs("ccl_py_test_1")
-	if err != nil {
-		t.Fatalf("Failed to get absolute path: %v", err)
-	}
-
-	// Clean up previous run
-	if err := os.RemoveAll(tmpDir); err != nil {
-		t.Fatalf("Failed to remove existing dir: %v", err)
-	}
-
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		t.Fatalf("Failed to create dir: %v", err)
-	}
-
-	fmt.Printf("Generating Python code to: %s\n", tmpDir)
-
-	// Parse CCL
-	parsedDefinitions, parseErr := cclParser.ParseCCLSourceFile(&cclParser.CCLParseOptions{
-		SourceFilePath: pySource1,
-	})
-	if parseErr != nil {
-		t.Fatalf("Error: failed to parse source file %s: %v\n", pySource1, parseErr)
-		return
-	}
-
-	// Generate Code
-	cclLoader.LoadGenerators()
-	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
-		CCLDefinition:  parsedDefinitions,
-		OutputPath:     filepath.Join(tmpDir, "models"),
-		TargetLanguage: "python",
-	})
-	if err != nil {
-		t.Fatalf("Error: failed to generate code: %v\n", err)
-		return
-	} else if result == nil {
-		t.Fatalf("Unknown error: failed to generate code")
-		return
-	}
-
-	// Create verify.py to test generated code
-	verifyPyContent := `
+	pySource1      = "definitions1.ccl"
+	mainPyContent1 = `
 import sys
 import os
 import struct
@@ -139,9 +94,53 @@ if __name__ == "__main__":
 		print(f"Verification failed: {e}")
 		sys.exit(1)
 `
+)
+
+func TestPythonGenerator1(t *testing.T) {
+	// Setup output directory
+	tmpDir, err := filepath.Abs("ccl_py_test_1")
+	if err != nil {
+		t.Fatalf("Failed to get absolute path: %v", err)
+	}
+
+	// Clean up previous run
+	if err := os.RemoveAll(tmpDir); err != nil {
+		t.Fatalf("Failed to remove existing dir: %v", err)
+	}
+
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		t.Fatalf("Failed to create dir: %v", err)
+	}
+
+	fmt.Printf("Generating Python code to: %s\n", tmpDir)
+
+	// Parse CCL
+	parsedDefinitions, parseErr := cclParser.ParseCCLSourceFile(&cclParser.CCLParseOptions{
+		SourceFilePath: pySource1,
+	})
+	if parseErr != nil {
+		t.Fatalf("Error: failed to parse source file %s: %v\n", pySource1, parseErr)
+		return
+	}
+
+	// Generate Code
+	cclLoader.LoadGenerators()
+	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
+		CCLDefinition:  parsedDefinitions,
+		OutputPath:     filepath.Join(tmpDir, "models"),
+		TargetLanguage: "python",
+	})
+	if err != nil {
+		t.Fatalf("Error: failed to generate code: %v\n", err)
+		return
+	} else if result == nil {
+		t.Fatalf("Unknown error: failed to generate code")
+		return
+	}
+
 	output, err := RunPythonProject(&RunPythonOptions{
 		TargetPath:    tmpDir,
-		RunnerContent: verifyPyContent,
+		RunnerContent: mainPyContent1,
 	})
 	if err != nil {
 		t.Fatalf("Failed to run generated code: %v\nOutput:\n%s", err, output)

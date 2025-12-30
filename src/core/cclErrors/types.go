@@ -36,3 +36,13 @@ type UnsupportedTypeDefinitionError struct {
 	TypeName       string
 	TargetLanguage string
 }
+
+// UnsupportedFileNamingStyleError is an error that is returned when an
+// unsupported file naming style is encountered for a certain model
+// when compiling to a certain target language.
+type UnsupportedFileNamingStyleError struct {
+	ModelName       string
+	StyleName       string
+	SupportedStyles []string
+	TargetLanguage  string
+}

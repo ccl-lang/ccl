@@ -100,6 +100,20 @@ func (m *ModelDefinition) DoesAliasMatch(targetAlias string) bool {
 	return false
 }
 
+// GetNamespace returns a non-empty namespace for the model.
+func (m *ModelDefinition) GetNamespace() string {
+	if m.Namespace == "" {
+		return gValues.DefaultMainNamespace
+	}
+
+	return m.Namespace
+}
+
+// GetFullName returns the full name of the model, including its namespace.
+func (m *ModelDefinition) GetFullName() string {
+	return m.GetNamespace() + "." + m.Name
+}
+
 // HasAttribute returns true if the model definition has at least one of the
 // given attributes.
 func (m *ModelDefinition) HasAttribute(attributeName ...string) bool {
@@ -156,6 +170,16 @@ func (m *ModelDefinition) FindAttribute(name string) *AttributeUsageInfo {
 // method.
 func (f *ModelFieldDefinition) IsArray() bool {
 	return f.Type.IsArray()
+}
+
+// IsCustomTypeModel returns true if the field's type is a custom model.
+func (f *ModelFieldDefinition) IsCustomTypeModel() bool {
+	return f != nil && f.Type.IsCustomTypeModel()
+}
+
+// GetFullTypeName returns the full type name of the field's type.
+func (f *ModelFieldDefinition) GetFullTypeName() string {
+	return f.Type.GetDefinition().GetFullName()
 }
 
 // HasNoType returns true when the field's type field is not

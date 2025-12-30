@@ -1,6 +1,9 @@
 package cclValues
 
-import "github.com/ALiwoto/ssg/ssg"
+import (
+	"github.com/ALiwoto/ssg/ssg"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+)
 
 //---------------------------------------------------------
 
@@ -29,6 +32,15 @@ func (t *CCLTypeDefinition) GetName() string {
 	return t.name
 }
 
+// GetShortModelName returns the short name of the model type.
+func (t *CCLTypeDefinition) GetShortModelName() string {
+	if t.model != nil {
+		return t.model.Name
+	}
+
+	return ""
+}
+
 func (t *CCLTypeDefinition) AddGenericParam(targetType *CCLTypeDefinition) error {
 	if targetType == nil {
 		return ErrGenericParamCantBeNil
@@ -45,7 +57,7 @@ func (t *CCLTypeDefinition) AddGenericParam(targetType *CCLTypeDefinition) error
 
 // GetNamespace returns a non-empty namespace for the type.
 // If the type is built-in, it returns "builtin".
-// If the type has no namespace, it returns "global".
+// If the type has no namespace, it returns "main".
 // Otherwise, it returns the assigned namespace.
 func (t *CCLTypeDefinition) GetNamespace() string {
 	if t.IsBuiltIn() {
@@ -53,7 +65,7 @@ func (t *CCLTypeDefinition) GetNamespace() string {
 	}
 
 	if t.namespace == "" {
-		return NamespaceGlobal
+		return gValues.DefaultMainNamespace
 	}
 
 	return t.namespace
@@ -74,7 +86,7 @@ func (t *CCLTypeDefinition) GetModelDefinition() *ModelDefinition {
 // IsCustomModel returns true if the type is a custom model.
 // It does NOT necessarily check that model field is set.
 func (t *CCLTypeDefinition) IsCustomModel() bool {
-	return t.typeFlags&TypeFlagCustomModel != 0
+	return t != nil && t.typeFlags&TypeFlagCustomModel != 0
 }
 
 // IsCustomType simply calls IsCustomModel (for now).

@@ -1,5 +1,7 @@
 package cclErrors
 
+import "strings"
+
 //---------------------------------------------------------
 
 func (v *ValidationError) Error() string {
@@ -31,6 +33,15 @@ func (u *UnsupportedFieldTypeError) Error() string {
 
 func (u *UnsupportedTypeDefinitionError) Error() string {
 	return "Unsupported type definition: " + u.TypeName +
+		" when compiling to " + u.TargetLanguage
+}
+
+//---------------------------------------------------------
+
+func (u *UnsupportedFileNamingStyleError) Error() string {
+	return "Unsupported file naming style: " + u.StyleName +
+		" for model " + u.ModelName +
+		". Supported styles are: [" + strings.Join(u.SupportedStyles, ", ") + "]" +
 		" when compiling to " + u.TargetLanguage
 }
 

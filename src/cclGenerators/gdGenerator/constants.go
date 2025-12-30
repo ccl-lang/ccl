@@ -1,5 +1,9 @@
 package gdGenerator
 
 const (
-	LanguageName = "Go"
+	LanguageName = "Gd"
+)
+
+const (
+	DefaultFileNamingStyle = "snake_case"
 )

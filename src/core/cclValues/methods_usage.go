@@ -17,6 +17,11 @@ func (u *CCLTypeUsage) GetDefinition() *CCLTypeDefinition {
 	return u.definition
 }
 
+// IsCustomTypeModel returns true if the type usage is of a custom model type.
+func (u *CCLTypeUsage) IsCustomTypeModel() bool {
+	return u != nil && u.definition != nil && u.definition.IsCustomModel()
+}
+
 // GetUnderlyingType returns the underlying type of the type usage.
 func (u *CCLTypeUsage) GetUnderlyingType() *CCLTypeUsage {
 	return u.underlyingType
