@@ -9,7 +9,6 @@ import (
 	"github.com/ccl-lang/ccl/src/cclGenerators"
 	"github.com/ccl-lang/ccl/src/cclLoader"
 	"github.com/ccl-lang/ccl/src/cclParser"
-	"github.com/ccl-lang/ccl/tests/codeGen/goGen"
 )
 
 const (
@@ -128,7 +127,7 @@ func main() {
 	fmt.Println("Runtime verification successful!")
 }
 `
-	output, err := goGen.RunGoProject(&goGen.RunGoOptions{
+	output, err := RunGoProject(&RunGoOptions{
 		TargetPath:    tmpDir,
 		RunnerContent: mainGoContent,
 	})

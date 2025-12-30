@@ -7,6 +7,7 @@ import (
 
 	"github.com/ALiwoto/ssg/ssg"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
+	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	"github.com/ccl-lang/ccl/src/core/globalValues"
@@ -59,7 +60,7 @@ func (c *GDScriptGenerationContext) generateCodeForMode(model *CCLModel) error {
 	}
 
 	path := c.Options.OutputPath + string(os.PathSeparator)
-	fileName := ToPascalCase(model.Name) + ".gd"
+	fileName := cclUtils.ToPascalCase(model.Name) + ".gd"
 	err = ssg.WriteFileStr(path+fileName, builder.String())
 	if err != nil {
 		return err
@@ -82,7 +83,7 @@ func (c *GDScriptGenerationContext) GenerateModelClass(model *CCLModel) error {
 		NewLine()
 
 	// Write model ID constant
-	modelIdConstName := "MODEL_ID_" + strings.ToUpper(ToSnakeCase(model.Name))
+	modelIdConstName := "MODEL_ID_" + strings.ToUpper(cclUtils.ToSnakeCase(model.Name))
 	builder.WriteLine("const " + modelIdConstName +
 		" = " + ssg.ToBase10(model.ModelId)).
 		NewLine()
@@ -98,7 +99,7 @@ func (c *GDScriptGenerationContext) GenerateModelClass(model *CCLModel) error {
 				TargetLanguage: LanguageName,
 			}
 		}
-		builder.WriteLine("var " + ToSnakeCase(field.Name) + ": " + varType)
+		builder.WriteLine("var " + cclUtils.ToSnakeCase(field.Name) + ": " + varType)
 	}
 	builder.NewLine()
 

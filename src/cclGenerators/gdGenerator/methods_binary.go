@@ -1,6 +1,7 @@
 package gdGenerator
 
 import (
+	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
@@ -28,7 +29,7 @@ func (c *GDScriptGenerationContext) generateSerializeBinaryMethod(model *CCLMode
 }
 
 func (c *GDScriptGenerationContext) generateFieldSerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldRawName := ToSnakeCase(field.Name)
+	fieldRawName := cclUtils.ToSnakeCase(field.Name)
 	fieldName := "self." + fieldRawName
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
@@ -74,7 +75,7 @@ func (c *GDScriptGenerationContext) generateFieldSerializeBinary(field *CCLField
 
 func (c *GDScriptGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
 	targetFieldType := field.Type.GetUnderlyingType()
-	fieldName := "self." + ToSnakeCase(field.Name)
+	fieldName := "self." + cclUtils.ToSnakeCase(field.Name)
 	builder.WriteLine("buffer.put_u32(" + fieldName + ".size())").
 		WriteLine("for item in " + fieldName + ":").
 		Indent()
@@ -149,7 +150,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
 	field *CCLField,
 	builder *codeBuilder.CodeBuilder,
 ) {
-	fieldName := ToSnakeCase(field.Name)
+	fieldName := cclUtils.ToSnakeCase(field.Name)
 	resultField := resultName + "." + fieldName
 
 	switch field.Type.GetName() {
@@ -206,7 +207,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	builder *codeBuilder.CodeBuilder,
 ) {
 	targetFieldType := field.Type.GetUnderlyingType()
-	fieldName := ToSnakeCase(field.Name)
+	fieldName := cclUtils.ToSnakeCase(field.Name)
 	resultField := resultName + "." + fieldName
 
 	builder.WriteLine("var " + fieldName + "_len = buffer.get_u32()").

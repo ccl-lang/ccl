@@ -9,7 +9,6 @@ import (
 	"github.com/ccl-lang/ccl/src/cclGenerators"
 	"github.com/ccl-lang/ccl/src/cclLoader"
 	"github.com/ccl-lang/ccl/src/cclParser"
-	"github.com/ccl-lang/ccl/tests/codeGen/gdGen"
 )
 
 const (
@@ -112,7 +111,7 @@ func _init():
 func _ready():
 	quit(1) # Should not reach here
 `
-	output, err := gdGen.RunGodotProject(&gdGen.RunGodotOptions{
+	output, err := RunGodotProject(&RunGodotOptions{
 		TargetPath:    tmpDir,
 		RunnerContent: runnerGdContent,
 	})

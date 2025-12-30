@@ -1,4 +1,4 @@
-package gdGen
+package gdGen_test
 
 import (
 	"fmt"
@@ -7,6 +7,11 @@ import (
 	"path/filepath"
 	"runtime"
 )
+
+type RunGodotOptions struct {
+	TargetPath    string
+	RunnerContent string
+}
 
 // Helper function to create the command based on OS and environment
 func getGodotCmd(args ...string) *exec.Cmd {

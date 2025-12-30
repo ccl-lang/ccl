@@ -1,4 +1,4 @@
-package goGen
+package goGen_test
 
 import (
 	"fmt"
@@ -6,6 +6,11 @@ import (
 	"os/exec"
 	"path/filepath"
 )
+
+type RunGoOptions struct {
+	TargetPath    string
+	RunnerContent string
+}
 
 // RunGoProject runs a Go project located at targetPath with the provided runnerContent script.
 func RunGoProject(opts *RunGoOptions) (string, error) {

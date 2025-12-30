@@ -28,5 +28,6 @@ experiment_files
 
 tests/codeGen/gdGen/ccl_gd_test_*
 tests/codeGen/goGen/ccl_go_test_*
+tests/codeGen/pyGen/ccl_py_test_*
 
 
