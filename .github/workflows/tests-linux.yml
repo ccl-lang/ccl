@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python
       uses: actions/setup-python@v6
@@ -27,6 +27,12 @@ jobs:
       uses: chickensoft-games/setup-godot@v2
       with:
         version: 4.5.0
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '22'
+        cache: 'npm'
 
     - name: Test
       run: go test -v ./...

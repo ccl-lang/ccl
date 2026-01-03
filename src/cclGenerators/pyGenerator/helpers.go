@@ -26,7 +26,7 @@ func GenerateCode(options *gen.CodeGenerationOptions) (*gen.CodeGenerationResult
 	}
 
 	pyCtx := &PythonGenerationContext{
-		CodeGenerationBase: gen.CodeGenerationBase{
+		CodeGenerationBase: &gen.CodeGenerationBase{
 			Options: options,
 		},
 	}

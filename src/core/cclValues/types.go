@@ -5,6 +5,10 @@ import "github.com/ccl-lang/ccl/src/core/cclUtils"
 // cclTypeFlag represents flags for a specific ccl type definition.
 type cclTypeFlag int
 
+// CCLReservedLiteral is a type alias for reserved literals in CCL.
+// These include: null, true, false, nil, self, super, this, etc...
+type CCLReservedLiteral = string
+
 // ParameterInstance is a struct that represents a passed parameter instance.
 // This parameter is for when the user is passing a parameter to a function or any
 // other place in the source code, such as attributes.

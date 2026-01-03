@@ -205,16 +205,23 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 						p.advance()
 						continue
 					}
+
+					// we got invalid token here
+					return nil, &UnexpectedTokenAfterAssignmentError{
+						ParamName:      currentParam.Name,
+						TokenValue:     p.current.GetIdentifier(),
+						SourcePosition: p.getSourcePosition(),
+					}
 				}
 
 				continue
 			}
 
-			if p.IsCurrentLiteralValue() {
+			if p.IsCurrentLiteralValue() || p.IsCurrentReservedLiteral() {
 				if currentParam != nil {
 					return nil, &UnexpectedTokenAfterParameterError{
 						ParamName:      currentParam.Name,
-						TokenValue:     p.current.GetIdentifier(),
+						TokenValue:     p.current.FormatValueAsString(),
 						SourcePosition: p.getSourcePosition(),
 					}
 				}
@@ -225,6 +232,14 @@ func (p *CCLParser) parseSingleAttribute() (*cclValues.AttributeUsageInfo, error
 				}
 				currentParam.ChangeValue(p.current.GetLiteralValue())
 				p.advance()
+				continue
+			}
+
+			// if we reach here, then we have an unexpected token
+			return nil, &UnexpectedTokenError{
+				Expected:       cclLexer.TokenTypeIdentifier,
+				Actual:         p.current.Type,
+				SourcePosition: p.getSourcePosition(),
 			}
 		}
 

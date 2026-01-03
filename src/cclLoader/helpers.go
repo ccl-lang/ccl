@@ -6,6 +6,7 @@ import (
 	"github.com/ccl-lang/ccl/src/cclGenerators/gdGenerator"
 	"github.com/ccl-lang/ccl/src/cclGenerators/goGenerator"
 	"github.com/ccl-lang/ccl/src/cclGenerators/pyGenerator"
+	"github.com/ccl-lang/ccl/src/cclGenerators/tsGenerator"
 )
 
 func LoadGenerators() {
@@ -27,5 +28,10 @@ func LoadGenerators() {
 	// py generator
 	for _, currentAlias := range pyGenerator.LanguageAliases {
 		cclGenerators.CodeGenerators[currentAlias] = pyGenerator.GenerateCode
+	}
+
+	// ts generator
+	for _, currentAlias := range tsGenerator.LanguageAliases {
+		cclGenerators.CodeGenerators[currentAlias] = tsGenerator.GenerateCode
 	}
 }

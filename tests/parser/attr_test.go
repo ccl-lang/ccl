@@ -20,7 +20,7 @@ type attributeInfo struct {
 
 const AttrTestInput1 = `
 #[MyAttribute1("Hello")]
-#[MyAttribute2("Param1", "Param2")]
+#[MyAttribute2(true, "Param2")]
 #[MyAttribute3("Param1", "Param2", 1234)]
 `
 
@@ -39,7 +39,7 @@ var AttrTestInput1Expected = []attributeInfo{
 		Parameters: []attributeParamInfo{
 			{
 				Name:  "",
-				Value: "Param1",
+				Value: true,
 			},
 			{
 				Name:  "",

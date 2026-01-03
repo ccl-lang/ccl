@@ -119,3 +119,22 @@ var (
 		},
 	}
 )
+
+// maps related to reserved literal tokens
+var (
+	reservedLiteralTokenToTypeUsage = map[cclValues.CCLReservedLiteral]cclValues.SpecificCCLTypeUsageGenerator{
+		cclValues.ReservedLiteralTrue: func(c *cclValues.CCLCodeContext) *cclValues.CCLTypeUsage {
+			return c.NewBuiltinTypeUsage(cclValues.TypeNameBool)
+		},
+		cclValues.ReservedLiteralFalse: func(c *cclValues.CCLCodeContext) *cclValues.CCLTypeUsage {
+			return c.NewBuiltinTypeUsage(cclValues.TypeNameBool)
+		},
+	}
+	reservedLiteralTokenToInternalValue = map[cclValues.CCLReservedLiteral]any{
+		cclValues.ReservedLiteralNull:  nil,
+		cclValues.ReservedLiteralNil:   nil,
+		cclValues.ReservedLiteralNone:  nil,
+		cclValues.ReservedLiteralTrue:  true,
+		cclValues.ReservedLiteralFalse: false,
+	}
+)

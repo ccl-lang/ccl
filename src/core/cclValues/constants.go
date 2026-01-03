@@ -43,3 +43,16 @@ const (
 const (
 	NamespaceBuiltin = "builtin"
 )
+
+const (
+	ReservedLiteralTrue     = "true"
+	ReservedLiteralFalse    = "false"
+	ReservedLiteralNull     = "null"
+	ReservedLiteralNil      = "nil"
+	ReservedLiteralNone     = "None"
+	ReservedLiteralSelf     = "self"
+	ReservedLiteralSuper    = "super"
+	ReservedLiteralThis     = "this"
+	ReservedLiteralNaN      = "NaN"
+	ReservedLiteralInfinity = "Infinity"
+)

@@ -318,6 +318,9 @@ func Lex(input string) ([]*CCLToken, error) {
 			} else if cclValues.IsBuiltinTypeName(identifier) {
 				tokenType = TokenTypeDataType
 				identifier = cclValues.GetNormalizedTypeName(identifier)
+			} else if cclValues.IsReservedLiteral(identifier) {
+				tokenType = TokenTypeReservedLiteral
+				identifier = cclValues.GetNormalizedReservedLiteral(identifier)
 			}
 
 			tokens = append(tokens, &CCLToken{

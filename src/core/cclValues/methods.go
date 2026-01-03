@@ -177,6 +177,12 @@ func (f *ModelFieldDefinition) IsCustomTypeModel() bool {
 	return f != nil && f.Type.IsCustomTypeModel()
 }
 
+// IsNullable returns true if the field's type is nullable.
+func (c *ModelFieldDefinition) IsNullable() bool {
+	// for now, we just return custom type models as nullable
+	return c.IsCustomTypeModel()
+}
+
 // GetFullTypeName returns the full type name of the field's type.
 func (f *ModelFieldDefinition) GetFullTypeName() string {
 	return f.Type.GetDefinition().GetFullName()

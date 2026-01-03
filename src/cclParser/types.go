@@ -12,6 +12,7 @@ import (
 type CCLParseOptions struct {
 	SourceFilePath string
 	SourceContent  string
+	CodeContext    *cclValues.CCLCodeContext
 }
 
 type CCLParser struct {

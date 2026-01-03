@@ -262,6 +262,11 @@ func (p *CCLParser) IsCurrentLiteralValue() bool {
 	return p.current.IsTokenLiteralValue()
 }
 
+// IsCurrentReservedLiteral checks if the current token is a reserved literal.
+func (p *CCLParser) IsCurrentReservedLiteral() bool {
+	return p.current.IsReservedLiteral()
+}
+
 // FindTokenPattern peeks in front of the current token to see if the provided
 // patterns match the tokens from now on.
 // Comments are ignored. Tokens which are -1 in the specified arguments, will

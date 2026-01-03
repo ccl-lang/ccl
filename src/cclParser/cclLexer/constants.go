@@ -26,6 +26,7 @@ const (
 	TokenTypeStringLiteral                        // a string literal
 	TokenTypeIntLiteral                           // an integer literal
 	TokenTypeFloatLiteral                         // a float literal
+	TokenTypeReservedLiteral                      // a reserved literal: true, false, null, nil, self, super, this, etc...
 	TokenTypeWhitespace                           // a whitespace: ' ', '\t', '\n', '\r'
 	TokenTypeLeftParenthesis                      // (
 	TokenTypeRightParenthesis                     // )

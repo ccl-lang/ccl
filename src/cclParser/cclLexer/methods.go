@@ -40,6 +40,17 @@ func (t *CCLToken) GetStringLiteral() string {
 	return ""
 }
 
+// GetReservedLiteral returns the reserved literal value of the token.
+// If the token is not a reserved literal, it returns an empty string.
+// Some examples of reserved literals are: true, false, null, nil, self, super, this.
+func (t *CCLToken) GetReservedLiteral() string {
+	if t.Type == TokenTypeReservedLiteral {
+		return t.value.(string)
+	}
+
+	return ""
+}
+
 // GetComment returns the comment value of the token.
 // If the token is not a comment, it returns an empty string.
 func (t *CCLToken) GetComment() string {
@@ -90,6 +101,14 @@ func (t *CCLToken) IsIdentifier() bool {
 	return t.Type == TokenTypeIdentifier
 }
 
+// IsReservedLiteral returns true if the token is a reserved literal.
+// e.g. true, false, null, nil, self, super, this
+func (t *CCLToken) IsReservedLiteral() bool {
+	return t.Type == TokenTypeReservedLiteral
+}
+
+// IsBuiltinDataType returns true if the token is a built-in data type.
+// e.g. int, float, string, bool, etc.
 func (t *CCLToken) IsBuiltinDataType() bool {
 	return t.Type == TokenTypeDataType
 }
@@ -102,6 +121,13 @@ func (t *CCLToken) GetLiteralTypeInfo(ctx *cclValues.CCLCodeContext) *cclValues.
 		// we have a value token, so we need to return the type info
 		// based on the token type
 		generator := literalValueTokenToTypeUsage[t.Type]
+		if generator == nil {
+			return nil
+		}
+		return generator(ctx)
+	} else if t.IsReservedLiteral() {
+		// reserved literals also have type info
+		generator := reservedLiteralTokenToTypeUsage[t.GetReservedLiteral()]
 		if generator == nil {
 			return nil
 		}
@@ -144,6 +170,10 @@ func (t *CCLToken) GetCustomTypeUsage(
 
 // GetLiteralValue returns the literal value of the token.
 func (t *CCLToken) GetLiteralValue() any {
+	if t.IsReservedLiteral() {
+		return reservedLiteralTokenToInternalValue[t.value.(string)]
+	}
+
 	if !t.IsTokenLiteralValue() {
 		// we don't have a value token
 		return nil

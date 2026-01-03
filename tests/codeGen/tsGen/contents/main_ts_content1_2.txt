@@ -1,0 +1,84 @@
+// Main content needed for test function TestTSGenerator1_1 in file tsGen1_test.go.
+
+import { User, SkinInfo, BasicSkin, Position } from './models/generated';
+
+function testUser() {
+	console.log("Testing User...");
+	const user = new User();
+	user.id = "user123";
+	user.username = "test_user";
+	
+	const skin = new SkinInfo();
+	skin.type = 0;
+	
+	const basicSkin = new BasicSkin();
+	basicSkin.r = 255;
+	basicSkin.g = 0;
+	basicSkin.b = 0;
+	
+	skin.basic = basicSkin;
+	user.skin = skin;
+
+	// Test serialization
+	const userBinary = user.serializeBinary();
+	if (!userBinary || userBinary.length === 0) {
+		throw new Error("Failed to serialize user");
+	}
+
+	// Test deserialization
+	const deserializedUser = User.deserializeBinary(userBinary);
+	if (!deserializedUser) {
+		throw new Error("Failed to deserialize user");
+	}
+
+	if (user.username !== "test_user") {
+		throw new Error("Username mismatch");
+	}
+	if (deserializedUser.username !== "test_user") {
+		throw new Error("Deserialized username mismatch");
+	}
+	
+	if (deserializedUser?.skin?.basic?.r !== 255) {
+		throw new Error("Deserialized skin color mismatch");
+	}
+
+	console.log("User test passed!");
+}
+
+function testPosition() {
+	console.log("Testing Position...");
+	const pos = new Position();
+	pos.x = 10;
+	pos.y = 20;
+	pos.z = 30;
+
+	if (pos.x !== 10) {
+		throw new Error("Position X mismatch");
+	}
+
+	// Test serialization
+	const posBinary = pos.serializeBinary();
+	if (!posBinary || posBinary.length === 0) {
+		throw new Error("Failed to serialize position");
+	}
+
+	// Test deserialization
+	const deserializedPos = Position.deserializeBinary(posBinary);
+	if (!deserializedPos) {
+		throw new Error("Failed to deserialize position");
+	}
+
+	if (deserializedPos.x !== 10) {
+		throw new Error("Deserialized Position X mismatch");
+	}
+
+	console.log("Position test passed!");
+}
+
+try {
+	testUser();
+	testPosition();
+	console.log("Runtime verification successful!");
+} catch (e) {
+	console.error("Verification failed:", e);
+}

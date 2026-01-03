@@ -31,8 +31,10 @@ func ParseCCLSourceContent(options *CCLParseOptions) (*cclValues.SourceCodeDefin
 		return nil, err
 	}
 
-	ctx := cclValues.NewCCLCodeContext()
-	return ParseCCL(ctx, allTokens, options)
+	if options.CodeContext == nil {
+		options.CodeContext = cclValues.NewCCLCodeContext()
+	}
+	return ParseCCL(options.CodeContext, allTokens, options)
 }
 
 func ParseCCL(

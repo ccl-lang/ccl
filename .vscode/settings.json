@@ -6,6 +6,7 @@
         "getcwd",
         "Linef",
         "memoryview",
-        "staticmethod"
+        "staticmethod",
+        "subarray"
     ]
 }

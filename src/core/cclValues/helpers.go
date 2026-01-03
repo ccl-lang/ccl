@@ -18,6 +18,18 @@ func GetNormalizedKeywordName(value string) string {
 	return keywordNamesToNormalizedValues[value]
 }
 
+// IsReservedLiteral checks if the given value is a reserved literal.
+// Reserved literals include: null, true, false, nil, self, super, this.
+func IsReservedLiteral(value string) bool {
+	_, exists := reservedLiteralsToNormalizedValues[value]
+	return exists
+}
+
+// GetNormalizedReservedLiteral returns the normalized value of the given reserved literal.
+func GetNormalizedReservedLiteral(value string) string {
+	return reservedLiteralsToNormalizedValues[value]
+}
+
 // NewTypeInfoWithOperators_OLD creates a new type info with operators.
 // TODO: refactor this to handle operators in a better way.
 func NewTypeInfoWithOperators_OLD(name string, operators ...string) *CCLTypeDefinition {

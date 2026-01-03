@@ -4,14 +4,14 @@ import (
 	"slices"
 
 	"github.com/ccl-lang/ccl/src/core/cclValues"
-	"github.com/ccl-lang/ccl/src/core/globalValues"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 //---------------------------------------------------------
 
 // GetGlobalAttribute retrieves a global attribute with the specified name.
 func (c *CodeGenerationBase) GetGlobalAttribute(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	name string,
 ) *cclValues.AttributeUsageInfo {
 	return c.Options.CCLDefinition.FindGlobalAttribute(targetLang, name)
@@ -19,7 +19,7 @@ func (c *CodeGenerationBase) GetGlobalAttribute(
 
 // GetGlobalAttributes retrieves all global attributes with the specified name.
 func (c *CodeGenerationBase) GetGlobalAttributes(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	name string,
 ) []*cclValues.AttributeUsageInfo {
 	return c.Options.CCLDefinition.FindGlobalAttributes(targetLang, name)
@@ -28,7 +28,7 @@ func (c *CodeGenerationBase) GetGlobalAttributes(
 // GetGlobalOrModelAttribute retrieves an attribute with the specified name
 // from global attributes or the current model.
 func (c *CodeGenerationBase) GetGlobalOrModelAttribute(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	name string,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributeUsageInfo {
@@ -43,7 +43,7 @@ func (c *CodeGenerationBase) GetGlobalOrModelAttribute(
 // GetGlobalOrModelAttributes retrieves all attributes with the specified name
 // from global attributes or the current model.
 func (c *CodeGenerationBase) GetGlobalOrModelAttributes(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	name string,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
@@ -57,7 +57,7 @@ func (c *CodeGenerationBase) GetGlobalOrModelAttributes(
 // GetGlobalAndModelAttributes retrieves all attributes with the specified name
 // from both global attributes and the current model.
 func (c *CodeGenerationBase) GetGlobalAndModelAttributes(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	name string,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
@@ -69,7 +69,7 @@ func (c *CodeGenerationBase) GetGlobalAndModelAttributes(
 // GetModelOrGlobalAttribute retrieves an attribute with the specified name
 // from the current model or global attributes.
 func (c *CodeGenerationBase) GetModelOrGlobalAttribute(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	name string,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributeUsageInfo {
@@ -84,7 +84,7 @@ func (c *CodeGenerationBase) GetModelOrGlobalAttribute(
 // GetModelAndGlobalAttributes retrieves all attributes with the specified name
 // from both global attributes and the current model.
 func (c *CodeGenerationBase) GetModelAndGlobalAttributes(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	name string,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
@@ -96,7 +96,7 @@ func (c *CodeGenerationBase) GetModelAndGlobalAttributes(
 // GetModelOrGlobalAttributes retrieves all attributes with the specified name
 // from the current model or global attributes.
 func (c *CodeGenerationBase) GetModelOrGlobalAttributes(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	name string,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
@@ -112,7 +112,7 @@ func (c *CodeGenerationBase) GetModelOrGlobalAttributes(
 // NeedsCloneMethods returns true if the current model or global attributes
 // indicate that clone methods are needed.
 func (c *CodeGenerationBase) NeedsCloneMethods(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	currentModel *cclValues.ModelDefinition,
 ) bool {
 	attr := c.GetModelOrGlobalAttribute(
@@ -129,7 +129,7 @@ func (c *CodeGenerationBase) NeedsCloneMethods(
 // NeedsBinarySerialization returns true if the current model or global attributes
 // indicate that binary serialization is needed.
 func (c *CodeGenerationBase) NeedsBinarySerialization(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	currentModel *cclValues.ModelDefinition,
 ) bool {
 	return c.NeedsSerializationType(
@@ -142,7 +142,7 @@ func (c *CodeGenerationBase) NeedsBinarySerialization(
 // NeedsJsonSerialization returns true if the current model or global attributes
 // indicate that JSON serialization is needed.
 func (c *CodeGenerationBase) NeedsJsonSerialization(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	currentModel *cclValues.ModelDefinition,
 ) bool {
 	return c.NeedsSerializationType(
@@ -155,7 +155,7 @@ func (c *CodeGenerationBase) NeedsJsonSerialization(
 // NeedsSerializationType checks if the specified serialization type is needed
 // based on global attributes and model-specific attributes.
 func (c *CodeGenerationBase) NeedsSerializationType(
-	targetLang globalValues.LanguageType,
+	targetLang gValues.LanguageType,
 	currentModel *cclValues.ModelDefinition,
 	sType string,
 ) bool {
@@ -168,3 +168,13 @@ func (c *CodeGenerationBase) NeedsSerializationType(
 }
 
 //---------------------------------------------------------
+
+// IsSingleFileMode checks if the code generation should be done in single file mode
+// and returns the single file name if applicable.
+func (c *CodeGenerationBase) IsSingleFileMode(targetLang gValues.LanguageType) (bool, string) {
+	attr := c.GetGlobalAttribute(targetLang, "CCLGenerateSingleFile")
+	if attr != nil {
+		return attr.GetParamAt(0).GetAsBool(), attr.GetParamAt(1).GetAsString()
+	}
+	return false, ""
+}
