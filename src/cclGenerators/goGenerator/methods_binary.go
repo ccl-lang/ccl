@@ -9,10 +9,6 @@ import (
 //---------------------------------------------------------
 
 func (c *GoGenerationContext) generateSerializeBinaryMethod(model *CCLModel) error {
-	// TODO:
-	// This SerializeBinary method generation HAS TO BE MOVED to an attribute handler
-	// so users can specify different types of attributes for serialize method generation
-	// like JSON, XML, etc.
 	c.MethodsCode.NewLine().
 		WriteLine("func (m *" + model.Name + ") SerializeBinary() ([]byte, error) {").
 		Indent().

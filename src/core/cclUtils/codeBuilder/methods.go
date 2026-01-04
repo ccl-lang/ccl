@@ -1,11 +1,33 @@
 package codeBuilder
 
 import (
+	"encoding/json"
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/ALiwoto/ssg/ssg"
 )
+
+// addDebugInfo captures the current source location and adds it to the debug info for the current section.
+func (c *CodeBuilder) addDebugInfo(skip int) {
+	if !c.enableDebugInfo {
+		return
+	}
+	_, file, line, ok := runtime.Caller(skip)
+	if !ok {
+		return
+	}
+
+	fileParts := strings.Split(file, "/src/")
+	file = "src/" + fileParts[len(fileParts)-1]
+
+	c.debugInfos[c.currentSection] = append(c.debugInfos[c.currentSection], &DebugInfo{
+		SourceFile:    file,
+		SourceLine:    line,
+		SectionOffset: c.builders[c.currentSection].Len(),
+	})
+}
 
 // checkSection checks if the current section is set.
 func (c *CodeBuilder) checkSection() {
@@ -103,13 +125,17 @@ func (c *CodeBuilder) Unindent() *CodeBuilder {
 // UnindentLine decreases the indentation level and adds a new line.
 func (c *CodeBuilder) UnindentLine() *CodeBuilder {
 	c.Unindent()
-	c.NewLine()
+
+	c.addDebugInfo(2)
+	c.checkSection()
+	c.builders[c.currentSection].WriteString(c.newLineStr)
 	return c
 }
 
 // WriteStr writes a string with the current indentation.
 // If you don't want indentation, use AppendStr instead.
 func (c *CodeBuilder) WriteStr(s string) *CodeBuilder {
+	c.addDebugInfo(2)
 	c.writeIndentation()
 	c.builders[c.currentSection].WriteString(s)
 	return c
@@ -117,6 +143,7 @@ func (c *CodeBuilder) WriteStr(s string) *CodeBuilder {
 
 // AppendStr appends a string without adding indentation.
 func (c *CodeBuilder) AppendStr(s string) *CodeBuilder {
+	c.addDebugInfo(2)
 	c.checkSection()
 	c.builders[c.currentSection].WriteString(s)
 	return c
@@ -125,6 +152,7 @@ func (c *CodeBuilder) AppendStr(s string) *CodeBuilder {
 // WriteLine writes a line with the current indentation.
 // If you don't want indentation, use AppendLine instead.
 func (c *CodeBuilder) WriteLine(s string) *CodeBuilder {
+	c.addDebugInfo(2)
 	c.writeIndentation()
 	c.builders[c.currentSection].WriteString(s)
 	c.builders[c.currentSection].WriteString(c.newLineStr)
@@ -133,6 +161,7 @@ func (c *CodeBuilder) WriteLine(s string) *CodeBuilder {
 
 // AppendLine appends a line without adding indentation.
 func (c *CodeBuilder) AppendLine(s string) *CodeBuilder {
+	c.addDebugInfo(2)
 	c.checkSection()
 	c.builders[c.currentSection].WriteString(s)
 	c.builders[c.currentSection].WriteString(c.newLineStr)
@@ -141,6 +170,7 @@ func (c *CodeBuilder) AppendLine(s string) *CodeBuilder {
 
 // WriteLinef writes a formatted line with the current indentation.
 func (c *CodeBuilder) WriteLinef(format string, args ...any) *CodeBuilder {
+	c.addDebugInfo(2)
 	c.writeIndentation()
 	fmt.Fprintf(c.builders[c.currentSection], format, args...)
 	c.builders[c.currentSection].WriteString(c.newLineStr)
@@ -149,6 +179,7 @@ func (c *CodeBuilder) WriteLinef(format string, args ...any) *CodeBuilder {
 
 // NewLine adds a new line.
 func (c *CodeBuilder) NewLine() *CodeBuilder {
+	c.addDebugInfo(2)
 	c.checkSection()
 	c.builders[c.currentSection].WriteString(c.newLineStr)
 	return c
@@ -165,6 +196,11 @@ func (c *CodeBuilder) writeIndentation() *CodeBuilder {
 
 // String returns the built string.
 func (c *CodeBuilder) String(orderedKeys []string) string {
+	return c.Build(orderedKeys).Code
+}
+
+// Build builds the code and returns the result.
+func (c *CodeBuilder) Build(orderedKeys []string) *CodeBuildResult {
 	if len(orderedKeys) == 0 || (len(orderedKeys) == 1 && orderedKeys[0] == "*") {
 		orderedKeys = GetDefaultOrderedSections()
 		for key := range c.builders {
@@ -173,18 +209,64 @@ func (c *CodeBuilder) String(orderedKeys []string) string {
 	} else if len(orderedKeys) == 1 {
 		targetBuilder, exists := c.builders[orderedKeys[0]]
 		if !exists || targetBuilder == nil {
-			return ""
+			return &CodeBuildResult{}
 		}
-		return targetBuilder.String()
+		// If only one section, we still need to process debug info if enabled
+		if !c.enableDebugInfo {
+			return &CodeBuildResult{Code: targetBuilder.String()}
+		}
+		// Fallthrough to general processing for debug info
 	}
 
 	var result strings.Builder
+	var finalDebugInfos []*DebugInfo
+	currentLine := 1
+
 	for _, key := range orderedKeys {
 		currentSb, exists := c.builders[key]
 		if !exists || currentSb == nil || currentSb.Len() == 0 {
 			continue
 		}
-		result.WriteString(currentSb.String() + c.newLineStr)
+		sectionContent := currentSb.String()
+		result.WriteString(sectionContent)
+		result.WriteString(c.newLineStr)
+
+		if c.enableDebugInfo {
+			sectionDebugInfos := c.debugInfos[key]
+			for _, info := range sectionDebugInfos {
+				// Calculate the line number relative to the start of the section
+				// We need to count newlines in the section content up to the offset
+				// This is a bit expensive, but necessary for accuracy
+				// Optimization: we could cache line offsets for the section
+
+				// Ensure offset is within bounds (it should be)
+				if info.SectionOffset > len(sectionContent) {
+					info.SectionOffset = len(sectionContent)
+				}
+
+				precedingContent := sectionContent[:info.SectionOffset]
+				linesBefore := strings.Count(precedingContent, c.newLineStr)
+
+				info.GeneratedLine = currentLine + linesBefore
+				finalDebugInfos = append(finalDebugInfos, info)
+			}
+		}
+
+		// Update currentLine for the next section
+		// Count lines in the section content + 1 for the newline added after the section
+		currentLine += strings.Count(sectionContent, c.newLineStr) + 1
 	}
-	return result.String()
+
+	res := &CodeBuildResult{
+		Code: result.String(),
+	}
+
+	if c.enableDebugInfo {
+		jsonData, err := json.Marshal(finalDebugInfos)
+		if err == nil {
+			res.DebugInfo = string(jsonData)
+		}
+	}
+
+	return res
 }

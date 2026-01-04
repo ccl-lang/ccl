@@ -8,10 +8,11 @@ import (
 type GenerateCode func(options *CodeGenerationOptions) (*CodeGenerationResult, error)
 
 type CodeGenerationOptions struct {
-	CCLDefinition  *cclValues.SourceCodeDefinition
-	OutputPath     string
-	TargetLanguage string
-	PackageName    string
+	CCLDefinition     *cclValues.SourceCodeDefinition
+	OutputPath        string
+	TargetLanguage    string
+	PackageName       string
+	GenerateDebugInfo bool
 }
 
 // CodeGenerationResult holds the result of a code generation process.

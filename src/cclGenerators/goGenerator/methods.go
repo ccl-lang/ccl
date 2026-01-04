@@ -46,35 +46,35 @@ func (c *GoGenerationContext) GenerateCode() error {
 
 	path := c.Options.OutputPath + string(os.PathSeparator)
 	if c.ConstantsCode != nil {
-		err = ssg.WriteFileStr(path+ConstantsFileName, c.ConstantsCode.String(nil))
+		err = c.WriteCodeFile(path+ConstantsFileName, c.ConstantsCode.Build(nil))
 		if err != nil {
 			return err
 		}
 	}
 
 	if c.VarsCode != nil {
-		err = ssg.WriteFileStr(path+VarsFileName, c.VarsCode.String(nil))
+		err = c.WriteCodeFile(path+VarsFileName, c.VarsCode.Build(nil))
 		if err != nil {
 			return err
 		}
 	}
 
 	if c.TypesCode != nil {
-		err = ssg.WriteFileStr(path+TypesFileName, c.TypesCode.String(nil))
+		err = c.WriteCodeFile(path+TypesFileName, c.TypesCode.Build(nil))
 		if err != nil {
 			return err
 		}
 	}
 
 	if c.HelpersCode != nil {
-		err = ssg.WriteFileStr(path+HelpersFileName, c.HelpersCode.String(nil))
+		err = c.WriteCodeFile(path+HelpersFileName, c.HelpersCode.Build(nil))
 		if err != nil {
 			return err
 		}
 	}
 
 	if c.MethodsCode != nil {
-		err = ssg.WriteFileStr(path+MethodsFileName, c.MethodsCode.String(nil))
+		err = c.WriteCodeFile(path+MethodsFileName, c.MethodsCode.Build(nil))
 		if err != nil {
 			return err
 		}
@@ -85,7 +85,11 @@ func (c *GoGenerationContext) GenerateCode() error {
 //---------------------------------------------------------
 
 func (c *GoGenerationContext) GenerateConstants() error {
-	c.ConstantsCode = codeBuilder.NewCodeBuilder()
+	c.ConstantsCode = codeBuilder.NewCodeBuilderWithOptions(&codeBuilder.CodeBuilderOptions{
+		IndentationStr:  "\t",
+		NewLineStr:      "\n",
+		EnableDebugInfo: c.Options.GenerateDebugInfo,
+	})
 	//TODO: refactor this to use sections properly
 	c.ConstantsCode.BeginSection("constants")
 	defer c.ConstantsCode.EndSection()
@@ -126,7 +130,11 @@ func (c *GoGenerationContext) generateConstantsForModel(currentModel *CCLModel) 
 //---------------------------------------------------------
 
 func (c *GoGenerationContext) GenerateVars() error {
-	c.VarsCode = codeBuilder.NewCodeBuilder()
+	c.VarsCode = codeBuilder.NewCodeBuilderWithOptions(&codeBuilder.CodeBuilderOptions{
+		IndentationStr:  "\t",
+		NewLineStr:      "\n",
+		EnableDebugInfo: c.Options.GenerateDebugInfo,
+	})
 	//TODO: refactor this to use sections properly
 	c.VarsCode.BeginSection("vars")
 	defer c.VarsCode.EndSection()
@@ -141,7 +149,11 @@ func (c *GoGenerationContext) GenerateVars() error {
 //---------------------------------------------------------
 
 func (c *GoGenerationContext) GenerateTypes() error {
-	c.TypesCode = codeBuilder.NewCodeBuilder()
+	c.TypesCode = codeBuilder.NewCodeBuilderWithOptions(&codeBuilder.CodeBuilderOptions{
+		IndentationStr:  "\t",
+		NewLineStr:      "\n",
+		EnableDebugInfo: c.Options.GenerateDebugInfo,
+	})
 	//TODO: refactor this to use sections properly
 	c.TypesCode.BeginSection("types")
 	defer c.TypesCode.EndSection()
@@ -243,7 +255,11 @@ func (c *GoGenerationContext) generateTypesForModel(currentModel *CCLModel) erro
 //---------------------------------------------------------
 
 func (c *GoGenerationContext) GenerateHelpers() error {
-	c.HelpersCode = codeBuilder.NewCodeBuilder()
+	c.HelpersCode = codeBuilder.NewCodeBuilderWithOptions(&codeBuilder.CodeBuilderOptions{
+		IndentationStr:  "\t",
+		NewLineStr:      "\n",
+		EnableDebugInfo: c.Options.GenerateDebugInfo,
+	})
 	//TODO: refactor this to use sections properly
 	c.HelpersCode.BeginSection("helpers")
 	defer c.HelpersCode.EndSection()
@@ -258,7 +274,11 @@ func (c *GoGenerationContext) GenerateHelpers() error {
 //---------------------------------------------------------
 
 func (c *GoGenerationContext) GenerateMethods() error {
-	c.MethodsCode = codeBuilder.NewCodeBuilder()
+	c.MethodsCode = codeBuilder.NewCodeBuilderWithOptions(&codeBuilder.CodeBuilderOptions{
+		IndentationStr:  "\t",
+		NewLineStr:      "\n",
+		EnableDebugInfo: c.Options.GenerateDebugInfo,
+	})
 	//TODO: refactor this to use sections properly
 	c.MethodsCode.BeginSection("methods")
 	defer c.MethodsCode.EndSection()

@@ -17,8 +17,7 @@ func (c *GDScriptGenerationContext) GenerateCode() error {
 	c.ModelSections = make(map[string][]string)
 
 	// Generate each model class
-	for i := range c.Options.CCLDefinition.TypeDefinitions {
-		typeDef := c.Options.CCLDefinition.TypeDefinitions[i]
+	for _, typeDef := range c.Options.CCLDefinition.TypeDefinitions {
 		if typeDef.IsCustomModel() {
 			fullName := typeDef.GetFullName()
 			sections := c.ModelSections[fullName]
@@ -46,7 +45,11 @@ func (c *GDScriptGenerationContext) GenerateCode() error {
 
 func (c *GDScriptGenerationContext) generateCodeForModel(model *CCLModel) error {
 	modelName := model.GetFullName()
-	builder := codeBuilder.NewCodeBuilder()
+	builder := codeBuilder.NewCodeBuilderWithOptions(&codeBuilder.CodeBuilderOptions{
+		IndentationStr:  "\t",
+		NewLineStr:      "\n",
+		EnableDebugInfo: c.Options.GenerateDebugInfo,
+	})
 	c.ModelClasses[modelName] = builder
 
 	builder.BeginSection(modelName)
@@ -79,7 +82,7 @@ func (c *GDScriptGenerationContext) generateCodeForModel(model *CCLModel) error 
 		return err
 	}
 
-	err = ssg.WriteFileStr(path+fileName+".gd", builder.String(c.ModelSections[modelName]))
+	err = c.WriteCodeFile(path+fileName+".gd", builder.Build(c.ModelSections[modelName]))
 	if err != nil {
 		return err
 	}
@@ -141,7 +144,7 @@ func (c *GDScriptGenerationContext) getGDScriptType(field *cclValues.ModelFieldD
 
 	gdType := CCLTypesToGdTypes[targetType.GetName()]
 	if gdType == "" {
-		if !c.IsCustomType(targetType.GetName()) {
+		if !targetType.IsCustomTypeModel() {
 			return ""
 		}
 

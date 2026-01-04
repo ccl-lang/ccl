@@ -19,11 +19,13 @@ func NewCodeBuilderWithOptions(opts *CodeBuilderOptions) *CodeBuilder {
 			SectionHeaders:        {},
 			SectionImports:        {},
 		},
-		indentations:   map[string]int{},
-		importedKeys:   map[string]bool{},
-		currentSection: "",
-		indentationStr: opts.IndentationStr,
-		newLineStr:     opts.NewLineStr,
+		indentations:    map[string]int{},
+		importedKeys:    map[string]bool{},
+		currentSection:  "",
+		indentationStr:  opts.IndentationStr,
+		newLineStr:      opts.NewLineStr,
+		debugInfos:      map[string][]*DebugInfo{},
+		enableDebugInfo: opts.EnableDebugInfo,
 	}
 }
 

@@ -56,9 +56,10 @@ func TestTSGenerator1_1(t *testing.T) {
 	// Generate Code
 	cclLoader.LoadGenerators()
 	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
-		CCLDefinition:  parsedDefinitions,
-		OutputPath:     filepath.Join(tmpDir, "models"),
-		TargetLanguage: "ts",
+		CCLDefinition:     parsedDefinitions,
+		OutputPath:        filepath.Join(tmpDir, "models"),
+		TargetLanguage:    "ts",
+		GenerateDebugInfo: true,
 	})
 	if err != nil {
 		t.Fatalf("Error: failed to generate code: %v\n", err)
@@ -110,9 +111,10 @@ func TestTSGenerator1_2(t *testing.T) {
 	// Generate Code
 	cclLoader.LoadGenerators()
 	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
-		CCLDefinition:  parsedDefinitions,
-		OutputPath:     filepath.Join(tmpDir, "models"),
-		TargetLanguage: "ts",
+		CCLDefinition:     parsedDefinitions,
+		OutputPath:        filepath.Join(tmpDir, "models"),
+		TargetLanguage:    "ts",
+		GenerateDebugInfo: true,
 	})
 	if err != nil {
 		t.Fatalf("Error: failed to generate code: %v\n", err)
