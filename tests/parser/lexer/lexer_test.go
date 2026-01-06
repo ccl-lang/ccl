@@ -54,10 +54,7 @@ func TestLexer1(t *testing.T) {
 		t.Fatalf("No tokens found")
 	}
 
-	fmt.Println("Tokens:")
-	for _, token := range lexResults {
-		fmt.Println(token)
-	}
+	fmt.Println("Tokens:", lexResults)
 }
 
 const input2 = `#[System.Text.SerializationType("C#", "binary")]`
@@ -72,10 +69,7 @@ func TestLexer2(t *testing.T) {
 		t.Fatalf("No tokens found")
 	}
 
-	fmt.Println("Tokens:")
-	for _, token := range lexResults {
-		fmt.Println(token)
-	}
+	fmt.Println("Tokens:", lexResults)
 }
 
 const input3 = `model MyModelName { field1: string = "default value"; field2: int32; }`
@@ -107,7 +101,7 @@ func TestLexer3(t *testing.T) {
 		t.Fatalf("No tokens found")
 	}
 
-	fmt.Println("Tokens:")
+	fmt.Println("Tokens:", lexResults)
 	for i, token := range lexResults {
 		if i >= len(input3Tokens) {
 			t.Fatalf("Unexpected token: %v", token)
@@ -120,8 +114,6 @@ func TestLexer3(t *testing.T) {
 			t.Fatalf("Expected token value %v, got %v", input3Tokens[i].value, formatted)
 			return
 		}
-
-		fmt.Println(token)
 	}
 }
 
@@ -177,7 +169,7 @@ func TestLexer4(t *testing.T) {
 		t.Fatalf("No tokens found")
 	}
 
-	fmt.Println("Tokens:")
+	fmt.Println("Tokens:", lexResults)
 	for i, token := range lexResults {
 		if i >= len(input4Tokens) {
 			t.Fatalf("Unexpected token: %v", token)
@@ -190,8 +182,6 @@ func TestLexer4(t *testing.T) {
 			t.Fatalf("Expected token value %v, got %v", input4Tokens[i].value, formatted)
 			return
 		}
-
-		fmt.Println(token)
 	}
 }
 
@@ -224,10 +214,7 @@ func TestAttributeWithInteger(t *testing.T) {
 		t.Fatalf("Expected string literal 'binary', got '%s'", stringLiteral)
 	}
 
-	fmt.Println("Tokens:")
-	for _, token := range lexResults {
-		fmt.Println(token)
-	}
+	fmt.Println("Tokens:", lexResults)
 }
 
 //---------------------------------------------------------

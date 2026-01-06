@@ -1,6 +1,7 @@
 package goGen_test
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,76 +13,12 @@ import (
 )
 
 const (
-	goSource1      = "definitions1.ccl"
-	mainGoContent1 = `
-package main
-
-import (
-	"ccl_test_generated/models"
-	"fmt"
+	goSource1 = "definitions1.ccl"
 )
 
-func main() {
-	// Test creating a User
-	user := models.User{
-		Id:       "user123",
-		Username: "test_user",
-		Skin: &models.SkinInfo{
-			Type: 0,
-			Basic: &models.BasicSkin{
-				R: 255,
-				G: 0,
-				B: 0,
-			},
-		},
-	}
-
-	userBinary, err := user.SerializeBinary()
-	if err != nil {
-		panic(fmt.Sprintf("Failed to serialize user: %v", err))
-	}
-
-	deserializedUser := &models.User{}
-	err = deserializedUser.DeserializeBinary(userBinary)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to deserialize user: %v", err))
-	}
-
-	if user.Username != "test_user" {
-		panic("Username mismatch")
-	} else if deserializedUser.Username != "test_user" {
-		panic("Deserialized username mismatch")
-	}
-
-	// Test creating a Position
-	pos := models.Position{
-		X: 10,
-		Y: 20,
-		Z: 30,
-	}
-
-	if pos.X != 10 {
-		panic("Position X mismatch")
-	}
-
-	positionBinary, err := pos.SerializeBinary()
-	if err != nil {
-		panic(fmt.Sprintf("Failed to serialize position: %v", err))
-	}
-
-	deserializedPosition := &models.Position{}
-	err = deserializedPosition.DeserializeBinary(positionBinary)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to deserialize position: %v", err))
-	}
-
-	if pos.X != 10 {
-		panic("Position X mismatch")
-	}
-
-	fmt.Println("Runtime verification successful!")
-}
-`
+var (
+	//go:embed contents/main_go_content1.txt
+	mainGoContent1 string
 )
 
 func TestGoGenerator1(t *testing.T) {

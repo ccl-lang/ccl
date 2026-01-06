@@ -1,6 +1,7 @@
 package gdGen_test
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,59 +13,12 @@ import (
 )
 
 const (
-	gdSource1      = "definitions1.ccl"
-	mainGdContent1 = `
-extends SceneTree
+	gdSource1 = "definitions1.ccl"
+)
 
-func _init():
-	print("Starting GDScript runtime verification...")
-	
-	var user_script = load("res://models/user.gd")
-	if user_script == null:
-		print("Error: Could not load user.gd")
-		quit(1)
-		return
-
-	var user = user_script.new()
-	user.id = "user123"
-	user.username = "test_user"
-	
-	# Test SkinInfo
-	var skin_info_script = load("res://models/skin_info.gd")
-	var skin_info = skin_info_script.new()
-	skin_info.type = 0
-
-	var basic_skin_script = load("res://models/basic_skin.gd")
-	var basic_skin = basic_skin_script.new()
-	basic_skin.r = 255
-	basic_skin.g = 0
-	basic_skin.b = 0
-
-	skin_info.basic = basic_skin
-	user.skin = skin_info
-
-	if user.username != "test_user":
-		print("Error: Username mismatch")
-		quit(1)
-		return
-
-	# Test Position (direct access)
-	var pos = Position.new()
-	pos.x = 10
-	pos.y = 20
-	pos.z = 30
-
-	if pos.x != 10:
-		print("Error: Position X mismatch")
-		quit(1)
-		return
-
-	print("Runtime verification successful!")
-	quit(0)
-
-func _ready():
-	quit(1) # Should not reach here
-`
+var (
+	//go:embed contents/main_gd_content1.txt
+	mainGdContent1 string
 )
 
 func TestGdGenerator1(t *testing.T) {

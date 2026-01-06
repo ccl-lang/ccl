@@ -27,6 +27,7 @@ jobs:
       uses: chickensoft-games/setup-godot@v2
       with:
         version: 4.5.0
+        use-dotnet: false
 
     - name: Set up Node.js
       uses: actions/setup-node@v6

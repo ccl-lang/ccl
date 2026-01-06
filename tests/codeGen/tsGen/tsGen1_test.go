@@ -12,17 +12,17 @@ import (
 	"github.com/ccl-lang/ccl/src/cclParser"
 )
 
+const (
+	tsSource1_1 = "definitions1_1.ccl"
+	tsSource1_2 = "definitions1_2.ccl"
+)
+
 var (
 	//go:embed contents/main_ts_content1_1.txt
 	mainTSContent1_1 string
 
 	//go:embed contents/main_ts_content1_2.txt
 	mainTSContent1_2 string
-)
-
-const (
-	tsSource1_1 = "definitions1_1.ccl"
-	tsSource1_2 = "definitions1_2.ccl"
 )
 
 // TestTSGenerator1_1 tests the TypeScript code generator with multiple output files.
