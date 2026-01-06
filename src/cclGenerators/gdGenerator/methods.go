@@ -35,7 +35,7 @@ func (c *GDScriptGenerationContext) GenerateCode() error {
 			// for now, we only support model types
 			return &cclErrors.UnsupportedTypeDefinitionError{
 				TypeName:       typeDef.GetFullName(),
-				TargetLanguage: LanguageName,
+				TargetLanguage: CurrentLanguage.String(),
 			}
 		}
 	}
@@ -114,7 +114,7 @@ func (c *GDScriptGenerationContext) generateModelClass(builder *codeBuilder.Code
 				TypeName:       field.Type.GetName(),
 				FieldName:      field.Name,
 				ModelName:      modelName,
-				TargetLanguage: LanguageName,
+				TargetLanguage: CurrentLanguage.String(),
 			}
 		}
 		builder.WriteLine("var " + cclUtils.ToSnakeCase(field.Name) + ": " + varType)

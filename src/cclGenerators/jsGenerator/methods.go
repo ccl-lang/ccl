@@ -1,4 +1,4 @@
-package tsGenerator
+package jsGenerator
 
 import (
 	"os"
@@ -13,12 +13,12 @@ import (
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
-func (c *TypeScriptGenerationContext) generateCode() (*gen.CodeGenerationResult, error) {
-	c.IsSingleFile, c.SingleFileName = c.IsSingleFileMode(CurrentLanguage)
+func (c *JavaScriptGenerationContext) generateCode() (*gen.CodeGenerationResult, error) {
+	c.IsSingleFile, c.SingleFileName = c.IsSingleFileMode(LanguageName)
 
 	if c.IsSingleFile {
 		if c.SingleFileName == "" {
-			c.SingleFileName = DefaultSingleFileName
+			c.SingleFileName = "generated.js"
 		}
 
 		c.SingleFileBuilder = codeBuilder.NewCodeBuilderWithOptions(&codeBuilder.CodeBuilderOptions{
@@ -42,14 +42,14 @@ func (c *TypeScriptGenerationContext) generateCode() (*gen.CodeGenerationResult,
 			// for now, we only support model types
 			return nil, &cclErrors.UnsupportedTypeDefinitionError{
 				TypeName:       typeDef.GetFullName(),
-				TargetLanguage: CurrentLanguage.String(),
+				TargetLanguage: LanguageName.String(),
 			}
 		}
 	}
 
 	result := &gen.CodeGenerationResult{
 		SourceLanguage: gValues.LanguageCCL.String(),
-		TargetLanguage: CurrentLanguage.String(),
+		TargetLanguage: gValues.LanguageJS.String(),
 		OutputFiles:    []string{},
 	}
 
@@ -62,7 +62,7 @@ func (c *TypeScriptGenerationContext) generateCode() (*gen.CodeGenerationResult,
 		result.OutputFiles = append(result.OutputFiles, path)
 	} else {
 		for modelName, builder := range c.ModelClasses {
-			path := c.Options.OutputPath + string(os.PathSeparator) + modelName + ".ts"
+			path := c.Options.OutputPath + string(os.PathSeparator) + modelName + ".js"
 			err := c.WriteCodeFile(path, builder.Build(nil))
 			if err != nil {
 				return nil, err
@@ -74,7 +74,7 @@ func (c *TypeScriptGenerationContext) generateCode() (*gen.CodeGenerationResult,
 	return result, nil
 }
 
-func (c *TypeScriptGenerationContext) generateCodeForModel(model *CCLModel) error {
+func (c *JavaScriptGenerationContext) generateCodeForModel(model *CCLModel) error {
 	var builder *codeBuilder.CodeBuilder
 	if c.IsSingleFile {
 		builder = c.SingleFileBuilder
@@ -104,7 +104,7 @@ func (c *TypeScriptGenerationContext) generateCodeForModel(model *CCLModel) erro
 			if targetType.IsCustomTypeModel() {
 				// Import the custom type
 				// Assuming same directory for now
-				builder.DoImport(targetType.GetName(), "import { "+targetType.GetName()+" } from './"+targetType.GetName()+"';")
+				builder.DoImport(targetType.GetName(), "import { "+targetType.GetName()+" } from './"+targetType.GetName()+".js';")
 			}
 		}
 	}
@@ -117,23 +117,19 @@ func (c *TypeScriptGenerationContext) generateCodeForModel(model *CCLModel) erro
 	return nil
 }
 
-func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.CodeBuilder, model *CCLModel) error {
+func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.CodeBuilder, model *CCLModel) error {
 	builder.WriteLine("export class " + model.Name + " {").
 		Indent()
 
 	// Write model ID constant
 	modelIdConstName := "MODEL_ID_" + strings.ToUpper(cclUtils.ToSnakeCase(model.Name))
-	builder.WriteLine("public static readonly " + modelIdConstName + " = " + ssg.ToBase10(model.ModelId) + ";").
+	builder.WriteLine("static " + modelIdConstName + " = " + ssg.ToBase10(model.ModelId) + ";").
 		NewLine()
 
 	// Fields
 	for _, field := range model.Fields {
-		tsType := c.getTypeScriptType(field)
 		fieldName := cclUtils.ToCamelCase(field.Name)
-		if field.IsNullable() {
-			tsType = tsType + " | null"
-		}
-		builder.WriteLine("public " + fieldName + ": " + tsType + ";")
+		builder.WriteLine(fieldName + ";")
 	}
 	builder.NewLine()
 
@@ -159,24 +155,15 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 				defaultValue = "new Uint8Array(0)"
 			default:
 				if field.Type.IsCustomTypeModel() {
-					defaultValue = "null" // or new CustomType() if we want non-nullable
+					defaultValue = "null"
 				}
 			}
 		}
 
-		// If it's a custom type and not an array, we might want to allow null or initialize it.
-		// For now, let's strictly follow the type. If it's a class, it can be null or undefined in TS if not strict.
-		// But let's initialize primitives.
 		if defaultValue != "null" {
 			builder.WriteLine("this." + fieldName + " = " + defaultValue + ";")
 		} else {
-			// For custom types, we might want to leave it undefined or null.
-			// If strictNullChecks is on, we need to handle this.
-			// Let's assume we initialize to null and the type allows it or we use ! assertion.
-			// Actually, better to just not initialize if it's optional, or initialize to null.
-			// Let's initialize to null and cast if needed, or just leave it.
-			// Let's set it to null for now.
-			builder.WriteLine("this." + fieldName + " = null as any;")
+			builder.WriteLine("this." + fieldName + " = null;")
 		}
 	}
 	builder.Unindent().
@@ -184,76 +171,23 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		NewLine()
 
 	// Get Model ID
-	builder.WriteLine("public getModelId(): number {").
+	builder.WriteLine("getModelId() {").
 		Indent().
 		WriteLine("return " + model.Name + "." + modelIdConstName + ";").
-		UnindentLine().
+		Unindent().
 		WriteLine("}").
 		NewLine()
 
 	// Clone Empty
-	builder.WriteLine("public cloneEmpty(): " + model.Name + " {").
+	builder.WriteLine("cloneEmpty() {").
 		Indent().
 		WriteLine("return new " + model.Name + "();").
-		UnindentLine().
+		Unindent().
 		WriteLine("}").
 		NewLine()
 
-	// Binary Serialization
-	if c.NeedsBinarySerialization(CurrentLanguage, model) {
-		if err := c.generateSerializeBinaryMethod(model, builder); err != nil {
-			return err
-		}
-		if err := c.generateDeserializeBinaryMethod(model, builder); err != nil {
-			return err
-		}
-	}
-
-	builder.UnindentLine().
+	builder.Unindent().
 		WriteLine("}")
 
-	builder.NewLine()
-
 	return nil
-}
-
-//---------------------------------------------------------
-
-func (c *TypeScriptGenerationContext) getTypeScriptType(field *CCLField) string {
-	targetType := field.Type
-	if targetType.IsArray() {
-		targetType = targetType.GetUnderlyingType()
-	}
-
-	tsType := ""
-	switch targetType.GetName() {
-	case cclValues.TypeNameString:
-		tsType = "string"
-	case cclValues.TypeNameInt, cclValues.TypeNameInt8, cclValues.TypeNameInt16, cclValues.TypeNameInt32, cclValues.TypeNameInt64,
-		cclValues.TypeNameUint, cclValues.TypeNameUint8, cclValues.TypeNameUint16, cclValues.TypeNameUint32, cclValues.TypeNameUint64,
-		cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
-		tsType = "number"
-	case cclValues.TypeNameBool:
-		tsType = "boolean"
-	case cclValues.TypeNameBytes:
-		tsType = "Uint8Array"
-	case cclValues.TypeNameDateTime:
-		tsType = "number" // Using timestamp
-	default:
-		if targetType.IsCustomTypeModel() {
-			tsType = targetType.GetName()
-		} else {
-			tsType = "any"
-		}
-	}
-
-	if field.IsArray() {
-		if targetType.IsCustomTypeModel() {
-			tsType = "Array<" + tsType + " | null>"
-		} else {
-			tsType = tsType + "[]"
-		}
-	}
-
-	return tsType
 }

@@ -4,6 +4,7 @@ var (
 	langsToShortName = map[LanguageType]string{
 		LanguageUnknown: "unknown",
 		LanguageCCL:     "ccl",
+		LanguageGd:      "gd",
 		LanguageGo:      "go",
 		LanguageCS:      "cs",
 		LanguagePy:      "py",

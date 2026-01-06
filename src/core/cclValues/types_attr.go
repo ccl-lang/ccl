@@ -11,10 +11,10 @@ type AttributeUsageInfo struct {
 	// Name is the name of the attribute.
 	Name string
 
-	// Language specifies which language this attribute should
+	// Languages specifies which languages this attribute should
 	// get applied to.
 	// it can be an empty string to indicate all languages.
-	Language gValues.LanguageType
+	Languages []gValues.LanguageType
 
 	// Parameters is the list of parameters for the attribute.
 	Parameters []*ParameterInstance

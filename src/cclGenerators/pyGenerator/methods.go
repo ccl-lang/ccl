@@ -26,7 +26,7 @@ func (c *PythonGenerationContext) GenerateCode() error {
 			// for now, we only support model types
 			return &cclErrors.UnsupportedTypeDefinitionError{
 				TypeName:       typeDef.GetFullName(),
-				TargetLanguage: LanguageName,
+				TargetLanguage: CurrentLanguage.String(),
 			}
 		}
 	}

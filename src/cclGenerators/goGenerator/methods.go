@@ -110,7 +110,7 @@ func (c *GoGenerationContext) GenerateConstants() error {
 			// for now, we only support model type definitions
 			return &cclErrors.UnsupportedTypeDefinitionError{
 				TypeName:       currentTypeDef.GetFullName(),
-				TargetLanguage: LanguageName,
+				TargetLanguage: CurrentLanguage.String(),
 			}
 		}
 	}
@@ -204,7 +204,7 @@ func (c *GoGenerationContext) GenerateTypes() error {
 			// for now, we only support model type definitions
 			return &cclErrors.UnsupportedTypeDefinitionError{
 				TypeName:       currentTypeDef.GetFullName(),
-				TargetLanguage: LanguageName,
+				TargetLanguage: CurrentLanguage.String(),
 			}
 		}
 	}
@@ -232,7 +232,7 @@ func (c *GoGenerationContext) generateTypesForModel(currentModel *CCLModel) erro
 					TypeName:       targetType.GetName(),
 					FieldName:      currentField.Name,
 					ModelName:      currentModel.Name,
-					TargetLanguage: LanguageName,
+					TargetLanguage: CurrentLanguage.String(),
 				}
 			}
 
@@ -314,7 +314,7 @@ func (c *GoGenerationContext) GenerateMethods() error {
 			// for now, we only support model type definitions
 			return &cclErrors.UnsupportedTypeDefinitionError{
 				TypeName:       currentTypeDef.GetFullName(),
-				TargetLanguage: LanguageName,
+				TargetLanguage: CurrentLanguage.String(),
 			}
 		}
 	}

@@ -1,6 +1,10 @@
 package cclValues
 
-import gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+import (
+	"slices"
+
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+)
 
 //---------------------------------------------------------
 
@@ -11,7 +15,7 @@ func (a *AttributeUsageInfo) IsForLanguageStr(lang string) bool {
 
 // IsForLanguage checks if the attribute usage info is for the given language.
 func (a *AttributeUsageInfo) IsForLanguage(lang gValues.LanguageType) bool {
-	if a.Language == 0 {
+	if len(a.Languages) == 0 {
 		// This attribute can be used for all target languages.
 		return true
 	} else if lang.IsUnsupported() {
@@ -19,7 +23,7 @@ func (a *AttributeUsageInfo) IsForLanguage(lang gValues.LanguageType) bool {
 		return false
 	}
 
-	return a.Language&lang != 0
+	return slices.Contains(a.Languages, lang)
 }
 
 // GetParamAt returns the parameter at the specified index.

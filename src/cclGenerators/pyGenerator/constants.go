@@ -1,9 +1,11 @@
 package pyGenerator
 
+import gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+
 const (
-	LanguageName = "Python"
+	CurrentLanguage = gValues.LanguagePy
 )
 
 const (
-	DefaultFileNamingStyle = "snake_case"
+	DefaultFileNamingStyle = gValues.StyleSnakeCase
 )

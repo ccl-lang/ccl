@@ -9,7 +9,6 @@ ccl is a code generation tool for converting a .ccl source file to certain progr
 A basic example of the ccl grammar is as follow:
 
 ```ccl
-// NOTE: Support for attributes is not added as of yet
 // This is a global attribute, applied to the whole generation process
 #[CCLVersion("1.0.0")]
 #[SerializationType("binary")]

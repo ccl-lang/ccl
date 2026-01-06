@@ -1,9 +1,11 @@
 package gdGenerator
 
+import gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+
 const (
-	LanguageName = "Gd"
+	CurrentLanguage = gValues.LanguageGd
 )
 
 const (
-	DefaultFileNamingStyle = "snake_case"
+	DefaultFileNamingStyle = gValues.StyleSnakeCase
 )

@@ -1,7 +1,9 @@
 package goGenerator
 
+import gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+
 const (
-	LanguageName = "Go"
+	CurrentLanguage = gValues.LanguageGo
 )
 
 const (
