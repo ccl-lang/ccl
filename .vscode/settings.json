@@ -8,6 +8,8 @@
         "Linef",
         "memoryview",
         "staticmethod",
-        "subarray"
+        "subarray",
+        "codegen",
+        "ebnf"
     ]
 }

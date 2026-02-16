@@ -17,10 +17,7 @@ func HandleGenerateCommand() {
 	language := fs.String("language", "", "Programming language for the generated code")
 	output := fs.String("output", "", "Output path for the generated package")
 	generateDebugInfo := fs.Bool("generate-debug-info", false, "Generate debug info file")
-	o := fs.String("o", "", "Output path for the generated package")
-	if o != nil && *o != "" {
-		output = o
-	}
+	fs.StringVar(output, "o", "", "Output path for the generated package")
 
 	// Parse flags
 	fs.Parse(os.Args[2:])
