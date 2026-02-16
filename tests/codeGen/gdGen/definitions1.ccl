@@ -101,34 +101,34 @@ model AuthWalletAnswer {
 
 model JoinRoomRequest {
     RpcId: uint16;
-    Room: string;
+    RoomId: string;
 }
 
 model JoinRoomAnswer {
     RpcId: uint16;
-    Room: string;
+    RoomId: string;
     RoomInfo: Room;
     State: State;
 }
 
 model LeaveRoomRequest {
     RpcId: uint16;
-    Room: string;
+    RoomId: string;
 }
 
 model LeaveRoomAnswer {
     RpcId: uint16;
-    Room: string;
+    RoomId: string;
 }
 
 // Server update messages
 model ServerUpdateRoomInfo {
-    Room: string;
+    RoomId: string;
     Users: int32;
 }
 
 model ServerUpdateRoomUsers {
-    Room: string;
+    RoomId: string;
     Users: User[];
 }
 

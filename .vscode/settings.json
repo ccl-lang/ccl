@@ -3,15 +3,17 @@
         "bytearray",
         "cclinfo",
         "chickensoft",
-        "gdscript",
-        "getcwd",
-        "Linef",
-        "memoryview",
-        "staticmethod",
-        "subarray",
         "codegen",
         "ebnf",
+        "gdscript",
+        "getattr",
+        "getcwd",
         "goroutine",
-        "goroutines"
+        "goroutines",
+        "Linef",
+        "memoryview",
+        "sbyte",
+        "staticmethod",
+        "subarray"
     ]
 }
