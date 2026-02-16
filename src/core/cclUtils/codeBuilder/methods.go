@@ -58,14 +58,47 @@ func (c *CodeBuilder) DoImport(key, importLine string) *CodeBuilder {
 }
 
 // AddCommentHeader adds a comment header to the "comment_headers" section with a new line.
+// This is useful for comment headers such as license headers, "DO NOT EDIT" warnings, etc.
 func (c *CodeBuilder) AddCommentHeader(comment string) *CodeBuilder {
 	return c.AppendCommentHeader(comment + c.newLineStr)
 }
 
 // AppendCommentHeader adds a comment header to the "comment_headers" section.
+// This is useful for comment headers such as license headers, "DO NOT EDIT" warnings, etc.
 func (c *CodeBuilder) AppendCommentHeader(comment string) *CodeBuilder {
 	c.checkSection()
 	c.builders[SectionCommentHeaders].WriteString(comment)
+	return c
+}
+
+// AddHeader adds a header to the "headers" section with a new line.
+// This is useful for file headers such as package declarations, general file comments, etc.
+// This will come after comment headers but before imports.
+func (c *CodeBuilder) AddHeader(strValue string) *CodeBuilder {
+	return c.AppendHeader(strValue + c.newLineStr)
+}
+
+// AppendHeader adds a header to the "headers" section.
+// This is useful for file headers such as package declarations, general file comments, etc.
+// This will come after comment headers but before imports.
+func (c *CodeBuilder) AppendHeader(strValue string) *CodeBuilder {
+	c.checkSection()
+	c.builders[SectionHeaders].WriteString(strValue)
+	return c
+}
+
+// AddNamespaceDeclaration adds a namespace declaration to the "namespace_declarations" section with a new line.
+// This is useful for organizing code into different namespaces in languages such as C#.
+// NOTE: this comes after imports and before type declarations.
+func (c *CodeBuilder) AddNamespaceDeclaration(strValue string) *CodeBuilder {
+	return c.AppendNamespaceDeclaration(strValue + c.newLineStr)
+}
+
+// AppendNamespaceDeclaration adds a namespace declaration to the "namespace_declarations" section.
+// This is useful for organizing code into different namespaces.
+func (c *CodeBuilder) AppendNamespaceDeclaration(strValue string) *CodeBuilder {
+	c.checkSection()
+	c.builders[SectionDeclareNamespace].WriteString(strValue)
 	return c
 }
 
@@ -135,6 +168,8 @@ func (c *CodeBuilder) UnindentLine() *CodeBuilder {
 // WriteStr writes a string with the current indentation.
 // If you don't want indentation, use AppendStr instead.
 func (c *CodeBuilder) WriteStr(s string) *CodeBuilder {
+	c.checkSection()
+
 	c.addDebugInfo(2)
 	c.writeIndentation()
 	c.builders[c.currentSection].WriteString(s)
@@ -143,6 +178,8 @@ func (c *CodeBuilder) WriteStr(s string) *CodeBuilder {
 
 // AppendStr appends a string without adding indentation.
 func (c *CodeBuilder) AppendStr(s string) *CodeBuilder {
+	c.checkSection()
+
 	c.addDebugInfo(2)
 	c.checkSection()
 	c.builders[c.currentSection].WriteString(s)
@@ -152,6 +189,8 @@ func (c *CodeBuilder) AppendStr(s string) *CodeBuilder {
 // WriteLine writes a line with the current indentation.
 // If you don't want indentation, use AppendLine instead.
 func (c *CodeBuilder) WriteLine(s string) *CodeBuilder {
+	c.checkSection()
+
 	c.addDebugInfo(2)
 	c.writeIndentation()
 	c.builders[c.currentSection].WriteString(s)
@@ -170,6 +209,8 @@ func (c *CodeBuilder) AppendLine(s string) *CodeBuilder {
 
 // WriteLinef writes a formatted line with the current indentation.
 func (c *CodeBuilder) WriteLinef(format string, args ...any) *CodeBuilder {
+	c.checkSection()
+
 	c.addDebugInfo(2)
 	c.writeIndentation()
 	fmt.Fprintf(c.builders[c.currentSection], format, args...)
@@ -186,8 +227,9 @@ func (c *CodeBuilder) NewLine() *CodeBuilder {
 }
 
 // writeIndentation writes the current indentation to the string builder.
+// NOTE: since this is an internal method, it does NOT check for section or
+// debug info; so the caller must ensure those are handled appropriately.
 func (c *CodeBuilder) writeIndentation() *CodeBuilder {
-	c.checkSection()
 	for i := 0; i < c.indentations[c.currentSection]; i++ {
 		c.builders[c.currentSection].WriteString(c.indentationStr)
 	}

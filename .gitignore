@@ -24,8 +24,13 @@ go.work.sum
 # env file
 .env
 
+# Personal experimental files.
 experiment_files
 
+# Personal local docs
+*t_docs/
+
+# generated test files
 tests/codeGen/*Gen/ccl_*_test_*
 
 

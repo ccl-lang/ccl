@@ -15,9 +15,10 @@ func NewCodeBuilderWithOptions(opts *CodeBuilderOptions) *CodeBuilder {
 	return &CodeBuilder{
 		mut: &sync.Mutex{},
 		builders: map[string]*strings.Builder{
-			SectionCommentHeaders: {},
-			SectionHeaders:        {},
-			SectionImports:        {},
+			SectionCommentHeaders:   {},
+			SectionHeaders:          {},
+			SectionImports:          {},
+			SectionDeclareNamespace: {},
 		},
 		indentations:    map[string]int{},
 		importedKeys:    map[string]bool{},
@@ -39,5 +40,5 @@ func GetDefaultCodeBuilderOptions() *CodeBuilderOptions {
 
 // GetDefaultOrderedSections returns the default ordered sections for output.
 func GetDefaultOrderedSections() []string {
-	return []string{SectionCommentHeaders, SectionHeaders, SectionImports}
+	return []string{SectionCommentHeaders, SectionHeaders, SectionImports, SectionDeclareNamespace}
 }

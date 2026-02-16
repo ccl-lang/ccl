@@ -1,0 +1,107 @@
+// Main content needed for test function TestCSGenerator1_1 in file csGen_test.go.
+// This C# code tests the generated models.
+
+using System;
+using CCLGenerated;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        try
+        {
+            TestUser();
+            TestPosition();
+            Console.WriteLine("Runtime verification successful!");
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"Verification failed: {e}");
+            Environment.Exit(1);
+        }
+    }
+
+    static void TestUser()
+    {
+        Console.WriteLine("Testing User...");
+        var user = new User();
+        user.Id = "user123";
+        user.Username = "test_user";
+
+        var skin = new SkinInfo();
+        skin.Type = 0;
+
+        var basicSkin = new BasicSkin();
+        basicSkin.R = 255;
+        basicSkin.G = 0;
+        basicSkin.B = 0;
+
+        skin.Basic = basicSkin;
+        user.Skin = skin;
+
+        // Test serialization
+        var userBinary = user.SerializeBinary();
+        if (userBinary == null || userBinary.Length == 0)
+        {
+            throw new Exception("Failed to serialize user");
+        }
+
+        // Test deserialization
+        var deserializedUser = User.DeserializeBinary(userBinary);
+        if (deserializedUser == null)
+        {
+            throw new Exception("Failed to deserialize user");
+        }
+
+        if (user.Username != "test_user")
+        {
+            throw new Exception("Username mismatch");
+        }
+        if (deserializedUser.Username != "test_user")
+        {
+            throw new Exception("Deserialized username mismatch");
+        }
+
+        if (deserializedUser?.Skin?.Basic?.R != 255)
+        {
+            throw new Exception("Deserialized skin color mismatch");
+        }
+
+        Console.WriteLine("User test passed!");
+    }
+
+    static void TestPosition()
+    {
+        Console.WriteLine("Testing Position...");
+        var pos = new Position();
+        pos.X = 10;
+        pos.Y = 20;
+        pos.Z = 30;
+
+        if (pos.X != 10)
+        {
+            throw new Exception("Position X mismatch");
+        }
+
+        // Test serialization
+        var posBinary = pos.SerializeBinary();
+        if (posBinary == null || posBinary.Length == 0)
+        {
+            throw new Exception("Failed to serialize position");
+        }
+
+        // Test deserialization
+        var deserializedPos = Position.DeserializeBinary(posBinary);
+        if (deserializedPos == null)
+        {
+            throw new Exception("Failed to deserialize position");
+        }
+
+        if (deserializedPos.X != 10)
+        {
+            throw new Exception("Deserialized Position X mismatch");
+        }
+
+        Console.WriteLine("Position test passed!");
+    }
+}
