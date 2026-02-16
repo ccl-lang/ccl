@@ -32,6 +32,8 @@ func (c *CodeBuilder) addDebugInfo(skip int) {
 // checkSection checks if the current section is set.
 func (c *CodeBuilder) checkSection() {
 	if c.currentSection == "" {
+		// Developer misuse: this is an invariant violation, not a user error.
+		// Panicking here is intentional to surface incorrect builder usage quickly.
 		panic("CodeBuilder: illegal usage of CodeBuilder without initiating a section")
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/ALiwoto/ssg/ssg"
 	gen "github.com/ccl-lang/ccl/src/cclGenerators"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 // GenerateCode generates Python code from the provided CCL source file.
@@ -35,7 +36,11 @@ func GenerateCode(options *gen.CodeGenerationOptions) (*gen.CodeGenerationResult
 		return nil, err
 	}
 
-	return &gen.CodeGenerationResult{}, nil
+	return &gen.CodeGenerationResult{
+		SourceLanguage: gValues.LanguageCCL.String(),
+		TargetLanguage: CurrentLanguage.String(),
+		OutputFiles:    pyCtx.OutputFiles,
+	}, nil
 }
 
 func toSnakeCase(s string) string {

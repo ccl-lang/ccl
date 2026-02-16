@@ -20,4 +20,7 @@ type GDScriptGenerationContext struct {
 	// One builder per model class file
 	ModelClasses  map[string]*codeBuilder.CodeBuilder
 	ModelSections map[string][]string
+
+	// OutputFiles is the list of generated files.
+	OutputFiles []string
 }

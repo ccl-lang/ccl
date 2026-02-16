@@ -19,4 +19,7 @@ type PythonGenerationContext struct {
 
 	// One builder per model class file
 	ModelClasses map[string]*codeBuilder.CodeBuilder
+
+	// OutputFiles is the list of generated files.
+	OutputFiles []string
 }

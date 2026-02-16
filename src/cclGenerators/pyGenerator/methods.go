@@ -13,6 +13,7 @@ import (
 
 func (c *PythonGenerationContext) GenerateCode() error {
 	c.ModelClasses = make(map[string]*codeBuilder.CodeBuilder)
+	c.OutputFiles = []string{}
 
 	// Generate each model class
 	for i := range c.Options.CCLDefinition.TypeDefinitions {
@@ -35,6 +36,7 @@ func (c *PythonGenerationContext) GenerateCode() error {
 	if err := c.generateInitFile(); err != nil {
 		return err
 	}
+	c.OutputFiles = append(c.OutputFiles, c.Options.OutputPath+string(os.PathSeparator)+"__init__.py")
 
 	return nil
 }
@@ -74,10 +76,12 @@ func (c *PythonGenerationContext) generateCodeForModel(model *CCLModel) error {
 		return err
 	}
 
-	err = ssg.WriteFileStr(path+fileName+".py", builder.String(nil))
+	fullPath := path + fileName + ".py"
+	err = ssg.WriteFileStr(fullPath, builder.String(nil))
 	if err != nil {
 		return err
 	}
+	c.OutputFiles = append(c.OutputFiles, fullPath)
 
 	// We keep the builder in the map for __init__.py generation
 	return nil

@@ -15,6 +15,7 @@ import (
 func (c *GDScriptGenerationContext) GenerateCode() error {
 	c.ModelClasses = make(map[string]*codeBuilder.CodeBuilder)
 	c.ModelSections = make(map[string][]string)
+	c.OutputFiles = []string{}
 
 	// Generate each model class
 	for _, typeDef := range c.Options.CCLDefinition.TypeDefinitions {
@@ -82,10 +83,12 @@ func (c *GDScriptGenerationContext) generateCodeForModel(model *CCLModel) error 
 		return err
 	}
 
-	err = c.WriteCodeFile(path+fileName+".gd", builder.Build(c.ModelSections[modelName]))
+	fullPath := path + fileName + ".gd"
+	err = c.WriteCodeFile(fullPath, builder.Build(c.ModelSections[modelName]))
 	if err != nil {
 		return err
 	}
+	c.OutputFiles = append(c.OutputFiles, fullPath)
 
 	// to not lack memory, we should delete the builder
 	delete(c.ModelClasses, modelName)

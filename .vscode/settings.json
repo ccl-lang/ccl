@@ -10,6 +10,8 @@
         "staticmethod",
         "subarray",
         "codegen",
-        "ebnf"
+        "ebnf",
+        "goroutine",
+        "goroutines"
     ]
 }

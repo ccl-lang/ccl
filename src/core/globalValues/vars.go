@@ -15,6 +15,9 @@ var (
 	langsAliasNames = map[string]LanguageType{
 		"unknown":    LanguageUnknown,
 		"ccl":        LanguageCCL,
+		"gd":         LanguageGd,
+		"godot":      LanguageGd,
+		"gdscript":   LanguageGd,
 		"go":         LanguageGo,
 		"golang":     LanguageGo,
 		"cs":         LanguageCS,

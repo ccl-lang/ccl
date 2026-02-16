@@ -50,7 +50,7 @@ func (c *CodeGenerationBase) GetFileNameForModel(
 	defaultStyle string,
 	supportedStyles []string,
 ) (string, error) {
-	namingStyle := c.GetFileNamingStyle(gValues.LanguagePy, currentModel, defaultStyle)
+	namingStyle := c.GetFileNamingStyle(targetLang, currentModel, defaultStyle)
 	fileName := ""
 	switch namingStyle {
 	case gValues.StylePascalCase:
