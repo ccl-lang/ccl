@@ -123,6 +123,8 @@ func (p *CCLParser) ParseAsCCL() (*cclValues.SourceCodeDefinition, error) {
 	return p.codeDefinition, nil
 }
 
+// peekHasAssignment returns true if there is an assignment token in front of the current token,
+// ignoring comments.
 func (p *CCLParser) peekHasAssignment() bool {
 	// keep doing a loop until we hit an assignment.
 	// if we hit something other than assignment, we should return false
@@ -130,14 +132,16 @@ func (p *CCLParser) peekHasAssignment() bool {
 	// if we hit EOF, we should return false
 	currentPos := p.pos + 1
 	for currentPos < len(p.tokens) {
-
 		if p.tokens[currentPos].Type == cclLexer.TokenTypeComment {
+			currentPos++
 			continue
 		}
 
 		if p.tokens[currentPos].Type == cclLexer.TokenTypeAssignment {
 			return true
 		}
+
+		return false
 	}
 
 	return false
