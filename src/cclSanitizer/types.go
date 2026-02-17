@@ -13,3 +13,9 @@ type AttributeResolutionError struct {
 	Message        string
 	SourcePosition *cclUtils.SourceCodePosition
 }
+
+// AstSanitizationError represents a general failure while converting AST to IR.
+type AstSanitizationError struct {
+	Message        string
+	SourcePosition *cclUtils.SourceCodePosition
+}
