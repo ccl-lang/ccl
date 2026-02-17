@@ -7,3 +7,9 @@ type TypeUsageResolutionError struct {
 	Message        string
 	SourcePosition *cclUtils.SourceCodePosition
 }
+
+// AttributeResolutionError represents a failure to resolve an attribute usage.
+type AttributeResolutionError struct {
+	Message        string
+	SourcePosition *cclUtils.SourceCodePosition
+}

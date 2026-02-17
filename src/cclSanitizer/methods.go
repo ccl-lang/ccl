@@ -21,3 +21,21 @@ func (e *TypeUsageResolutionError) Error() string {
 		e.SourcePosition.Column,
 	)
 }
+
+// Error returns the string representation of the attribute resolution error.
+func (e *AttributeResolutionError) Error() string {
+	if e == nil {
+		return "cclSanitizer: unknown attribute resolution error"
+	}
+
+	if e.SourcePosition == nil {
+		return "cclSanitizer: " + e.Message
+	}
+
+	return fmt.Sprintf(
+		"cclSanitizer: %s (line %d, col %d)",
+		e.Message,
+		e.SourcePosition.Line,
+		e.SourcePosition.Column,
+	)
+}
