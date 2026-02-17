@@ -261,6 +261,18 @@ func (p *CCLParser) getSourcePosition() *cclUtils.SourceCodePosition {
 	}
 }
 
+func (p *CCLParser) getSourcePositionForToken(token *cclLexer.CCLToken) *cclUtils.SourceCodePosition {
+	if token == nil {
+		return nil
+	}
+
+	return &cclUtils.SourceCodePosition{
+		Line:       token.Line,
+		Column:     token.Column,
+		SourceLine: p.getCurrentSourceLine(token.Line),
+	}
+}
+
 // IsCurrentValue checks if the current token is a literal value token.
 func (p *CCLParser) IsCurrentLiteralValue() bool {
 	return p.current.IsTokenLiteralValue()

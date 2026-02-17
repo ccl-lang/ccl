@@ -91,6 +91,19 @@ func (t *CCLToken) GetIdentifier() string {
 	return ""
 }
 
+// GetDataTypeName returns the built-in data type name if the token is a data type.
+// If the token is not a data type, it returns an empty string.
+func (t *CCLToken) GetDataTypeName() string {
+	if t.Type == TokenTypeDataType {
+		name, ok := t.value.(string)
+		if ok {
+			return name
+		}
+	}
+
+	return ""
+}
+
 // IsTokenValue returns true if the token is a value token.
 func (t *CCLToken) IsTokenLiteralValue() bool {
 	return valueTokens[t.Type]

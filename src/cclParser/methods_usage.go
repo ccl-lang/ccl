@@ -2,6 +2,8 @@ package cclParser
 
 import (
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
+	"github.com/ccl-lang/ccl/src/cclSanitizer"
+	"github.com/ccl-lang/ccl/src/core/cclAst"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
@@ -9,7 +11,20 @@ import (
 // No need to call advance after calling this method, as it will handle all the necessary
 // advance calls by itself.
 func (p *CCLParser) parseCurrentTypeUsage(currentNamespace string) (*cclValues.CCLTypeUsage, error) {
+	typeExpr, err := p.parseCurrentTypeExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	return cclSanitizer.ResolveTypeUsage(p.ctx, currentNamespace, typeExpr)
+}
+
+func (p *CCLParser) parseCurrentTypeExpression() (cclAst.TypeExpression, error) {
 	allTokens := p.readUntilSemicolon()
+	if len(allTokens) == 0 {
+		return nil, p.ErrInvalidSyntax("Missing type expression")
+	}
+
 	last := len(allTokens) - 1
 
 	isArray := allTokens[last].Type == cclLexer.TokenTypeRightBracket
@@ -37,19 +52,38 @@ func (p *CCLParser) parseCurrentTypeUsage(currentNamespace string) (*cclValues.C
 		return nil, p.ErrInvalidSyntax("Unsupported type syntax with extra tokens")
 	}
 
-	var baseTypeUsage *cclValues.CCLTypeUsage
-	// I WAS HERE
-	switch allTokens[0].Type {
+	baseToken := allTokens[0]
+	basePosition := p.getSourcePositionForToken(baseToken)
+
+	var baseTypeExpr *cclAst.SimpleTypeExpression
+	switch baseToken.Type {
 	case cclLexer.TokenTypeDataType:
-		baseTypeUsage = allTokens[0].GetBuiltInDataTypeUsage(p.ctx)
+		baseTypeExpr = &cclAst.SimpleTypeExpression{
+			TypeName: cclAst.SimpleTypeName{
+				Name: baseToken.GetDataTypeName(),
+			},
+			IsBuiltinToken: true,
+			SourcePosition: basePosition,
+		}
 	case cclLexer.TokenTypeIdentifier:
-		baseTypeUsage = allTokens[0].GetCustomTypeUsage(p.ctx, currentNamespace)
+		baseTypeExpr = &cclAst.SimpleTypeExpression{
+			TypeName: cclAst.SimpleTypeName{
+				Name: baseToken.GetIdentifier(),
+			},
+			IsBuiltinToken: false,
+			SourcePosition: basePosition,
+		}
 	default:
 		return nil, p.ErrInvalidSyntax("Expected builtin data-type or an identifier as first token")
 	}
 
 	if isArray {
-		return p.ctx.NewArrayTypeUsage(baseTypeUsage, arrayLength), nil
+		return &cclAst.ArrayTypeExpression{
+			ElementType:    baseTypeExpr,
+			Length:         arrayLength,
+			SourcePosition: basePosition,
+		}, nil
 	}
-	return baseTypeUsage, nil
+
+	return baseTypeExpr, nil
 }
