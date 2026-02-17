@@ -1,0 +1,31 @@
+name: CCL Tests Deps
+description: Set up runtimes required for running tests.
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.11"
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: stable
+
+    - name: Set up Godot
+      uses: chickensoft-games/setup-godot@v2
+      with:
+        version: 4.6.0
+        use-dotnet: false
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: "22"
+
+    - name: Install .NET 6.0 runtime
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: "6.0.x"
