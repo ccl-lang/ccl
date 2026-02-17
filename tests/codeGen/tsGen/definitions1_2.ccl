@@ -46,7 +46,7 @@ model SkinInfo {
     Texture: TextureSkin;
 }
 
-// User and Room types
+// UserInfo and RoomInfo types
 model UserInfo {
     Id: string;
     Username: string;
@@ -60,9 +60,9 @@ model RoomInfo {
 }
 
 model EntityState {
-    Pos: Position;
-    Rotation: Rotation;
-    Scale: Scale;
+    Pos: PositionInfo;
+    Rotation: RotationInfo;
+    Scale: ScaleInfo;
     Color: SkinInfo;
 }
 
@@ -106,7 +106,7 @@ model JoinRoomAnswer {
     RpcId: uint16;
     RoomId: string;
     Room: RoomInfo;
-    State: State;
+    State: EntityState;
 }
 
 model LeaveRoomRequest {
@@ -127,22 +127,22 @@ model ServerUpdateRoomInfo {
 
 model ServerUpdateRoomUsers {
     RoomId: string;
-    Users: User[];
+    Users: UserInfo[];
 }
 
 model ServerUpdatePlayerPosition {
     UserId: string;
-    Pos: Position;
+    Pos: PositionInfo;
 }
 
 model ServerUpdatePlayerRotation {
     UserId: string;
-    Rotation: Rotation;
+    Rotation: RotationInfo;
 }
 
 model ServerUpdatePlayerScale {
     UserId: string;
-    Scale: Scale;
+    Scale: ScaleInfo;
 }
 
 model ServerUpdatePlayerColor {
@@ -160,10 +160,12 @@ model ServerUpdatePlayerLeave {
 }
 
 model ServerUpdatePlayerJoin {
-    User: User;
+    User: UserInfo;
 }
 
 model UsersList {
-    Users: User[];
-    MoreUsers: User[];
+    Users: UserInfo[];
+    MoreUsers: UserInfo[];
 }
+
+

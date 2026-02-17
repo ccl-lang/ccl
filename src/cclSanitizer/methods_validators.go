@@ -53,3 +53,50 @@ func (v *fieldNameValidator) ValidateFieldName(
 }
 
 //---------------------------------------------------------
+
+func validateFieldTypeUsages(typeUsages []fieldTypeUsageCheck) error {
+	for _, usage := range typeUsages {
+		if err := validateTypeUsageCompleteness(usage, usage.typeUsage); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateTypeUsageCompleteness(
+	usageInfo fieldTypeUsageCheck,
+	typeUsage *cclValues.CCLTypeUsage,
+) error {
+	if typeUsage == nil || typeUsage.GetDefinition() == nil {
+		return &AstSanitizationError{
+			Message:        "field type resolved to nil",
+			SourcePosition: usageInfo.sourcePosition,
+		}
+	}
+
+	typeDef := typeUsage.GetDefinition()
+	if typeDef.IsIncomplete() {
+		return &AstSanitizationError{
+			Message:        "unknown type '" + typeDef.GetFullName() + "' for field '" + usageInfo.fieldName + "' in model '" + usageInfo.modelName + "'",
+			SourcePosition: usageInfo.sourcePosition,
+		}
+	}
+
+	underlying := typeUsage.GetUnderlyingType()
+	if underlying != nil {
+		if err := validateTypeUsageCompleteness(usageInfo, underlying); err != nil {
+			return err
+		}
+	}
+
+	for _, arg := range typeUsage.GetGenericArgs() {
+		if err := validateTypeUsageCompleteness(usageInfo, arg); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+//---------------------------------------------------------

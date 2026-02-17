@@ -4,9 +4,9 @@ extends SceneTree
 func _init():
 	print("Starting GDScript runtime verification...")
 	
-	var user_script = load("res://models/user.gd")
+	var user_script = load("res://models/user_info.gd")
 	if user_script == null:
-		print("Error: Could not load user.gd")
+		print("Error: Could not load user_info.gd")
 		quit(1)
 		return
 
@@ -33,14 +33,14 @@ func _init():
 		quit(1)
 		return
 
-	# Test Position (direct access)
-	var pos = Position.new()
+	# Test PositionInfo (direct access)
+	var pos = PositionInfo.new()
 	pos.x = 10
 	pos.y = 20
 	pos.z = 30
 
 	if pos.x != 10:
-		print("Error: Position X mismatch")
+		print("Error: PositionInfo X mismatch")
 		quit(1)
 		return
 

@@ -1,11 +1,11 @@
-import { User } from './models/User.js';
+import { UserInfo } from './models/UserInfo.js';
 import { SkinInfo } from './models/SkinInfo.js';
 import { BasicSkin } from './models/BasicSkin.js';
-import { Position } from './models/Position.js';
+import { PositionInfo } from './models/PositionInfo.js';
 
 function testUser() {
-	console.log("Testing User...");
-	const user = new User();
+	console.log("Testing UserInfo...");
+	const user = new UserInfo();
 	user.id = "user123";
 	user.username = "test_user";
 
@@ -27,21 +27,21 @@ function testUser() {
 		throw new Error("Skin color mismatch");
 	}
 
-	console.log("User test passed!");
+	console.log("UserInfo test passed!");
 }
 
 function testPosition() {
-	console.log("Testing Position...");
-	const pos = new Position();
+	console.log("Testing PositionInfo...");
+	const pos = new PositionInfo();
 	pos.x = 10;
 	pos.y = 20;
 	pos.z = 30;
 
 	if (pos.x !== 10) {
-		throw new Error("Position X mismatch");
+		throw new Error("PositionInfo X mismatch");
 	}
 
-	console.log("Position test passed!");
+	console.log("PositionInfo test passed!");
 }
 
 try {
@@ -52,3 +52,4 @@ try {
 	console.error("Verification failed:", e);
 	process.exit(1);
 }
+

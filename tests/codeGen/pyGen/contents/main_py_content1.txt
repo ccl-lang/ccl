@@ -7,11 +7,11 @@ import struct
 # Add the current directory to sys.path to ensure we can import the generated models
 sys.path.append(os.getcwd())
 
-from models import User, SkinInfo, BasicSkin, Position
+from models import UserInfo, SkinInfo, BasicSkin, PositionInfo
 
 def test_user():
-	print("Testing User...")
-	user = User()
+	print("Testing UserInfo...")
+	user = UserInfo()
 	user.id = "user123"
 	user.username = "test_user"
 	
@@ -32,7 +32,7 @@ def test_user():
 		raise Exception("Failed to serialize user")
 
 	# Test deserialization
-	deserialized_user = User.deserialize_binary(user_binary)
+	deserialized_user = UserInfo.deserialize_binary(user_binary)
 	if not deserialized_user:
 		raise Exception("Failed to deserialize user")
 
@@ -44,17 +44,17 @@ def test_user():
 	if deserialized_user.skin.basic.r != 255:
 		raise Exception("Deserialized skin color mismatch")
 
-	print("User test passed!")
+	print("UserInfo test passed!")
 
 def test_position():
-	print("Testing Position...")
-	pos = Position()
+	print("Testing PositionInfo...")
+	pos = PositionInfo()
 	pos.x = 10
 	pos.y = 20
 	pos.z = 30
 
 	if pos.x != 10:
-		raise Exception("Position X mismatch")
+		raise Exception("PositionInfo X mismatch")
 
 	# Test serialization
 	pos_binary = pos.serialize_binary()
@@ -62,14 +62,14 @@ def test_position():
 		raise Exception("Failed to serialize position")
 
 	# Test deserialization
-	deserialized_pos = Position.deserialize_binary(pos_binary)
+	deserialized_pos = PositionInfo.deserialize_binary(pos_binary)
 	if not deserialized_pos:
 		raise Exception("Failed to deserialize position")
 
 	if deserialized_pos.x != 10:
-		raise Exception("Deserialized Position X mismatch")
+		raise Exception("Deserialized PositionInfo X mismatch")
 
-	print("Position test passed!")
+	print("PositionInfo test passed!")
 
 if __name__ == "__main__":
 	try:
@@ -79,3 +79,4 @@ if __name__ == "__main__":
 	except Exception as e:
 		print(f"Verification failed: {e}")
 		sys.exit(1)
+

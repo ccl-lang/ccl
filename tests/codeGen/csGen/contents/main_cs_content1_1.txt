@@ -23,8 +23,8 @@ class Program
 
     static void TestUser()
     {
-        Console.WriteLine("Testing User...");
-        var user = new User();
+        Console.WriteLine("Testing UserInfo...");
+        var user = new UserInfo();
         user.Id = "user123";
         user.Username = "test_user";
 
@@ -47,7 +47,7 @@ class Program
         }
 
         // Test deserialization
-        var deserializedUser = User.DeserializeBinary(userBinary);
+        var deserializedUser = UserInfo.DeserializeBinary(userBinary);
         if (deserializedUser == null)
         {
             throw new Exception("Failed to deserialize user");
@@ -67,20 +67,20 @@ class Program
             throw new Exception("Deserialized skin color mismatch");
         }
 
-        Console.WriteLine("User test passed!");
+        Console.WriteLine("UserInfo test passed!");
     }
 
     static void TestPosition()
     {
-        Console.WriteLine("Testing Position...");
-        var pos = new Position();
+        Console.WriteLine("Testing PositionInfo...");
+        var pos = new PositionInfo();
         pos.X = 10;
         pos.Y = 20;
         pos.Z = 30;
 
         if (pos.X != 10)
         {
-            throw new Exception("Position X mismatch");
+            throw new Exception("PositionInfo X mismatch");
         }
 
         // Test serialization
@@ -91,7 +91,7 @@ class Program
         }
 
         // Test deserialization
-        var deserializedPos = Position.DeserializeBinary(posBinary);
+        var deserializedPos = PositionInfo.DeserializeBinary(posBinary);
         if (deserializedPos == null)
         {
             throw new Exception("Failed to deserialize position");
@@ -99,9 +99,9 @@ class Program
 
         if (deserializedPos.X != 10)
         {
-            throw new Exception("Deserialized Position X mismatch");
+            throw new Exception("Deserialized PositionInfo X mismatch");
         }
 
-        Console.WriteLine("Position test passed!");
+        Console.WriteLine("PositionInfo test passed!");
     }
 }

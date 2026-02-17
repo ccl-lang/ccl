@@ -32,6 +32,7 @@ func SanitizeCCLAst(
 
 	definition := &cclValues.SourceCodeDefinition{}
 	nameValidator := newFieldNameValidator(ast, fileNamespace)
+	fieldTypeUsages := []fieldTypeUsageCheck{}
 
 	for _, globalAttr := range ast.GlobalAttributes {
 		if globalAttr == nil {
@@ -151,6 +152,12 @@ func SanitizeCCLAst(
 					}
 				}
 				fieldDef.ChangeValueType(typeUsage)
+				fieldTypeUsages = append(fieldTypeUsages, fieldTypeUsageCheck{
+					modelName:      modelDef.Name,
+					fieldName:      fieldDef.Name,
+					typeUsage:      typeUsage,
+					sourcePosition: fieldAst.SourcePosition,
+				})
 			} else if fieldAst.Value != nil {
 				valueType, value, err := resolveFieldAssignment(ctx, fieldAst.Value, fieldAst.SourcePosition)
 				if err != nil {
@@ -158,6 +165,12 @@ func SanitizeCCLAst(
 				}
 				fieldDef.ChangeValueType(valueType)
 				fieldDef.ChangeValue(value)
+				fieldTypeUsages = append(fieldTypeUsages, fieldTypeUsageCheck{
+					modelName:      modelDef.Name,
+					fieldName:      fieldDef.Name,
+					typeUsage:      valueType,
+					sourcePosition: fieldAst.SourcePosition,
+				})
 			} else {
 				return nil, &AstSanitizationError{
 					Message:        "field has no type or value",
@@ -177,6 +190,10 @@ func SanitizeCCLAst(
 		}
 
 		definition.TypeDefinitions = append(definition.TypeDefinitions, modelTypeDef)
+	}
+
+	if err := validateFieldTypeUsages(fieldTypeUsages); err != nil {
+		return nil, err
 	}
 
 	return definition, nil

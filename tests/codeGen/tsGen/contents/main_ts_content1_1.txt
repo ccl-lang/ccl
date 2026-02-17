@@ -1,13 +1,13 @@
 // Main content needed for test function TestTSGenerator1_1 in file tsGen1_test.go.
 
-import { User } from './models/User';
+import { UserInfo } from './models/UserInfo';
 import { SkinInfo } from './models/SkinInfo';
 import { BasicSkin } from './models/BasicSkin';
-import { Position } from './models/Position';
+import { PositionInfo } from './models/PositionInfo';
 
 function testUser() {
-	console.log("Testing User...");
-	const user = new User();
+	console.log("Testing UserInfo...");
+	const user = new UserInfo();
 	user.id = "user123";
 	user.username = "test_user";
 
@@ -29,7 +29,7 @@ function testUser() {
 	}
 
 	// Test deserialization
-	const deserializedUser = User.deserializeBinary(userBinary);
+	const deserializedUser = UserInfo.deserializeBinary(userBinary);
 	if (!deserializedUser) {
 		throw new Error("Failed to deserialize user");
 	}
@@ -45,18 +45,18 @@ function testUser() {
 		throw new Error("Deserialized skin color mismatch");
 	}
 
-	console.log("User test passed!");
+	console.log("UserInfo test passed!");
 }
 
 function testPosition() {
-	console.log("Testing Position...");
-	const pos = new Position();
+	console.log("Testing PositionInfo...");
+	const pos = new PositionInfo();
 	pos.x = 10;
 	pos.y = 20;
 	pos.z = 30;
 
 	if (pos.x !== 10) {
-		throw new Error("Position X mismatch");
+		throw new Error("PositionInfo X mismatch");
 	}
 
 	// Test serialization
@@ -66,16 +66,16 @@ function testPosition() {
 	}
 
 	// Test deserialization
-	const deserializedPos = Position.deserializeBinary(posBinary);
+	const deserializedPos = PositionInfo.deserializeBinary(posBinary);
 	if (!deserializedPos) {
 		throw new Error("Failed to deserialize position");
 	}
 
 	if (deserializedPos.x !== 10) {
-		throw new Error("Deserialized Position X mismatch");
+		throw new Error("Deserialized PositionInfo X mismatch");
 	}
 
-	console.log("Position test passed!");
+	console.log("PositionInfo test passed!");
 }
 
 try {

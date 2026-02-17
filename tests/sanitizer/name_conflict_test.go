@@ -12,12 +12,12 @@ import (
 )
 
 const FieldNameConflictModelInput = `
-model RoomInfo {
+model PlainExample {
 	id: int;
 }
 
 model UserInfo {
-	Room: string;
+	PlainExample: string;
 }
 `
 

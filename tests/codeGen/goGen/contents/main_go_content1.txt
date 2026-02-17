@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	// Test creating a User
-	user := models.User{
+	// Test creating a UserInfo
+	user := models.UserInfo{
 		Id:       "user123",
 		Username: "test_user",
 		Skin: &models.SkinInfo{
@@ -27,7 +27,7 @@ func main() {
 		panic(fmt.Sprintf("Failed to serialize user: %v", err))
 	}
 
-	deserializedUser := &models.User{}
+	deserializedUser := &models.UserInfo{}
 	err = deserializedUser.DeserializeBinary(userBinary)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to deserialize user: %v", err))
@@ -39,15 +39,15 @@ func main() {
 		panic("Deserialized username mismatch")
 	}
 
-	// Test creating a Position
-	pos := models.Position{
+	// Test creating a PositionInfo
+	pos := models.PositionInfo{
 		X: 10,
 		Y: 20,
 		Z: 30,
 	}
 
 	if pos.X != 10 {
-		panic("Position X mismatch")
+		panic("PositionInfo X mismatch")
 	}
 
 	positionBinary, err := pos.SerializeBinary()
@@ -55,15 +55,16 @@ func main() {
 		panic(fmt.Sprintf("Failed to serialize position: %v", err))
 	}
 
-	deserializedPosition := &models.Position{}
+	deserializedPosition := &models.PositionInfo{}
 	err = deserializedPosition.DeserializeBinary(positionBinary)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to deserialize position: %v", err))
 	}
 
 	if pos.X != 10 {
-		panic("Position X mismatch")
+		panic("PositionInfo X mismatch")
 	}
 
 	fmt.Println("Runtime verification successful!")
 }
+
