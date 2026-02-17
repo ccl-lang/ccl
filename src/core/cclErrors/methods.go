@@ -1,11 +1,6 @@
 package cclErrors
 
-import (
-	"fmt"
-	"strings"
-
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
-)
+import "strings"
 
 //---------------------------------------------------------
 
@@ -21,7 +16,7 @@ func (d *DuplicateFieldError) Error() string {
 	}
 
 	message := "Duplicate field: " + d.ModelName + "." + d.FieldName
-	return formatErrorWithSourcePosition(message, d.SourcePosition)
+	return d.SourcePosition.FormatError(message)
 }
 
 //---------------------------------------------------------
@@ -32,7 +27,7 @@ func (d *DuplicateModelError) Error() string {
 	}
 
 	message := "Duplicate model: " + d.ModelName
-	return formatErrorWithSourcePosition(message, d.SourcePosition)
+	return d.SourcePosition.FormatError(message)
 }
 
 //---------------------------------------------------------
@@ -76,35 +71,5 @@ func (e *FieldNameConflictError) Error() string {
 		message += " in namespace '" + e.Namespace + "'"
 	}
 
-	return formatErrorWithSourcePosition(message, e.SourcePosition)
-}
-
-//---------------------------------------------------------
-
-func formatErrorWithSourcePosition(message string, pos *cclUtils.SourceCodePosition) string {
-	if pos == nil {
-		return message
-	}
-
-	if pos.SourceLine == "" {
-		return fmt.Sprintf(
-			"%s at line %d, column %d",
-			message,
-			pos.Line,
-			pos.Column,
-		)
-	}
-
-	result := fmt.Sprintf(
-		"Error: %s\n  at line %d, column %d\n",
-		message,
-		pos.Line,
-		pos.Column,
-	)
-
-	result += "  " + pos.SourceLine + "\n"
-	pointerIndent := "  " + strings.Repeat(" ", pos.Column)
-	result += pointerIndent + "^ " + message
-
-	return result
+	return e.SourcePosition.FormatError(message)
 }

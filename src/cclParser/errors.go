@@ -102,21 +102,7 @@ func (e *ExpectedValueError) Error() string {
 	}
 
 	// Create the main error message
-	message := fmt.Sprintf(
-		"cclParser: Expected a value after '=' in attribute parameter\n  at line %d, column %d\n",
-		e.SourcePosition.Line,
-		e.SourcePosition.Column,
-	)
-
-	// Add the source code line
-	message += "  " + e.SourcePosition.SourceLine + "\n"
-
-	// Add the pointer to the exact position
-	// First, calculate how many spaces to add before the ^
-	pointerIndent := "  " + strings.Repeat(" ", e.SourcePosition.Column)
-	message += pointerIndent + "^ Missing value here"
-
-	return message
+	return e.SourcePosition.FormatError("Missing value here")
 }
 
 //---------------------------------------------------------
@@ -143,17 +129,10 @@ func (e *UnexpectedTokenAfterParameterError) Error() string {
 		e.SourcePosition.Column,
 	)
 
-	// Add the source code line
-	message += "  " + e.SourcePosition.SourceLine + "\n"
-
-	// Add the pointer to the exact position
-	pointerIndent := "  " + strings.Repeat(" ", e.SourcePosition.Column)
-	message += pointerIndent + "^ Expected ',' or ')' here"
-
 	message += "\n\nHint: Parameter values should be separated by commas like:"
 	message += "\n  [MyAttribute(Param1 = \"value\", Param2 = 123)]"
 
-	return message
+	return e.SourcePosition.FormatError(message)
 }
 
 // ---------------------------------------------------------
@@ -180,13 +159,6 @@ func (e *UnexpectedTokenAfterAssignmentError) Error() string {
 		e.SourcePosition.Column,
 	)
 
-	// Add the source code line
-	message += "  " + e.SourcePosition.SourceLine + "\n"
-
-	// Add the pointer to the exact position
-	pointerIndent := "  " + strings.Repeat(" ", e.SourcePosition.Column)
-	message += pointerIndent + "^ Expected literal value or variable here"
-
 	targetParam := "Param2"
 	if e.ParamName != "" {
 		targetParam = e.ParamName
@@ -195,7 +167,7 @@ func (e *UnexpectedTokenAfterAssignmentError) Error() string {
 	message += "\n\nHint: After assignment, there should be a literal value or variable like this:"
 	message += "\n  [MyAttribute(Param1 = \"value\", " + targetParam + " = ConstantValue)]"
 
-	return message
+	return e.SourcePosition.FormatError(message)
 }
 
 //---------------------------------------------------------
@@ -223,18 +195,11 @@ func (e *UnexpectedEndOfAttributeError) Error() string {
 		e.SourcePosition.Column,
 	)
 
-	// Add the source code line
-	message += "  " + e.SourcePosition.SourceLine + "\n"
-
-	// Add the pointer to the exact position
-	pointerIndent := "  " + strings.Repeat(" ", e.SourcePosition.Column)
-	message += pointerIndent + "^ Expected end of attribute and an entity after this"
-
 	message += "\n\nHint: After attributes, we expect an entity (such as a model, or a field) like this:"
 	message += "\n  [MyAttribute(Param1 = \"value\", )]"
 	message += "\n  model MyModel { [MaxLength(10)] myField: string; }"
 
-	return message
+	return e.SourcePosition.FormatError(message)
 }
 
 //---------------------------------------------------------
@@ -262,17 +227,10 @@ func (e *InvalidAttributeUsageError) Error() string {
 		e.SourcePosition.Column,
 	)
 
-	// Add the source code line
-	message += "  " + e.SourcePosition.SourceLine + "\n"
-
-	// Add the pointer to the exact position
-	pointerIndent := "  " + strings.Repeat(" ", e.SourcePosition.Column)
-	message += pointerIndent + "^ Expected a valid attribute usage here"
-
 	message += "\n\nHint: Attributes can only be applied on models, fields, etc..."
 	message += "\n  If you don't want to do that, consider converting this to a global attribute."
 
-	return message
+	return e.SourcePosition.FormatError(message)
 }
 
 //---------------------------------------------------------
@@ -305,18 +263,11 @@ func (e *InvalidSyntaxError) Error() string {
 		e.SourcePosition.Column,
 	)
 
-	// Add the source code line
-	message += "  " + e.SourcePosition.SourceLine + "\n"
-
-	// Add the pointer to the exact position
-	pointerIndent := "  " + strings.Repeat(" ", e.SourcePosition.Column)
-	message += pointerIndent + "^ Invalid " + e.Language.String() + " syntax"
-
 	if e.HintMessage != "" {
 		message += "\n\nHint: " + e.HintMessage
 	}
 
-	return message
+	return e.SourcePosition.FormatError(message)
 }
 
 //---------------------------------------------------------
@@ -346,14 +297,7 @@ func (e *UndefinedIdentifierError) Error() string {
 		return message
 	}
 
-	// Add the source code line
-	message += "  " + e.SourcePosition.SourceLine + "\n"
-
-	// Add the pointer to the exact position
-	pointerIndent := "  " + strings.Repeat(" ", e.SourcePosition.Column)
-	message += pointerIndent + "^ Undefined identifier '" + e.TargetIdentifier + "' "
-
-	return message
+	return e.SourcePosition.FormatError(message)
 }
 
 //---------------------------------------------------------
