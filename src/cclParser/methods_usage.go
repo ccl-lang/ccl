@@ -2,24 +2,10 @@ package cclParser
 
 import (
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
-	"github.com/ccl-lang/ccl/src/cclSanitizer"
 	"github.com/ccl-lang/ccl/src/core/cclAst"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
-// parseCurrentType tries to parse a ccl type-info from the current lexer tokens.
-// No need to call advance after calling this method, as it will handle all the necessary
-// advance calls by itself.
-func (p *CCLParser) parseCurrentTypeUsage(currentNamespace string) (*cclValues.CCLTypeUsage, error) {
-	typeExpr, err := p.parseCurrentTypeExpression()
-	if err != nil {
-		return nil, err
-	}
-
-	return cclSanitizer.ResolveTypeUsage(p.ctx, currentNamespace, typeExpr)
-}
-
-func (p *CCLParser) parseCurrentTypeExpression() (cclAst.TypeExpression, error) {
+func (p *CCLAstParser) parseCurrentTypeExpression() (cclAst.TypeExpression, error) {
 	allTokens := p.readUntilSemicolon()
 	if len(allTokens) == 0 {
 		return nil, p.ErrInvalidSyntax("Missing type expression")

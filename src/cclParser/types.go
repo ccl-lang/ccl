@@ -15,7 +15,8 @@ type CCLParseOptions struct {
 	CodeContext    *cclValues.CCLCodeContext
 }
 
-type CCLParser struct {
+// CCLAstParser parses tokens into a syntax-only AST.
+type CCLAstParser struct {
 	// Options is the options for the parser.
 	Options *CCLParseOptions
 

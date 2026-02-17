@@ -41,3 +41,15 @@ func ParseCCLAst(
 	theParser := newCCLAstParser(ctx, tokens, options)
 	return theParser.ParseAsAST()
 }
+
+func newCCLAstParser(
+	ctx *cclValues.CCLCodeContext,
+	tokens []*cclLexer.CCLToken,
+	options *CCLParseOptions,
+) *CCLAstParser {
+	return &CCLAstParser{
+		Options: options,
+		tokens:  tokens,
+		ctx:     ctx,
+	}
+}

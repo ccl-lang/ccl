@@ -225,9 +225,18 @@ func (c *GoGenerationContext) generateTypesForModel(currentModel *CCLModel) erro
 		}
 
 		theGoType, ok := CCLTypesToGoTypes[targetType.GetName()]
-		customDefinedType := c.Options.CCLDefinition.GetModelByName(targetType.GetName())
 		if !ok {
-			if customDefinedType == nil {
+			if !targetType.IsCustomTypeModel() {
+				return &cclErrors.UnsupportedFieldTypeError{
+					TypeName:       targetType.GetName(),
+					FieldName:      currentField.Name,
+					ModelName:      currentModel.Name,
+					TargetLanguage: CurrentLanguage.String(),
+				}
+			}
+
+			customModel := targetType.GetDefinition().GetModelDefinition()
+			if customModel == nil {
 				return &cclErrors.UnsupportedFieldTypeError{
 					TypeName:       targetType.GetName(),
 					FieldName:      currentField.Name,
@@ -237,7 +246,7 @@ func (c *GoGenerationContext) generateTypesForModel(currentModel *CCLModel) erro
 			}
 
 			// TODO: add ways to specify this type being pointer or not
-			theGoType = "*" + customDefinedType.Name
+			theGoType = "*" + customModel.Name
 		}
 
 		// TODO: handle extra operators here

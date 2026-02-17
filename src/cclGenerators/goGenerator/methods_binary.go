@@ -47,7 +47,7 @@ func (c *GoGenerationContext) generateSerializeBinaryMethod(model *CCLModel) err
 
 func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField) error {
 	fieldTypeName := field.Type.GetName()
-	isCustomType := c.Options.CCLDefinition.IsCustomType(fieldTypeName)
+	isCustomType := field.Type.IsCustomTypeModel()
 	switch fieldTypeName {
 	case cclValues.TypeNameString:
 		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {").
@@ -114,7 +114,7 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 
 func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField) error {
 	targetFieldType := field.Type.GetUnderlyingType()
-	isCustomType := c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName())
+	isCustomType := targetFieldType.IsCustomTypeModel()
 	c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {").
 		Indent().
 		WriteLine("return nil, err").
@@ -222,7 +222,7 @@ func (c *GoGenerationContext) generateDeserializeBinaryMethod(model *CCLModel) e
 
 func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLField) error {
 	fieldTypeName := field.Type.GetName()
-	isCustomType := c.Options.CCLDefinition.IsCustomType(fieldTypeName)
+	isCustomType := field.Type.IsCustomTypeModel()
 	// isPointer := isCustomType //TODO: Find a way to specify this
 	fName := strings.ToLower(string(field.Name[0])) + field.Name[1:]
 	fLenName := fName + "Len"
@@ -328,7 +328,7 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 
 func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLField) error {
 	targetFieldType := field.Type.GetUnderlyingType()
-	isCustomType := c.Options.CCLDefinition.IsCustomType(targetFieldType.GetName())
+	isCustomType := targetFieldType.IsCustomTypeModel()
 	isPointer := isCustomType //TODO: Find a way to specify this
 	fName := strings.ToLower(string(field.Name[0])) + field.Name[1:]
 	fLenName := fName + "Len"

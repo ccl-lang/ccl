@@ -73,7 +73,7 @@ func (p *CCLAstParser) parseModelDeclAst(currentNamespace string) (*cclAst.Model
 		}
 
 		if p.isCurrentTokenFieldOfModel() {
-			field, err := p.parseModelFieldAst(currentNamespace)
+			field, err := p.parseModelFieldAst()
 			if err != nil {
 				return nil, err
 			}
@@ -102,7 +102,7 @@ func (p *CCLAstParser) parseModelDeclAst(currentNamespace string) (*cclAst.Model
 	}, nil
 }
 
-func (p *CCLAstParser) parseModelFieldAst(currentNamespace string) (*cclAst.FieldDecl, error) {
+func (p *CCLAstParser) parseModelFieldAst() (*cclAst.FieldDecl, error) {
 	field := &cclAst.FieldDecl{}
 	gotColon := false
 	gotAssignment := false
@@ -202,4 +202,19 @@ func (p *CCLAstParser) parseModelFieldAst(currentNamespace string) (*cclAst.Fiel
 	}
 
 	return field, nil
+}
+
+// isCurrentTokenFieldOfModel returns true only when the current token is at the
+// beginning of field of a model.
+func (p *CCLAstParser) isCurrentTokenFieldOfModel() bool {
+	// case1: identifier followed by colon
+	if p.isCurrentType(cclLexer.TokenTypeIdentifier) {
+		// lookahead for colon
+		if p.isNextType(cclLexer.TokenTypeColon) {
+			return true
+		}
+	}
+
+	// maybe add more cases in future
+	return false
 }
