@@ -5,7 +5,6 @@ import (
 
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
 	"github.com/ccl-lang/ccl/src/core/cclAst"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
 // ParseCCLSourceFileAsAST reads a CCL source file and parses it into a CCLFileAST.
@@ -26,30 +25,23 @@ func ParseCCLSourceContentAsAST(options *CCLParseOptions) (*cclAst.CCLFileAST, e
 		return nil, err
 	}
 
-	if options.CodeContext == nil {
-		options.CodeContext = cclValues.NewCCLCodeContext()
-	}
-
-	return ParseCCLAst(options.CodeContext, allTokens, options)
+	return ParseCCLAst(allTokens, options)
 }
 
 func ParseCCLAst(
-	ctx *cclValues.CCLCodeContext,
 	tokens []*cclLexer.CCLToken,
 	options *CCLParseOptions,
 ) (*cclAst.CCLFileAST, error) {
-	theParser := newCCLAstParser(ctx, tokens, options)
+	theParser := newCCLAstParser(tokens, options)
 	return theParser.ParseAsAST()
 }
 
 func newCCLAstParser(
-	ctx *cclValues.CCLCodeContext,
 	tokens []*cclLexer.CCLToken,
 	options *CCLParseOptions,
 ) *CCLAstParser {
 	return &CCLAstParser{
 		Options: options,
 		tokens:  tokens,
-		ctx:     ctx,
 	}
 }

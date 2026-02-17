@@ -42,7 +42,7 @@ func ParseCCL(
 	tokens []*cclLexer.CCLToken,
 	options *CCLParseOptions,
 ) (*cclValues.SourceCodeDefinition, error) {
-	astFile, err := ParseCCLAst(ctx, tokens, options)
+	astFile, err := ParseCCLAst(tokens, options)
 	if err != nil {
 		return nil, err
 	}

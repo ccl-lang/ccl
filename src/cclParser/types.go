@@ -28,14 +28,6 @@ type CCLAstParser struct {
 
 	// current is the current token that the parser is parsing.
 	current *cclLexer.CCLToken
-
-	// codeDefinition is the definition that this parser is building.
-	codeDefinition *cclValues.SourceCodeDefinition
-
-	// ctx is the code context for the parser that holds various global info
-	// about the CCL code being parsed.
-	// such as cache of built-in types, global variables, functions, etc.
-	ctx *cclValues.CCLCodeContext
 }
 
 //---------------------------------------------------------
