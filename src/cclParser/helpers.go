@@ -4,13 +4,14 @@ import (
 	"os"
 
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
+	"github.com/ccl-lang/ccl/src/cclSanitizer"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
 // ParseCCLSourceFile reads a CCL source file and parses it into a
-// SourceCodeDefinition value. It uses the CCL lexer to tokenize the source content and then
-// parses the tokens using the CCLParser. The function returns a pointer to a SourceCodeDefinition
-// value and an error if any occurred during the parsing process.
+// SourceCodeDefinition value. It uses the lexer to tokenize the source content,
+// parses tokens into an AST, and sanitizes the AST into IR.
+// The function returns a pointer to a SourceCodeDefinition value and an error if any occurred.
 func ParseCCLSourceFile(options *CCLParseOptions) (*cclValues.SourceCodeDefinition, error) {
 	content, err := os.ReadFile(options.SourceFilePath)
 	if err != nil {
@@ -22,9 +23,8 @@ func ParseCCLSourceFile(options *CCLParseOptions) (*cclValues.SourceCodeDefiniti
 }
 
 // ParseCCLSourceContent takes a CCLParseOptions struct and parses the
-// SourceContent field into a SourceCodeDefinition value. It uses the CCL lexer to tokenize
-// the source content and then parses the tokens using the CCLParser. The function returns a
-// pointer to a SourceCodeDefinition value and an error if any occurred during the parsing process.
+// SourceContent field into a SourceCodeDefinition value by going through AST -> IR.
+// The function returns a pointer to a SourceCodeDefinition value and an error if any occurred.
 func ParseCCLSourceContent(options *CCLParseOptions) (*cclValues.SourceCodeDefinition, error) {
 	allTokens, err := cclLexer.Lex(options.SourceContent)
 	if err != nil {
@@ -42,10 +42,10 @@ func ParseCCL(
 	tokens []*cclLexer.CCLToken,
 	options *CCLParseOptions,
 ) (*cclValues.SourceCodeDefinition, error) {
-	theParser := &CCLParser{
-		Options: options,
-		tokens:  tokens,
-		ctx:     ctx,
+	astFile, err := ParseCCLAst(ctx, tokens, options)
+	if err != nil {
+		return nil, err
 	}
-	return theParser.ParseAsCCL()
+
+	return cclSanitizer.SanitizeCCLAst(ctx, astFile)
 }
