@@ -6,7 +6,7 @@ import (
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
-func (p *CCLParser) ParseAsAST() (*cclAst.CCLFileAST, error) {
+func (p *CCLAstParser) ParseAsAST() (*cclAst.CCLFileAST, error) {
 	if err := p.initializeParsing(); err != nil {
 		return nil, err
 	}

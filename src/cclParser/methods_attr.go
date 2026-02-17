@@ -28,23 +28,6 @@ func (p *CCLParser) ParseGlobalAttribute() (*cclValues.AttributeUsageInfo, error
 	return cclSanitizer.ResolveAttributeUsage(p.ctx, globalNode)
 }
 
-func (p *CCLParser) parseGlobalAttributeNode() (*cclAst.GlobalAttributeNode, error) {
-	if err := p.consume(cclLexer.TokenTypeHash); err != nil {
-		return nil, err
-	}
-
-	attrNode, err := p.parseSingleAttributeNode()
-	if err != nil {
-		return nil, err
-	}
-
-	return &cclAst.GlobalAttributeNode{
-		Name:           attrNode.Name,
-		Params:         attrNode.Params,
-		SourcePosition: attrNode.SourcePosition,
-	}, nil
-}
-
 // ParseAttributes Keeps parsing all of the available attributes in the current position
 // until it hits something other than attribute.
 func (p *CCLParser) ParseAttributes() ([]*cclValues.AttributeUsageInfo, error) {
@@ -70,30 +53,6 @@ func (p *CCLParser) ParseAttributes() ([]*cclValues.AttributeUsageInfo, error) {
 
 			if attribute != nil {
 				allAttributes = append(allAttributes, attribute)
-			}
-			continue
-		}
-	}
-
-	return allAttributes, nil
-}
-
-func (p *CCLParser) parseAttributeNodes() ([]*cclAst.AttributeNode, error) {
-	allAttributes := []*cclAst.AttributeNode{}
-	for !p.IsAtEnd() && p.isCurrentAttribute() {
-		if p.isCurrentType(cclLexer.TokenTypeComment) {
-			p.advance()
-			continue
-		}
-
-		if p.isCurrentType(cclLexer.TokenTypeLeftBracket) {
-			attributeNode, err := p.parseSingleAttributeNode()
-			if err != nil {
-				return nil, err
-			}
-
-			if attributeNode != nil {
-				allAttributes = append(allAttributes, attributeNode)
 			}
 			continue
 		}

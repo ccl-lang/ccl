@@ -6,7 +6,7 @@ import (
 	"github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
-func (p *CCLParser) parseModelDeclAst(currentNamespace string) (*cclAst.ModelDecl, error) {
+func (p *CCLAstParser) parseModelDeclAst(currentNamespace string) (*cclAst.ModelDecl, error) {
 	if err := p.consume(cclLexer.TokenTypeKeywordModel); err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (p *CCLParser) parseModelDeclAst(currentNamespace string) (*cclAst.ModelDec
 	}, nil
 }
 
-func (p *CCLParser) parseModelFieldAst(currentNamespace string) (*cclAst.FieldDecl, error) {
+func (p *CCLAstParser) parseModelFieldAst(currentNamespace string) (*cclAst.FieldDecl, error) {
 	field := &cclAst.FieldDecl{}
 	gotColon := false
 	gotAssignment := false

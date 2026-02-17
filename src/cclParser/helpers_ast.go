@@ -38,10 +38,6 @@ func ParseCCLAst(
 	tokens []*cclLexer.CCLToken,
 	options *CCLParseOptions,
 ) (*cclAst.CCLFileAST, error) {
-	theParser := &CCLParser{
-		Options: options,
-		tokens:  tokens,
-		ctx:     ctx,
-	}
+	theParser := newCCLAstParser(ctx, tokens, options)
 	return theParser.ParseAsAST()
 }
