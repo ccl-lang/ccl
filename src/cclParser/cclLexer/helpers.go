@@ -18,17 +18,26 @@ func Lex(input string) ([]*CCLToken, error) {
 
 	for pos < totalRunesLen {
 		if isWhitespace(runes[pos]) {
-			isNextLF := pos+1 < totalRunesLen && runes[pos+1] == '\n'
-			if runes[pos] == '\n' || runes[pos] == '\r' {
-				// New Line
+			if runes[pos] == '\n' {
+				// New Line (LF)
 				line++
 				column = 1
-				if isNextLF {
+				pos++
+				continue
+			}
+
+			if runes[pos] == '\r' {
+				// New Line (CR or CRLF)
+				line++
+				column = 1
+				if pos+1 < totalRunesLen && runes[pos+1] == '\n' {
 					pos++
 				}
-			} else {
-				column++
+				pos++
+				continue
 			}
+
+			column++
 			pos++
 			continue
 		}

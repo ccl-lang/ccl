@@ -2,7 +2,6 @@ package cclParser
 
 import (
 	"errors"
-	"strings"
 
 	"slices"
 
@@ -128,13 +127,7 @@ func (p *CCLAstParser) consume(tokenType cclLexer.CCLTokenType) error {
 // to call this method in case of an error, and we don't want to keep
 // the lines in memory for a long time.
 func (p *CCLAstParser) getCurrentSourceLine(lineNum int) string {
-	result := ""
-	lines := strings.Split(p.Options.SourceContent, "\n")
-	if lineNum > 0 && lineNum <= len(lines) {
-		result = lines[lineNum-1]
-	}
-
-	return result
+	return cclUtils.GetSourceLineByNumber(p.Options.SourceContent, lineNum)
 }
 
 // getSourcePosition returns the current source position.

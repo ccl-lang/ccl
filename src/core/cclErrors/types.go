@@ -2,6 +2,9 @@ package cclErrors
 
 import "github.com/ccl-lang/ccl/src/core/cclUtils"
 
+// ConflictKind represents the kind of conflict that occurred, such as "model", "builtin type", "reserved name", etc.
+type ConflictKind string
+
 // ValidationError is an error that is returned when a validation
 // error occurs.
 type ValidationError struct {
@@ -57,7 +60,7 @@ type FieldNameConflictError struct {
 	ModelName      string
 	FieldName      string
 	ConflictName   string
-	ConflictKind   string
+	Kind           ConflictKind
 	Namespace      string
 	SourcePosition *cclUtils.SourceCodePosition
 }

@@ -227,7 +227,7 @@ func (v *fieldNameValidator) ValidateFieldName(
 			ModelName:      modelName,
 			FieldName:      fieldAst.Name,
 			ConflictName:   builtinName,
-			ConflictKind:   "builtin-type",
+			Kind:           cclErrors.ConflictKindBuiltinType,
 			Namespace:      cclValues.NamespaceBuiltin,
 			SourcePosition: fieldAst.SourcePosition,
 		}
@@ -244,7 +244,7 @@ func (v *fieldNameValidator) ValidateFieldName(
 				ModelName:      modelName,
 				FieldName:      fieldAst.Name,
 				ConflictName:   conflictName,
-				ConflictKind:   "model",
+				Kind:           cclErrors.ConflictKindModel,
 				Namespace:      namespace,
 				SourcePosition: fieldAst.SourcePosition,
 			}

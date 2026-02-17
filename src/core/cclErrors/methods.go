@@ -64,7 +64,7 @@ func (e *FieldNameConflictError) Error() string {
 
 	message := "Field name '" + e.FieldName +
 		"' in model '" + e.ModelName +
-		"' conflicts with " + e.ConflictKind +
+		"' conflicts with " + string(e.Kind) +
 		" name '" + e.ConflictName + "'"
 
 	if e.Namespace != "" {
