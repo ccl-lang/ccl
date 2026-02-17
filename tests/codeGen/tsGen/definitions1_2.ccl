@@ -5,19 +5,19 @@
 #[CCLGenerateSingleFile(true, "generated.ts")]
 
 // Basic geometric types
-model Position {
+model PositionInfo {
     X: int64;
     Y: int64;
     Z: int64;
 }
 
-model Rotation {
+model RotationInfo {
     X: float32;
     Y: float32;
     Z: float32;
 }
 
-model Scale {
+model ScaleInfo {
     X: uint32;
     Y: uint32;
     Z: uint32;
@@ -47,20 +47,20 @@ model SkinInfo {
 }
 
 // User and Room types
-model User {
+model UserInfo {
     Id: string;
     Username: string;
     Skin: SkinInfo;
 }
 
-model Room {
+model RoomInfo {
     Slug: string;
     Users: int32;
     MaxUsers: int32;
 }
 
-model State {
-    Position: Position;
+model EntityState {
+    Pos: Position;
     Rotation: Rotation;
     Scale: Scale;
     Color: SkinInfo;
@@ -105,7 +105,7 @@ model JoinRoomRequest {
 model JoinRoomAnswer {
     RpcId: uint16;
     RoomId: string;
-    RoomInfo: Room;
+    Room: RoomInfo;
     State: State;
 }
 
@@ -132,7 +132,7 @@ model ServerUpdateRoomUsers {
 
 model ServerUpdatePlayerPosition {
     UserId: string;
-    Position: Position;
+    Pos: Position;
 }
 
 model ServerUpdatePlayerRotation {

@@ -12,11 +12,11 @@ import (
 )
 
 const DuplicateModelsInput = `
-model Room {
+model RoomInfo {
 	id: int;
 }
 
-model Room {
+model RoomInfo {
 	name: string;
 }
 `
@@ -41,7 +41,7 @@ func TestSanitizeDuplicateModels(t *testing.T) {
 }
 
 const DuplicateFieldsInput = `
-model Room {
+model RoomInfo {
 	id: int;
 	id: int;
 }
@@ -67,7 +67,7 @@ func TestSanitizeDuplicateFields(t *testing.T) {
 }
 
 const FieldNameConflictModelInput = `
-model Room {
+model RoomInfo {
 	id: int;
 }
 
