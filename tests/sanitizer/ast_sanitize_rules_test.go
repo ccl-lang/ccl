@@ -100,7 +100,7 @@ func TestSanitizeFieldNameConflictWithModel(t *testing.T) {
 
 const FieldNameConflictBuiltinInput = `
 model UserInfo {
-	blah_blah: string;	hall_hallo: string;      some_other_field:int; INT32: string;
+	blah_blah: string;	hall_hallo: string;      some_other_field:int; INT32: string; cool_stuff: int;
 }
 `
 

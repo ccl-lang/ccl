@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-const SourceTabWidth = 4
-
 // FormatError formats an error message with source position context.
 // It expands tabs to spaces for consistent caret alignment.
 func (p *SourceCodePosition) FormatError(message string) string {
@@ -25,6 +23,7 @@ func (p *SourceCodePosition) FormatError(message string) string {
 
 	expandedLine := ExpandTabs(p.SourceLine, SourceTabWidth)
 	visualColumn := CalculateVisualColumn(p.SourceLine, p.Column, SourceTabWidth)
+	trimmedLine, caretColumn := buildErrorLineSnippet(expandedLine, visualColumn)
 
 	result := fmt.Sprintf(
 		"Error: %s\n  at line %d, column %d\n",
@@ -33,8 +32,8 @@ func (p *SourceCodePosition) FormatError(message string) string {
 		p.Column,
 	)
 
-	result += "  " + expandedLine + "\n"
-	pointerIndent := "  " + strings.Repeat(" ", visualColumn)
+	result += "  " + trimmedLine + "\n"
+	pointerIndent := "  " + strings.Repeat(" ", caretColumn)
 	result += pointerIndent + "^ " + message
 
 	return result

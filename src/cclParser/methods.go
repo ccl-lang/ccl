@@ -134,10 +134,6 @@ func (p *CCLAstParser) getCurrentSourceLine(lineNum int) string {
 		result = lines[lineNum-1]
 	}
 
-	if len(result) > MaxShownSourceLineLen {
-		result = result[:MaxShownSourceLineLen]
-	}
-
 	return result
 }
 
