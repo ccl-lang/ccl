@@ -1,5 +1,7 @@
 package cclErrors
 
+import "github.com/ccl-lang/ccl/src/core/cclUtils"
+
 // ValidationError is an error that is returned when a validation
 // error occurs.
 type ValidationError struct {
@@ -9,14 +11,16 @@ type ValidationError struct {
 // DuplicateFieldError is an error that is returned when a field
 // with the same name already exists in a model.
 type DuplicateFieldError struct {
-	ModelName string
-	FieldName string
+	ModelName      string
+	FieldName      string
+	SourcePosition *cclUtils.SourceCodePosition
 }
 
 // DuplicateModelError is an error that is returned when a model
 // with the same name already exists in a ccl source file / project.
 type DuplicateModelError struct {
-	ModelName string
+	ModelName      string
+	SourcePosition *cclUtils.SourceCodePosition
 }
 
 // UnsupportedFieldTypeError is an error that is returned when an
@@ -45,4 +49,15 @@ type UnsupportedFileNamingStyleError struct {
 	StyleName       string
 	SupportedStyles []string
 	TargetLanguage  string
+}
+
+// FieldNameConflictError is an error that is returned when a field name
+// conflicts with a reserved or existing name (such as model or builtin type names).
+type FieldNameConflictError struct {
+	ModelName      string
+	FieldName      string
+	ConflictName   string
+	ConflictKind   string
+	Namespace      string
+	SourcePosition *cclUtils.SourceCodePosition
 }

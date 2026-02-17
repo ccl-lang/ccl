@@ -1,6 +1,8 @@
 package cclSanitizer
 
 import (
+	"strings"
+
 	"github.com/ccl-lang/ccl/src/core/cclAst"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
 	"github.com/ccl-lang/ccl/src/core/cclUtils"
@@ -29,6 +31,7 @@ func SanitizeCCLAst(
 	}
 
 	definition := &cclValues.SourceCodeDefinition{}
+	nameValidator := newFieldNameValidator(ast, fileNamespace)
 
 	for _, globalAttr := range ast.GlobalAttributes {
 		if globalAttr == nil {
@@ -58,7 +61,8 @@ func SanitizeCCLAst(
 
 		if definition.GetModelByName(modelAst.Name) != nil {
 			return nil, &cclErrors.DuplicateModelError{
-				ModelName: modelAst.Name,
+				ModelName:      modelAst.Name,
+				SourcePosition: modelAst.SourcePosition,
 			}
 		}
 
@@ -92,10 +96,19 @@ func SanitizeCCLAst(
 				}
 			}
 
+			if err := nameValidator.ValidateFieldName(
+				modelNamespace,
+				modelDef.Name,
+				fieldAst,
+			); err != nil {
+				return nil, err
+			}
+
 			if modelDef.GetFieldByName(fieldAst.Name) != nil {
 				return nil, &cclErrors.DuplicateFieldError{
-					ModelName: modelDef.Name,
-					FieldName: fieldAst.Name,
+					ModelName:      modelDef.Name,
+					FieldName:      fieldAst.Name,
+					SourcePosition: fieldAst.SourcePosition,
 				}
 			}
 
@@ -167,6 +180,82 @@ func SanitizeCCLAst(
 	}
 
 	return definition, nil
+}
+
+type fieldNameValidator struct {
+	modelNamesByNamespace map[string]map[string]string
+}
+
+func newFieldNameValidator(ast *cclAst.CCLFileAST, defaultNamespace string) *fieldNameValidator {
+	modelNamesByNamespace := map[string]map[string]string{}
+	for _, modelAst := range ast.Models {
+		if modelAst == nil {
+			continue
+		}
+
+		namespace := modelAst.Namespace
+		if namespace == "" {
+			namespace = defaultNamespace
+		}
+
+		normalized := normalizeName(modelAst.Name)
+		if modelNamesByNamespace[namespace] == nil {
+			modelNamesByNamespace[namespace] = map[string]string{}
+		}
+		modelNamesByNamespace[namespace][normalized] = modelAst.Name
+	}
+
+	return &fieldNameValidator{
+		modelNamesByNamespace: modelNamesByNamespace,
+	}
+}
+
+func (v *fieldNameValidator) ValidateFieldName(
+	namespace string,
+	modelName string,
+	fieldAst *cclAst.FieldDecl,
+) error {
+	if fieldAst == nil {
+		return &AstSanitizationError{
+			Message: "nil field declaration in AST",
+		}
+	}
+
+	normalizedFieldName := normalizeName(fieldAst.Name)
+	if builtinName, ok := builtinTypeNamesLower[normalizedFieldName]; ok {
+		return &cclErrors.FieldNameConflictError{
+			ModelName:      modelName,
+			FieldName:      fieldAst.Name,
+			ConflictName:   builtinName,
+			ConflictKind:   "builtin-type",
+			Namespace:      cclValues.NamespaceBuiltin,
+			SourcePosition: fieldAst.SourcePosition,
+		}
+	}
+
+	if v == nil {
+		return nil
+	}
+
+	modelNames := v.modelNamesByNamespace[namespace]
+	if modelNames != nil {
+		if conflictName, ok := modelNames[normalizedFieldName]; ok {
+			return &cclErrors.FieldNameConflictError{
+				ModelName:      modelName,
+				FieldName:      fieldAst.Name,
+				ConflictName:   conflictName,
+				ConflictKind:   "model",
+				Namespace:      namespace,
+				SourcePosition: fieldAst.SourcePosition,
+			}
+		}
+	}
+
+	return nil
+}
+
+func normalizeName(name string) string {
+	return strings.ToLower(name)
 }
 
 func resolveFieldAssignment(

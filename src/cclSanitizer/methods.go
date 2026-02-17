@@ -2,6 +2,9 @@ package cclSanitizer
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/ccl-lang/ccl/src/core/cclUtils"
 )
 
 // Error returns the string representation of the type usage resolution error.
@@ -14,11 +17,9 @@ func (e *TypeUsageResolutionError) Error() string {
 		return "cclSanitizer: " + e.Message
 	}
 
-	return fmt.Sprintf(
-		"cclSanitizer: %s (line %d, col %d)",
-		e.Message,
-		e.SourcePosition.Line,
-		e.SourcePosition.Column,
+	return formatSanitizerErrorWithSourcePosition(
+		"Type error: "+e.Message,
+		e.SourcePosition,
 	)
 }
 
@@ -32,11 +33,9 @@ func (e *AttributeResolutionError) Error() string {
 		return "cclSanitizer: " + e.Message
 	}
 
-	return fmt.Sprintf(
-		"cclSanitizer: %s (line %d, col %d)",
-		e.Message,
-		e.SourcePosition.Line,
-		e.SourcePosition.Column,
+	return formatSanitizerErrorWithSourcePosition(
+		"Attribute error: "+e.Message,
+		e.SourcePosition,
 	)
 }
 
@@ -50,10 +49,39 @@ func (e *AstSanitizationError) Error() string {
 		return "cclSanitizer: " + e.Message
 	}
 
-	return fmt.Sprintf(
-		"cclSanitizer: %s (line %d, col %d)",
-		e.Message,
-		e.SourcePosition.Line,
-		e.SourcePosition.Column,
+	return formatSanitizerErrorWithSourcePosition(
+		"Sanitizer error: "+e.Message,
+		e.SourcePosition,
 	)
+}
+
+func formatSanitizerErrorWithSourcePosition(
+	message string,
+	pos *cclUtils.SourceCodePosition,
+) string {
+	if pos == nil {
+		return "cclSanitizer: " + message
+	}
+
+	if pos.SourceLine == "" {
+		return fmt.Sprintf(
+			"cclSanitizer: %s at line %d, column %d",
+			message,
+			pos.Line,
+			pos.Column,
+		)
+	}
+
+	result := fmt.Sprintf(
+		"Error: %s\n  at line %d, column %d\n",
+		message,
+		pos.Line,
+		pos.Column,
+	)
+
+	result += "  " + pos.SourceLine + "\n"
+	pointerIndent := "  " + strings.Repeat(" ", pos.Column)
+	result += pointerIndent + "^ " + message
+
+	return result
 }

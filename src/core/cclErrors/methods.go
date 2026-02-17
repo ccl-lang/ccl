@@ -1,6 +1,11 @@
 package cclErrors
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/ccl-lang/ccl/src/core/cclUtils"
+)
 
 //---------------------------------------------------------
 
@@ -11,13 +16,23 @@ func (v *ValidationError) Error() string {
 //---------------------------------------------------------
 
 func (d *DuplicateFieldError) Error() string {
-	return "Duplicate field: " + d.ModelName + "." + d.FieldName
+	if d == nil {
+		return "Duplicate field"
+	}
+
+	message := "Duplicate field: " + d.ModelName + "." + d.FieldName
+	return formatErrorWithSourcePosition(message, d.SourcePosition)
 }
 
 //---------------------------------------------------------
 
 func (d *DuplicateModelError) Error() string {
-	return "Duplicate model: " + d.ModelName
+	if d == nil {
+		return "Duplicate model"
+	}
+
+	message := "Duplicate model: " + d.ModelName
+	return formatErrorWithSourcePosition(message, d.SourcePosition)
 }
 
 //---------------------------------------------------------
@@ -46,3 +61,50 @@ func (u *UnsupportedFileNamingStyleError) Error() string {
 }
 
 //---------------------------------------------------------
+
+func (e *FieldNameConflictError) Error() string {
+	if e == nil {
+		return "Field name conflicts with reserved name"
+	}
+
+	message := "Field name '" + e.FieldName +
+		"' in model '" + e.ModelName +
+		"' conflicts with " + e.ConflictKind +
+		" name '" + e.ConflictName + "'"
+
+	if e.Namespace != "" {
+		message += " in namespace '" + e.Namespace + "'"
+	}
+
+	return formatErrorWithSourcePosition(message, e.SourcePosition)
+}
+
+//---------------------------------------------------------
+
+func formatErrorWithSourcePosition(message string, pos *cclUtils.SourceCodePosition) string {
+	if pos == nil {
+		return message
+	}
+
+	if pos.SourceLine == "" {
+		return fmt.Sprintf(
+			"%s at line %d, column %d",
+			message,
+			pos.Line,
+			pos.Column,
+		)
+	}
+
+	result := fmt.Sprintf(
+		"Error: %s\n  at line %d, column %d\n",
+		message,
+		pos.Line,
+		pos.Column,
+	)
+
+	result += "  " + pos.SourceLine + "\n"
+	pointerIndent := "  " + strings.Repeat(" ", pos.Column)
+	result += pointerIndent + "^ " + message
+
+	return result
+}
