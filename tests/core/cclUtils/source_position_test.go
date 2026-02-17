@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ccl-lang/ccl/src/core/cclUtils"
+	"github.com/ccl-lang/ccl/src/core/cclUtils/sourcePos"
 )
 
 func TestFormatErrorShowsCulpritForLongLine(t *testing.T) {
@@ -31,7 +32,7 @@ func TestFormatErrorShowsCulpritForLongLine(t *testing.T) {
 		t.Fatalf("expected formatted error to include culprit snippet, got:\n%s", formatted)
 	}
 
-	if !strings.Contains(formatted, cclUtils.SourceErrorEllipsis) {
+	if !strings.Contains(formatted, sourcePos.SourceErrorEllipsis) {
 		t.Fatalf("expected formatted error to include truncation ellipsis, got:\n%s", formatted)
 	}
 }

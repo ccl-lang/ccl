@@ -30,13 +30,6 @@ func (c *CCLCodeContext) NewCustomTypeUsage(name *SimpleTypeName) *CCLTypeUsage 
 	return NewTypeUsage(typeDef)
 }
 
-// NewTypeUsage creates a new type usage for the given type definition.
-func NewTypeUsage(definition *CCLTypeDefinition) *CCLTypeUsage {
-	return &CCLTypeUsage{
-		definition: definition,
-	}
-}
-
 // NewPointerTypeUsage creates a new pointer type usage that points to the given target type.
 func (c *CCLCodeContext) NewPointerTypeUsage(targetType *CCLTypeUsage) *CCLTypeUsage {
 	return &CCLTypeUsage{

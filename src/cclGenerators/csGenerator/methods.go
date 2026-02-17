@@ -2,6 +2,8 @@ package csGenerator
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/ALiwoto/ssg/ssg"
 	gen "github.com/ccl-lang/ccl/src/cclGenerators"
@@ -145,7 +147,7 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 	// Fields
 	for _, field := range model.Fields {
 		csType := c.getCSharpType(field)
-		fieldName := c.toPascalCase(field.Name)
+		fieldName := cclUtils.ToPascalCase(field.Name)
 		// C# properties
 		builder.WriteLine("public " + csType + " " + fieldName + " { get; set; }")
 	}
@@ -156,7 +158,7 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 	builder.WriteLine("{")
 	builder.Indent()
 	for _, field := range model.Fields {
-		fieldName := c.toPascalCase(field.Name)
+		fieldName := cclUtils.ToPascalCase(field.Name)
 		if field.IsArray() {
 			csType := c.getCSharpType(field)
 			// Initialize list
@@ -207,4 +209,113 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 	builder.WriteLine("}")
 
 	return nil
+}
+
+func (c *CSharpGenerationContext) getNamespace() string {
+	// 1. Check for attribute on the first model (assuming all models in the same file share namespace preference if defined there)
+	// Or we can check global attributes if CCL supports them.
+	// The user said: "try to get #[CSharpNamespace("MyNamespace")] attribute"
+	// We should check if any model has this attribute or if it's a file-level attribute (if supported).
+	// Since we are generating for a set of models, let's check the first one or look for a common one.
+	// Actually, the user might have meant an attribute on the model definition.
+	// Let's check the first model's attributes.
+
+	if len(c.Options.CCLDefinition.TypeDefinitions) > 0 {
+		firstModel := c.Options.CCLDefinition.TypeDefinitions[0]
+		if firstModel.IsCustomModel() {
+			model := firstModel.GetModelDefinition()
+			attr := c.GetGlobalOrModelAttributes(gValues.LanguageCS, AttributeNamespace, model)
+			if !attr.IsEmpty() {
+				params := attr.GetParamsAtAsStrings(0)
+				if len(params) > 0 {
+					return params[0]
+				}
+			}
+		}
+	}
+
+	// 2. Peek at parent directory
+	parentDir := filepath.Dir(c.Options.OutputPath)
+	baseNamespace := ""
+	foundCsFile := false
+
+	entries, err := os.ReadDir(parentDir)
+	if err == nil {
+		for _, entry := range entries {
+			if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".cs") {
+				content, err := os.ReadFile(filepath.Join(parentDir, entry.Name()))
+				if err == nil {
+					matches := csNamespaceRegex.FindStringSubmatch(string(content))
+					if len(matches) > 1 {
+						baseNamespace = matches[1]
+						foundCsFile = true
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if foundCsFile {
+		targetDirName := filepath.Base(c.Options.OutputPath)
+		return baseNamespace + "." + targetDirName
+	}
+
+	// 3. Default
+	return DefaultNamespace
+}
+
+func (c *CSharpGenerationContext) getCSharpType(field *CCLField) string {
+	targetType := field.Type
+	if targetType.IsArray() {
+		targetType = targetType.GetUnderlyingType()
+	}
+
+	csType := ""
+	switch targetType.GetName() {
+	case cclValues.TypeNameString:
+		csType = "string"
+	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
+		csType = "int"
+	case cclValues.TypeNameInt8:
+		csType = "sbyte"
+	case cclValues.TypeNameInt16:
+		csType = "short"
+	case cclValues.TypeNameInt64:
+		csType = "long"
+	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
+		csType = "uint"
+	case cclValues.TypeNameUint8:
+		csType = "byte"
+	case cclValues.TypeNameUint16:
+		csType = "ushort"
+	case cclValues.TypeNameUint64:
+		csType = "ulong"
+	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
+		csType = "float"
+	case cclValues.TypeNameFloat64:
+		csType = "double"
+	case cclValues.TypeNameBool:
+		csType = "bool"
+	case cclValues.TypeNameBytes:
+		csType = "byte[]"
+	case cclValues.TypeNameDateTime:
+		csType = "long" // Using timestamp
+	default:
+		if targetType.IsCustomTypeModel() {
+			csType = targetType.GetName()
+		} else {
+			csType = "object"
+		}
+	}
+
+	if field.IsArray() {
+		if targetType.IsCustomTypeModel() {
+			csType = "List<" + csType + ">"
+		} else {
+			csType = "List<" + csType + ">"
+		}
+	}
+
+	return csType
 }

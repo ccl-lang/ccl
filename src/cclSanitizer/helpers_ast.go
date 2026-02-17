@@ -182,10 +182,6 @@ func SanitizeCCLAst(
 	return definition, nil
 }
 
-type fieldNameValidator struct {
-	modelNamesByNamespace map[string]map[string]string
-}
-
 func newFieldNameValidator(ast *cclAst.CCLFileAST, defaultNamespace string) *fieldNameValidator {
 	modelNamesByNamespace := map[string]map[string]string{}
 	for _, modelAst := range ast.Models {
@@ -208,50 +204,6 @@ func newFieldNameValidator(ast *cclAst.CCLFileAST, defaultNamespace string) *fie
 	return &fieldNameValidator{
 		modelNamesByNamespace: modelNamesByNamespace,
 	}
-}
-
-func (v *fieldNameValidator) ValidateFieldName(
-	namespace string,
-	modelName string,
-	fieldAst *cclAst.FieldDecl,
-) error {
-	if fieldAst == nil {
-		return &AstSanitizationError{
-			Message: "nil field declaration in AST",
-		}
-	}
-
-	normalizedFieldName := normalizeName(fieldAst.Name)
-	if builtinName, ok := builtinTypeNamesLower[normalizedFieldName]; ok {
-		return &cclErrors.FieldNameConflictError{
-			ModelName:      modelName,
-			FieldName:      fieldAst.Name,
-			ConflictName:   builtinName,
-			Kind:           cclErrors.ConflictKindBuiltinType,
-			Namespace:      cclValues.NamespaceBuiltin,
-			SourcePosition: fieldAst.SourcePosition,
-		}
-	}
-
-	if v == nil {
-		return nil
-	}
-
-	modelNames := v.modelNamesByNamespace[namespace]
-	if modelNames != nil {
-		if conflictName, ok := modelNames[normalizedFieldName]; ok {
-			return &cclErrors.FieldNameConflictError{
-				ModelName:      modelName,
-				FieldName:      fieldAst.Name,
-				ConflictName:   conflictName,
-				Kind:           cclErrors.ConflictKindModel,
-				Namespace:      namespace,
-				SourcePosition: fieldAst.SourcePosition,
-			}
-		}
-	}
-
-	return nil
 }
 
 func normalizeName(name string) string {

@@ -39,7 +39,7 @@ func (c *CSharpGenerationContext) generateSerializeBinaryMethod(model *CCLModel,
 }
 
 func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldName := "this." + c.toPascalCase(field.Name)
+	fieldName := "this." + cclUtils.ToPascalCase(field.Name)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
@@ -98,7 +98,7 @@ func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 }
 
 func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldName := "this." + c.toPascalCase(field.Name)
+	fieldName := "this." + cclUtils.ToPascalCase(field.Name)
 	targetFieldType := field.Type.GetUnderlyingType()
 
 	builder.WriteLine("writer.Write((uint)(" + fieldName + "?.Count ?? 0));")

@@ -1,10 +1,5 @@
 package cclUtils
 
-// SourceCodePointer is a struct that represents a certain position
-// in the source code.
-type SourceCodePosition struct {
-	FilePath   string
-	Line       int
-	Column     int
-	SourceLine string
-}
+import "github.com/ccl-lang/ccl/src/core/cclUtils/sourcePos"
+
+type SourceCodePosition = sourcePos.SourceCodePosition

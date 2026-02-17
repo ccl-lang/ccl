@@ -6,6 +6,7 @@ import (
 
 	"github.com/ALiwoto/ssg/ssg"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
+	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
@@ -97,7 +98,7 @@ func (c *PythonGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		Indent()
 
 	// Write model ID constant
-	modelIdConstName := "MODEL_ID_" + strings.ToUpper(toSnakeCase(model.Name))
+	modelIdConstName := "MODEL_ID_" + strings.ToUpper(cclUtils.ToSnakeCase(model.Name))
 	builder.WriteLine(modelIdConstName + " = " + ssg.ToBase10(model.ModelId)).
 		NewLine()
 
@@ -137,7 +138,7 @@ func (c *PythonGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 				}
 				builder.DoImport(field.GetFullTypeName(), importLine)
 			}
-			fieldName := toSnakeCase(field.Name)
+			fieldName := cclUtils.ToSnakeCase(field.Name)
 			builder.WriteLine("self." + fieldName + ": " + varType + " = " + defaultValue)
 		}
 	}

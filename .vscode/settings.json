@@ -8,6 +8,7 @@
         "gdscript",
         "getattr",
         "getcwd",
+        "gofmt",
         "goroutine",
         "goroutines",
         "Linef",

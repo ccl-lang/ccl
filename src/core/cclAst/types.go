@@ -2,6 +2,15 @@ package cclAst
 
 import "github.com/ccl-lang/ccl/src/core/cclUtils"
 
+// AttributeLiteralKind represents the literal kind of an attribute value.
+type AttributeLiteralKind int
+
+// AttributeValueKind represents the kind of a value inside an attribute parameter.
+type AttributeValueKind int
+
+// TypeExpressionKind represents the kind of a type expression node.
+type TypeExpressionKind int
+
 // SimpleTypeName represents a simple (unqualified) type name with an optional namespace.
 type SimpleTypeName struct {
 	Name      string
