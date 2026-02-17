@@ -2,7 +2,6 @@ package cclParser
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
 	"github.com/ccl-lang/ccl/src/core/cclUtils"
@@ -38,20 +37,12 @@ func (e *UnexpectedTokenError) Error() string {
 	}
 
 	message := fmt.Sprintf(
-		"Error: expected token type %s, got %s\n  at line %d, column %d\n",
+		"expected token type %s, got %s",
 		e.Expected,
 		e.Actual,
-		e.SourcePosition.Line,
-		e.SourcePosition.Column,
 	)
 
-	// Add the source code line
-	message += "  " + e.SourcePosition.SourceLine + "\n"
-	// Add the pointer to the exact position
-	pointerIndent := "  " + strings.Repeat(" ", e.SourcePosition.Column)
-	message += pointerIndent + "^ Expected token '" + e.Expected.String() + "' here\n"
-
-	return message
+	return e.SourcePosition.FormatError(message)
 }
 
 //---------------------------------------------------------
@@ -73,19 +64,7 @@ func (e *UnexpectedEOFError) Error() string {
 		)
 	}
 
-	message := fmt.Sprintf(
-		"cclParser: Unexpected EOF at line %d, column %d",
-		e.SourcePosition.Line,
-		e.SourcePosition.Column,
-	)
-
-	// Add the source code line
-	message += "  " + e.SourcePosition.SourceLine + "\n"
-	// Add the pointer to the exact position
-	pointerIndent := "  " + strings.Repeat(" ", e.SourcePosition.Column)
-	message += pointerIndent + "^ Unexpected EOF\n"
-
-	return message
+	return e.SourcePosition.FormatError("Unexpected EOF")
 }
 
 //---------------------------------------------------------
