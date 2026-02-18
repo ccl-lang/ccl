@@ -50,8 +50,8 @@ func (c *GDScriptGenerationContext) generateSerializeJsonDictMethod(
 	}
 
 	builder.WriteLine("return data").
-		UnindentLine().
-		NewLine()
+		UnindentLine()
+
 	return nil
 }
 
@@ -60,9 +60,9 @@ func (c *GDScriptGenerationContext) generateSerializeJsonMethod(
 ) error {
 	builder.WriteLine("func serialize_json() -> String:").
 		Indent().
-		WriteLine("return JSON.stringify(serialize_json_dict())").
-		UnindentLine().
-		NewLine()
+		WriteLine("return JSON.stringify(self.serialize_json_dict())").
+		UnindentLine()
+
 	return nil
 }
 
@@ -160,27 +160,40 @@ func (c *GDScriptGenerationContext) generateArraySerializeJson(
 	fieldName := "self." + fieldRawName
 	listName := fieldRawName + "_list"
 
-	builder.WriteLine("var " + listName + " = []")
-	builder.WriteLine("if " + fieldName + " != null:")
-	builder.Indent()
-	builder.WriteLine("for item in " + fieldName + ":")
-	builder.Indent()
+	builder.MapVar("list", listName).
+		MapVar("field", fieldName).
+		MapVar("jsonName", jsonName)
+
+	defer builder.UnmapVar("list", "field", "jsonName")
+
+	builder.LineD("var $list = []").
+		LineD("if $field != null:").
+		Indent().
+		LineD("for item in $field:").
+		Indent()
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameBytes:
-		builder.WriteLine(listName + ".append(Marshalls.raw_to_base64(item))")
+		builder.LineD("$list.append(Marshalls.raw_to_base64(item))")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
-			builder.WriteLine(listName + ".append(item.serialize_json_dict() if item else null)")
+			// this will definitely break for < godot 4.0 (e.g. 3.x)
+			// but then we are using lots of other features which are not available
+			// for 3.x and lower anyway...
+			builder.WriteLine("@warning_ignore(\"incompatible_ternary\")").
+				LineD("$list.append(item.serialize_json_dict() if item else null)")
 		} else {
-			builder.WriteLine(listName + ".append(item)")
+			builder.LineD("$list.append(item)")
 		}
 	}
 
-	builder.Unindent()
-	builder.Unindent()
-	builder.WriteLine("data[\"" + jsonName + "\"] = " + listName)
-	builder.NewLine()
+	builder.Unindent().
+		LineD("data[\"$jsonName\"] = $list").
+		Unindent().
+		WriteLine("else:").
+		Indent().
+		LineD("data[\"$jsonName\"] = null").
+		UnindentLine()
 }
 
 func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
@@ -207,15 +220,13 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 		LineD("pass").
 		Unindent()
 
-	defer func() {
-		builder.UnmapVar(
-			"jsonName",
-			"value",
-			"field",
-			"fieldT",
-			"model",
-		)
-	}()
+	defer builder.UnmapVar(
+		"jsonName",
+		"value",
+		"field",
+		"fieldT",
+		"model",
+	)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
@@ -343,87 +354,159 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 	valueName := fieldRawName + "_value"
 	listName := fieldRawName + "_list"
 
-	builder.WriteLine("if data.has(\"" + jsonName + "\"):")
-	builder.Indent()
-	builder.WriteLine("var " + valueName + " = data[\"" + jsonName + "\"]")
-	builder.WriteLine("if " + valueName + " != null:")
-	builder.Indent()
-	builder.WriteLine("if typeof(" + valueName + ") != TYPE_ARRAY:")
-	builder.Indent()
-	builder.WriteLine("push_error(\"Expected array for field " + field.Name + " in " + modelName + "\")")
-	builder.WriteLine("return null")
-	builder.Unindent()
-	builder.WriteLine("var " + listName + " = [] as " + c.getGDScriptType(field))
-	builder.WriteLine("for item in " + valueName + ":")
-	builder.Indent()
+	builder.MapVar("field", resultField).
+		MapVar("fieldT", targetFieldType.GetName()).
+		MapVar("value", valueName).
+		MapVar("jsonName", jsonName).
+		MapVar("list", listName).
+		MapVar("model", modelName)
+
+	defer builder.UnmapVar(
+		"field",
+		"fieldT",
+		"value",
+		"jsonName",
+		"list",
+		"model",
+	)
+
+	builder.LineD("var $value = data.get(\"$jsonName\", null)").
+		LineD("if $value == null:").
+		Indent().
+		WriteLine("# we can't iterate over it later if it stays null").
+		LineD("$value = []").
+		Unindent().
+		LineD("elif not ($value is Array):").
+		Indent().
+		LineD("push_error(\"Expected array type for field $field in \" +").
+		Indent().
+		LineD("\"$model, but got \", $value)").
+		Unindent().
+		WriteLine("return null").
+		Unindent()
+
+	builder.LineD("var $list = [] as " + c.getGDScriptType(field)).
+		LineD("for item in $value:").
+		Indent()
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine("if typeof(item) != TYPE_STRING:")
-		builder.Indent()
-		builder.WriteLine("push_error(\"Expected string items for field " + field.Name + " in " + modelName + "\")")
-		builder.WriteLine("return null")
-		builder.Unindent()
-		builder.WriteLine(listName + ".append(item)")
+		builder.LineD("if item is String:").
+			Indent().
+			LineD("$list.append(item)").
+			Unindent().
+			LineD("else:").
+			Indent().
+			LineD("$list.append(str(item))").
+			Unindent()
 	case cclValues.TypeNameInt, cclValues.TypeNameInt8, cclValues.TypeNameInt16,
 		cclValues.TypeNameInt32, cclValues.TypeNameInt64,
 		cclValues.TypeNameUint, cclValues.TypeNameUint8, cclValues.TypeNameUint16,
 		cclValues.TypeNameUint32, cclValues.TypeNameUint64, cclValues.TypeNameDateTime:
-		builder.WriteLine("if typeof(item) != TYPE_INT and typeof(item) != TYPE_FLOAT:")
-		builder.Indent()
-		builder.WriteLine("push_error(\"Expected number items for field " + field.Name + " in " + modelName + "\")")
-		builder.WriteLine("return null")
-		builder.Unindent()
-		builder.WriteLine(listName + ".append(int(item))")
+		builder.WriteLine("if (").
+			Indent().
+			LineD("item is int or item is float or").
+			LineD("((item is String or item is StringName) and").
+			LineD("item.is_valid_int())").
+			Unindent().
+			WriteLine("):").
+			Indent().
+			LineD("$list.append(int(item))").
+			Unindent().
+			WriteLine("else:").
+			Indent().
+			LineD("push_error(\"Expected number for every element of field $field in \" +").
+			Indent().
+			LineD("\"$model, but got \", item)").
+			Unindent().
+			WriteLine("return null").
+			Unindent()
+
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
-		builder.WriteLine("if typeof(item) != TYPE_INT and typeof(item) != TYPE_FLOAT:")
-		builder.Indent()
-		builder.WriteLine("push_error(\"Expected number items for field " + field.Name + " in " + modelName + "\")")
-		builder.WriteLine("return null")
-		builder.Unindent()
-		builder.WriteLine(listName + ".append(float(item))")
+		builder.WriteLine("if (").
+			Indent().
+			WriteLine("item is int or item is float or").
+			WriteLine("((item is String or item is StringName) and").
+			WriteLine("item.is_valid_float())").
+			Unindent().
+			WriteLine("):").
+			Indent().
+			LineD("$list.append(float(item))").
+			Unindent().
+			WriteLine("else:").
+			Indent().
+			LineD("push_error(\"Expected float for every element of field $field in \" +").
+			Indent().
+			LineD("\"$model, but got \", item)").
+			Unindent().
+			WriteLine("return null").
+			Unindent()
 	case cclValues.TypeNameBool:
-		builder.WriteLine("if typeof(item) != TYPE_BOOL:")
-		builder.Indent()
-		builder.WriteLine("push_error(\"Expected bool items for field " + field.Name + " in " + modelName + "\")")
-		builder.WriteLine("return null")
-		builder.Unindent()
-		builder.WriteLine(listName + ".append(item)")
+		builder.WriteLine("if item is bool:").
+			Indent().
+			LineD("$list.append(item)").
+			Unindent().
+			WriteLine("elif item is String or item is StringName:").
+			Indent().
+			LineD("$list.append(").
+			Indent().
+			WriteLine("!item.is_empty() and").
+			WriteLine("item != \"0\" and").
+			WriteLine("item.to_lower() != \"false\"").
+			Unindent().
+			WriteLine(")").
+			Unindent().
+			LineD("elif item is int or item is float:").
+			Indent().
+			LineD("$list.append(bool(item))").
+			Unindent().
+			WriteLine("else:").
+			Indent().
+			LineD("push_error(\"Expected bool for every element of field $field in \" +").
+			Indent().
+			LineD("\"$model, but got \", item)").
+			Unindent().
+			WriteLine("return null").
+			Unindent()
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("if typeof(item) == TYPE_STRING:")
-		builder.Indent()
-		builder.WriteLine(listName + ".append(Marshalls.base64_to_raw(item))")
-		builder.Unindent()
-		builder.WriteLine("elif typeof(item) == TYPE_PACKED_BYTE_ARRAY:")
-		builder.Indent()
-		builder.WriteLine(listName + ".append(item)")
-		builder.Unindent()
-		builder.WriteLine("else:")
-		builder.Indent()
-		builder.WriteLine("push_error(\"Expected base64 string items for field " + field.Name + " in " + modelName + "\")")
-		builder.WriteLine("return null")
-		builder.Unindent()
+		builder.WriteLine("if item is String:").
+			Indent().
+			LineD("$list.append(Marshalls.base64_to_raw(item))").
+			Unindent().
+			WriteLine("elif item is PackedByteArray:").
+			Indent().
+			LineD("$list.append(item)").
+			Unindent().
+			WriteLine("else:").
+			Indent().
+			LineD("push_error(\"Expected base64 string for every element of field $field in \" +").
+			Indent().
+			LineD("\"$model, but got \", item)").
+			Unindent().
+			WriteLine("return null").
+			Unindent()
 	default:
 		if targetFieldType.IsCustomTypeModel() {
-			builder.WriteLine("if item == null:")
-			builder.Indent()
-			builder.WriteLine(listName + ".append(null)")
-			builder.Unindent()
-			builder.WriteLine("elif typeof(item) != TYPE_DICTIONARY:")
-			builder.Indent()
-			builder.WriteLine("push_error(\"Expected object items for field " + field.Name + " in " + modelName + "\")")
-			builder.WriteLine("return null")
-			builder.Unindent()
-			builder.WriteLine("else:")
-			builder.Indent()
-			builder.WriteLine(listName + ".append(" + targetFieldType.GetName() + ".deserialize_json_dict(item))")
-			builder.Unindent()
+			builder.WriteLine("if item == null:").
+				Indent().
+				LineD("$list.append(null)").
+				Unindent().
+				WriteLine("elif not (item is Dictionary):").
+				Indent().
+				LineD("push_error(\"Expected object items for every element of field $field in \" +").
+				Indent().
+				LineD("\"$model, but got \", item)").
+				Unindent().
+				WriteLine("return null").
+				Unindent().
+				WriteLine("else:").
+				Indent().
+				LineD("$list.append($fieldT.deserialize_json_dict(item))").
+				Unindent()
 		}
 	}
 
-	builder.Unindent()
-	builder.WriteLine(resultField + " = " + listName)
-	builder.Unindent()
-	builder.Unindent()
-	builder.NewLine()
+	builder.Unindent().
+		LineD("$field = $list").
+		NewLine()
 }

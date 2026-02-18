@@ -76,9 +76,17 @@ model AuthGuestRequest {
     Username: string;
 }
 
+model SomeTestObj {
+    hello: string;
+}
+
 model AuthGuestAnswer {
     RpcId: uint16;
     some_property: string;
+    some_float: float;
+    Success: bool;
+    some_bytes: bytes;
+    my_field: SomeTestObj;
     Token: string;
 }
 
@@ -170,5 +178,8 @@ model ServerUpdatePlayerJoin {
 
 model UsersList {
     Users: UserInfo[];
+    usernames: string[];
+    // photos: bytes[];
+    something: ServerUpdatePlayerLeave[];
     MoreUsers: UserInfo[];
 }
