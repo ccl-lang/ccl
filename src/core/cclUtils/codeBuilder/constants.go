@@ -15,6 +15,6 @@ const (
 	SectionDeclareNamespace = "declare_namespace"
 )
 
-var (
+const (
 	varIndicator = '$'
 )

@@ -84,3 +84,13 @@ func ResolveTypeUsage(
 		}
 	}
 }
+
+func validateFieldTypeUsages(typeUsages []*fieldTypeUsageCheck) error {
+	for _, usage := range typeUsages {
+		if err := usage.validateTypeUsageCompleteness(usage.typeUsage); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

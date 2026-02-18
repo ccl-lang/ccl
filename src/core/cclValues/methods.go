@@ -114,6 +114,11 @@ func (m *ModelDefinition) GetFullName() string {
 	return m.GetNamespace() + "." + m.Name
 }
 
+// GetFullName returns the name of the model, NOT including its namespace.
+func (m *ModelDefinition) GetName() string {
+	return m.Name
+}
+
 // HasAttribute returns true if the model definition has at least one of the
 // given attributes.
 func (m *ModelDefinition) HasAttribute(attributeName ...string) bool {
@@ -186,6 +191,11 @@ func (c *ModelFieldDefinition) IsNullable() bool {
 // GetFullTypeName returns the full type name of the field's type.
 func (f *ModelFieldDefinition) GetFullTypeName() string {
 	return f.Type.GetDefinition().GetFullName()
+}
+
+// GetName returns the name of the field.
+func (f *ModelFieldDefinition) GetName() string {
+	return f.Name
 }
 
 // HasNoType returns true when the field's type field is not

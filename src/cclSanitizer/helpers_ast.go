@@ -32,7 +32,7 @@ func SanitizeCCLAst(
 
 	definition := &cclValues.SourceCodeDefinition{}
 	nameValidator := newFieldNameValidator(ast, fileNamespace)
-	fieldTypeUsages := []fieldTypeUsageCheck{}
+	fieldTypeUsages := []*fieldTypeUsageCheck{}
 
 	for _, globalAttr := range ast.GlobalAttributes {
 		if globalAttr == nil {
@@ -152,7 +152,7 @@ func SanitizeCCLAst(
 					}
 				}
 				fieldDef.ChangeValueType(typeUsage)
-				fieldTypeUsages = append(fieldTypeUsages, fieldTypeUsageCheck{
+				fieldTypeUsages = append(fieldTypeUsages, &fieldTypeUsageCheck{
 					modelName:      modelDef.Name,
 					fieldName:      fieldDef.Name,
 					typeUsage:      typeUsage,
@@ -165,7 +165,7 @@ func SanitizeCCLAst(
 				}
 				fieldDef.ChangeValueType(valueType)
 				fieldDef.ChangeDefaultValue(value)
-				fieldTypeUsages = append(fieldTypeUsages, fieldTypeUsageCheck{
+				fieldTypeUsages = append(fieldTypeUsages, &fieldTypeUsageCheck{
 					modelName:      modelDef.Name,
 					fieldName:      fieldDef.Name,
 					typeUsage:      valueType,
