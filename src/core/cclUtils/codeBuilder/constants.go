@@ -14,3 +14,7 @@ const (
 	// where the namespace declaration MUST BE after the imports and before any type declarations.
 	SectionDeclareNamespace = "declare_namespace"
 )
+
+var (
+	varIndicator = '$'
+)

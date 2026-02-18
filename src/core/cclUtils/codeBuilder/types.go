@@ -19,6 +19,9 @@ type CodeBuilder struct {
 	// The key is the import key, the value is always true.
 	importedKeys map[string]bool
 
+	// mappedVars is a map of section -> varName -> realVarName (used in the code)
+	mappedVars *codeBuilderVars
+
 	currentSection string
 
 	indentationStr string
@@ -29,6 +32,11 @@ type CodeBuilder struct {
 	debugInfos map[string][]*DebugInfo
 
 	enableDebugInfo bool
+}
+
+type codeBuilderVars struct {
+	perSections map[string]map[string]string
+	globalVars  map[string]string
 }
 
 // CodeBuilderOptions holds configuration options for the CodeBuilder.

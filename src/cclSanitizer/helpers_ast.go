@@ -164,7 +164,7 @@ func SanitizeCCLAst(
 					return nil, err
 				}
 				fieldDef.ChangeValueType(valueType)
-				fieldDef.ChangeValue(value)
+				fieldDef.ChangeDefaultValue(value)
 				fieldTypeUsages = append(fieldTypeUsages, fieldTypeUsageCheck{
 					modelName:      modelDef.Name,
 					fieldName:      fieldDef.Name,

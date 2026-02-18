@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/ALiwoto/ssg/ssg"
 )
@@ -55,7 +56,8 @@ func (c *CodeBuilder) DoImport(key, importLine string) *CodeBuilder {
 	}
 
 	c.importedKeys[key] = true
-	c.builders[SectionImports].WriteString(importLine + c.newLineStr)
+	c.write(SectionImports, importLine)
+	c.write(SectionImports, c.newLineStr)
 	return c
 }
 
@@ -69,7 +71,7 @@ func (c *CodeBuilder) AddCommentHeader(comment string) *CodeBuilder {
 // This is useful for comment headers such as license headers, "DO NOT EDIT" warnings, etc.
 func (c *CodeBuilder) AppendCommentHeader(comment string) *CodeBuilder {
 	c.checkSection()
-	c.builders[SectionCommentHeaders].WriteString(comment)
+	c.write(SectionCommentHeaders, comment)
 	return c
 }
 
@@ -85,7 +87,7 @@ func (c *CodeBuilder) AddHeader(strValue string) *CodeBuilder {
 // This will come after comment headers but before imports.
 func (c *CodeBuilder) AppendHeader(strValue string) *CodeBuilder {
 	c.checkSection()
-	c.builders[SectionHeaders].WriteString(strValue)
+	c.write(SectionHeaders, strValue)
 	return c
 }
 
@@ -100,7 +102,7 @@ func (c *CodeBuilder) AddNamespaceDeclaration(strValue string) *CodeBuilder {
 // This is useful for organizing code into different namespaces.
 func (c *CodeBuilder) AppendNamespaceDeclaration(strValue string) *CodeBuilder {
 	c.checkSection()
-	c.builders[SectionDeclareNamespace].WriteString(strValue)
+	c.write(SectionDeclareNamespace, strValue)
 	return c
 }
 
@@ -140,6 +142,34 @@ func (c *CodeBuilder) EndSection() *CodeBuilder {
 	return c
 }
 
+// MapVar will basically map a variable name to its true real name
+func (c *CodeBuilder) MapVar(varName, realVarName string) *CodeBuilder {
+	c.checkSection()
+	c.mappedVars.setVar(c.currentSection, varName, realVarName)
+	return c
+}
+
+// UnmapVar will undefine the varName that was defined using the Define method.
+func (c *CodeBuilder) UnmapVar(varNames ...string) *CodeBuilder {
+	c.checkSection()
+	c.mappedVars.deleteVar(c.currentSection, varNames...)
+	return c
+}
+
+// MapGlobalVar will map a global varName to its realVarName that will be replaced *globally*.
+func (c *CodeBuilder) MapGlobalVar(varName, realVarName string) *CodeBuilder {
+	c.checkSection()
+	c.mappedVars.setGlobal(varName, realVarName)
+	return c
+}
+
+// UnmapGlobalVar will remove the varName from the global map.
+func (c *CodeBuilder) UnmapGlobalVar(varName string) *CodeBuilder {
+	c.checkSection()
+	c.mappedVars.deleteGlobalVar(varName)
+	return c
+}
+
 // Indent increases the indentation level.
 func (c *CodeBuilder) Indent() *CodeBuilder {
 	c.checkSection()
@@ -163,7 +193,7 @@ func (c *CodeBuilder) UnindentLine() *CodeBuilder {
 
 	c.addDebugInfo(2)
 	c.checkSection()
-	c.builders[c.currentSection].WriteString(c.newLineStr)
+	c.write(c.currentSection, c.newLineStr)
 	return c
 }
 
@@ -174,7 +204,7 @@ func (c *CodeBuilder) WriteStr(s string) *CodeBuilder {
 
 	c.addDebugInfo(2)
 	c.writeIndentation()
-	c.builders[c.currentSection].WriteString(s)
+	c.write(c.currentSection, s)
 	return c
 }
 
@@ -184,7 +214,7 @@ func (c *CodeBuilder) AppendStr(s string) *CodeBuilder {
 
 	c.addDebugInfo(2)
 	c.checkSection()
-	c.builders[c.currentSection].WriteString(s)
+	c.write(c.currentSection, s)
 	return c
 }
 
@@ -195,8 +225,33 @@ func (c *CodeBuilder) WriteLine(s string) *CodeBuilder {
 
 	c.addDebugInfo(2)
 	c.writeIndentation()
-	c.builders[c.currentSection].WriteString(s)
-	c.builders[c.currentSection].WriteString(c.newLineStr)
+	c.write(c.currentSection, s)
+	c.write(c.currentSection, c.newLineStr)
+	return c
+}
+
+// LineD Dynamically writes the string value.
+// Calling this method is more expensive than normally calling WriteLine, because
+// it will try to *resolve* all the variable names inside of the string.
+func (c *CodeBuilder) LineD(s string) *CodeBuilder {
+	c.checkSection()
+
+	c.addDebugInfo(2)
+	c.writeIndentation()
+	c.writeDynamic(c.currentSection, s)
+	c.write(c.currentSection, c.newLineStr)
+	return c
+}
+
+// AppendD will dynamically append the string value without any new line char.
+// Calling this method is more expensive than normally calling Append, because
+// it will try to *resolve* all the variable names inside of the string.
+func (c *CodeBuilder) AppendD(s string) *CodeBuilder {
+	c.checkSection()
+
+	c.addDebugInfo(2)
+	c.writeIndentation()
+	c.writeDynamic(c.currentSection, s)
 	return c
 }
 
@@ -204,8 +259,8 @@ func (c *CodeBuilder) WriteLine(s string) *CodeBuilder {
 func (c *CodeBuilder) AppendLine(s string) *CodeBuilder {
 	c.addDebugInfo(2)
 	c.checkSection()
-	c.builders[c.currentSection].WriteString(s)
-	c.builders[c.currentSection].WriteString(c.newLineStr)
+	c.write(c.currentSection, s)
+	c.write(c.currentSection, c.newLineStr)
 	return c
 }
 
@@ -215,8 +270,8 @@ func (c *CodeBuilder) WriteLinef(format string, args ...any) *CodeBuilder {
 
 	c.addDebugInfo(2)
 	c.writeIndentation()
-	fmt.Fprintf(c.builders[c.currentSection], format, args...)
-	c.builders[c.currentSection].WriteString(c.newLineStr)
+	c.writeF(c.currentSection, format, args...)
+	c.write(c.currentSection, c.newLineStr)
 	return c
 }
 
@@ -224,7 +279,7 @@ func (c *CodeBuilder) WriteLinef(format string, args ...any) *CodeBuilder {
 func (c *CodeBuilder) NewLine() *CodeBuilder {
 	c.addDebugInfo(2)
 	c.checkSection()
-	c.builders[c.currentSection].WriteString(c.newLineStr)
+	c.write(c.currentSection, c.newLineStr)
 	return c
 }
 
@@ -233,9 +288,69 @@ func (c *CodeBuilder) NewLine() *CodeBuilder {
 // debug info; so the caller must ensure those are handled appropriately.
 func (c *CodeBuilder) writeIndentation() *CodeBuilder {
 	for i := 0; i < c.indentations[c.currentSection]; i++ {
-		c.builders[c.currentSection].WriteString(c.indentationStr)
+		c.write(c.currentSection, c.indentationStr)
 	}
 	return c
+}
+
+// expandStr expands the string using the variables defined in the code builder.
+func (c *CodeBuilder) expandStr(inputValue string) string {
+	var builder strings.Builder
+	// good heuristic; expanded value may exceed this, but still helps
+	builder.Grow(len(inputValue))
+
+	inVar := false
+	// byte index of var name start (after indicator)
+	varStart := 0
+	indicatorLen := utf8.RuneLen(varIndicator)
+
+	for index, current := range inputValue {
+		if !inVar {
+			if current == varIndicator {
+				inVar = true
+				varStart = index + indicatorLen
+				continue
+			}
+			builder.WriteRune(current)
+			continue
+		}
+
+		// We are parsing a variable name.
+		// Logic change: Stop on space OR punctuation/symbols.
+		// We only allow letters, digits, and underscores in var names here.
+		if !isVarChar(current) {
+			name := inputValue[varStart:index]
+			val := c.mappedVars.getValue(c.currentSection, name)
+			builder.WriteString(val)
+			builder.WriteRune(current) // Write the char that ended the var
+			inVar = false
+		}
+	}
+
+	// Flush if string ended while still in var mode
+	if inVar {
+		name := inputValue[varStart:]
+		val := c.mappedVars.getValue(c.currentSection, name)
+		builder.WriteString(val)
+	}
+
+	return builder.String()
+}
+
+// writeDynamic
+func (c *CodeBuilder) writeDynamic(targetSection, value string) {
+	c.write(targetSection, c.expandStr(value))
+}
+
+// write writes to the target section's builder with the provided string value.
+// This is an internal method and is not supposed to be used by any code outside
+// of this package.
+func (c *CodeBuilder) write(targetSection, value string) {
+	c.builders[targetSection].WriteString(value)
+}
+
+func (c *CodeBuilder) writeF(targetSection, format string, args ...any) {
+	fmt.Fprintf(c.builders[targetSection], format, args...)
 }
 
 // String returns the built string.
@@ -313,4 +428,51 @@ func (c *CodeBuilder) Build(orderedKeys []string) *CodeBuildResult {
 	}
 
 	return res
+}
+
+//---------------------------------------------------------
+
+// getValue returns value of a var by its name either from the section name OR from
+// the global vars. Pass empty section name to force getting from global vars.
+func (v *codeBuilderVars) getValue(section, name string) string {
+	if section == "" {
+		return v.globalVars[name]
+	}
+
+	sectionMap, ok := v.perSections[section]
+	if ok && sectionMap != nil {
+		value, ok := sectionMap[name]
+		if ok {
+			return value
+		}
+	}
+
+	return v.globalVars[name]
+}
+
+func (v *codeBuilderVars) setVar(section, name, value string) {
+	sectionMap := v.perSections[section]
+	if sectionMap == nil {
+		sectionMap = map[string]string{}
+		v.perSections[section] = sectionMap
+	}
+
+	sectionMap[name] = value
+}
+
+func (v *codeBuilderVars) setGlobal(name, value string) {
+	v.globalVars[name] = value
+}
+
+func (v *codeBuilderVars) deleteVar(section string, names ...string) {
+	sectionMap, ok := v.perSections[section]
+	if ok && sectionMap != nil {
+		for _, current := range names {
+			delete(sectionMap, current)
+		}
+	}
+}
+
+func (v *codeBuilderVars) deleteGlobalVar(name string) {
+	delete(v.globalVars, name)
 }

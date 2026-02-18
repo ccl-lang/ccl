@@ -27,6 +27,7 @@ func NewCodeBuilderWithOptions(opts *CodeBuilderOptions) *CodeBuilder {
 		newLineStr:      opts.NewLineStr,
 		debugInfos:      map[string][]*DebugInfo{},
 		enableDebugInfo: opts.EnableDebugInfo,
+		mappedVars:      newCodeBuilderVars(),
 	}
 }
 
@@ -41,4 +42,19 @@ func GetDefaultCodeBuilderOptions() *CodeBuilderOptions {
 // GetDefaultOrderedSections returns the default ordered sections for output.
 func GetDefaultOrderedSections() []string {
 	return []string{SectionCommentHeaders, SectionHeaders, SectionImports, SectionDeclareNamespace}
+}
+
+//---------------------------------------------------------
+
+func newCodeBuilderVars() *codeBuilderVars {
+	return &codeBuilderVars{
+		perSections: map[string]map[string]string{},
+		globalVars:  map[string]string{},
+	}
+}
+
+// Helper to determine valid variable characters
+func isVarChar(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') ||
+		(r >= '0' && r <= '9') || r == '_'
 }

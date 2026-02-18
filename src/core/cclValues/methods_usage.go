@@ -59,9 +59,9 @@ func (p *ModelFieldDefinition) ChangeValueType(typeInfo *CCLTypeUsage) {
 	p.Type = typeInfo
 }
 
-// ChangeValue sets the value of the parameter.
-func (p *ModelFieldDefinition) ChangeValue(value any) {
-	p.value = value
+// ChangeDefaultValue sets the value of the parameter.
+func (p *ModelFieldDefinition) ChangeDefaultValue(value any) {
+	p.defaultValue = value
 }
 
 //---------------------------------------------------------

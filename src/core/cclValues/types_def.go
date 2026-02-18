@@ -136,6 +136,6 @@ type ModelFieldDefinition struct {
 	// to this field.
 	Attributes []*AttributeUsageInfo
 
-	// value is the current value of this field.
-	value any
+	// defaultValue is the default value that has been assigned to this field.
+	defaultValue any
 }

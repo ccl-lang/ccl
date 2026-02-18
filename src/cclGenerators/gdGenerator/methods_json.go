@@ -94,8 +94,8 @@ func (c *GDScriptGenerationContext) generateDeserializeJsonDictMethod(
 	}
 
 	builder.WriteLine("return model_result").
-		UnindentLine().
-		NewLine()
+		UnindentLine()
+
 	return nil
 }
 
@@ -122,8 +122,8 @@ func (c *GDScriptGenerationContext) generateDeserializeJsonMethod(
 		WriteLine("return null").
 		UnindentLine().
 		WriteLine("return " + model.Name + ".deserialize_json_dict(json.data)").
-		UnindentLine().
-		NewLine()
+		UnindentLine()
+
 	return nil
 }
 
@@ -194,73 +194,140 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 	resultField := resultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
 
-	builder.WriteLine("if data.has(\"" + jsonName + "\"):")
-	builder.Indent()
-	builder.WriteLine("var " + valueName + " = data[\"" + jsonName + "\"]")
-	builder.WriteLine("if " + valueName + " != null:")
-	builder.Indent()
+	builder.MapVar("jsonName", jsonName).
+		MapVar("value", valueName).
+		MapVar("field", resultField).
+		MapVar("fieldT", field.Type.GetName()).
+		MapVar("model", modelName).
+		// TODO #21: maybe we can have default value (from ccl) instead of null here?
+		LineD("var $value = data.get(\"$jsonName\", null)").
+		LineD("if $value == null:").
+		Indent().
+		// TODO #21: maybe we can have default value (from ccl) instead of pass here?
+		LineD("pass").
+		Unindent()
+
+	defer func() {
+		builder.UnmapVar(
+			"jsonName",
+			"value",
+			"field",
+			"fieldT",
+			"model",
+		)
+	}()
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine("if typeof(" + valueName + ") != TYPE_STRING:")
-		builder.Indent()
-		builder.WriteLine("push_error(\"Expected string for field " + field.Name + " in " + modelName + "\")")
-		builder.WriteLine("return null")
-		builder.Unindent()
-		builder.WriteLine(resultField + " = " + valueName)
+		builder.LineD("elif $value is String:").
+			Indent().
+			LineD("$field = $value").
+			Unindent().
+			LineD("else:").
+			Indent().
+			LineD("$field = str($value)").
+			Unindent()
 	case cclValues.TypeNameInt, cclValues.TypeNameInt8, cclValues.TypeNameInt16,
 		cclValues.TypeNameInt32, cclValues.TypeNameInt64,
 		cclValues.TypeNameUint, cclValues.TypeNameUint8, cclValues.TypeNameUint16,
 		cclValues.TypeNameUint32, cclValues.TypeNameUint64, cclValues.TypeNameDateTime:
-		builder.WriteLine("if typeof(" + valueName + ") != TYPE_INT and typeof(" + valueName + ") != TYPE_FLOAT:")
-		builder.Indent()
-		builder.WriteLine("push_error(\"Expected number for field " + field.Name + " in " + modelName + "\")")
-		builder.WriteLine("return null")
-		builder.Unindent()
-		builder.WriteLine(resultField + " = int(" + valueName + ")")
+		builder.WriteLine("if (").
+			Indent().
+			LineD("$value is int or $value is float or").
+			LineD("(($value is String or $value is StringName) and").
+			LineD("$value.is_valid_int())").
+			Unindent().
+			WriteLine("):").
+			Indent().
+			LineD("$field = int($value)").
+			Unindent().
+			WriteLine("else:").
+			Indent().
+			LineD("push_error(\"Expected number for field $field in \" +").
+			Indent().
+			LineD("\"$model, but got \", $value)").
+			Unindent().
+			WriteLine("return null").
+			Unindent()
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
-		builder.WriteLine("if typeof(" + valueName + ") != TYPE_INT and typeof(" + valueName + ") != TYPE_FLOAT:")
-		builder.Indent()
-		builder.WriteLine("push_error(\"Expected number for field " + field.Name + " in " + modelName + "\")")
-		builder.WriteLine("return null")
-		builder.Unindent()
-		builder.WriteLine(resultField + " = float(" + valueName + ")")
+		builder.WriteLine("if (").
+			Indent().
+			LineD("$value is int or $value is float or").
+			LineD("(($value is String or $value is StringName) and").
+			LineD("$value.is_valid_float())").
+			Unindent().
+			WriteLine("):").
+			Indent().
+			LineD("$field = float($value)").
+			Unindent().
+			WriteLine("else:").
+			Indent().
+			LineD("push_error(\"Expected float for field $field in \" +").
+			Indent().
+			LineD("\"$model, but got \", $value)").
+			Unindent().
+			WriteLine("return null").
+			Unindent()
 	case cclValues.TypeNameBool:
-		builder.WriteLine("if typeof(" + valueName + ") != TYPE_BOOL:")
-		builder.Indent()
-		builder.WriteLine("push_error(\"Expected bool for field " + field.Name + " in " + modelName + "\")")
-		builder.WriteLine("return null")
-		builder.Unindent()
-		builder.WriteLine(resultField + " = " + valueName)
+		builder.LineD("if $value is bool:").
+			Indent().
+			LineD("$field = $value").
+			Unindent().
+			LineD("elif $value is String or $value is StringName:").
+			Indent().
+			LineD("$field =  (").
+			Indent().
+			LineD("!$value.is_empty() and").
+			LineD("$value != \"0\" and").
+			LineD("$value.to_lower() != \"false\"").
+			Unindent().
+			WriteLine(")").
+			Unindent().
+			LineD("elif $value is int or $value is float:").
+			Indent().
+			LineD("$field = bool($value)").
+			Unindent().
+			WriteLine("else:").
+			Indent().
+			LineD("push_error(\"Expected bool for field $field in \" +").
+			Indent().
+			LineD("\"$model, but got \", $value)").
+			Unindent().
+			WriteLine("return null").
+			Unindent()
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("if typeof(" + valueName + ") == TYPE_STRING:")
-		builder.Indent()
-		builder.WriteLine(resultField + " = Marshalls.base64_to_raw(" + valueName + ")")
-		builder.Unindent()
-		builder.WriteLine("elif typeof(" + valueName + ") == TYPE_PACKED_BYTE_ARRAY:")
-		builder.Indent()
-		builder.WriteLine(resultField + " = " + valueName)
-		builder.Unindent()
-		builder.WriteLine("else:")
-		builder.Indent()
-		builder.WriteLine("push_error(\"Expected base64 string for field " + field.Name + " in " + modelName + "\")")
-		builder.WriteLine("return null")
-		builder.Unindent()
+		builder.LineD("if $value is String:").
+			Indent().
+			LineD("$field = Marshalls.base64_to_raw($value)").
+			Unindent().
+			LineD("elif $value is PackedByteArray:").
+			Indent().
+			LineD("$field = $value").
+			Unindent().
+			WriteLine("else:").
+			Indent().
+			LineD("push_error(\"Expected base64 string for field $field in \" +").
+			Indent().
+			LineD("\"$model, but got \", $value)").
+			Unindent().
+			WriteLine("return null").
+			Unindent()
 	default:
-		if field.Type.IsCustomTypeModel() {
-			builder.WriteLine("if typeof(" + valueName + ") != TYPE_DICTIONARY:")
-			builder.Indent()
-			builder.WriteLine("push_error(\"Expected object for field " + field.Name + " in " + modelName + "\")")
-			builder.WriteLine("return null")
-			builder.Unindent()
-			builder.WriteLine(resultField + " = " + field.Type.GetName() +
-				".deserialize_json_dict(" + valueName + ")")
+		if field.IsCustomTypeModel() {
+			builder.LineD("if $value is Dictionary:").
+				Indent().
+				LineD("$field = $fieldT.deserialize_json_dict($value)").
+				Unindent().
+				WriteLine("else:").
+				Indent().
+				LineD("push_error(\"Expected base64 string for field $field in \" +").
+				Indent().
+				LineD("\"$model, but got \", $value)").
+				Unindent().
+				WriteLine("return null").
+				Unindent()
 		}
 	}
-
-	builder.Unindent()
-	builder.Unindent()
-	builder.NewLine()
 }
 
 func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
