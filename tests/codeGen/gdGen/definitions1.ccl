@@ -5,6 +5,7 @@
 
 #[CCLVersion("1.0.0")]
 #[SerializationType("binary")]
+#[SerializationType("json")]
 
 // Basic geometric types
 model PositionInfo {
@@ -50,6 +51,7 @@ model SkinInfo {
 
 // UserInfo and RoomInfo types
 model UserInfo {
+    [JsonPropertyName("user_id")]
     Id: string;
     Username: string;
     Skin: SkinInfo;
@@ -76,6 +78,7 @@ model AuthGuestRequest {
 
 model AuthGuestAnswer {
     RpcId: uint16;
+    some_property: string;
     Token: string;
 }
 

@@ -50,7 +50,7 @@ func RunGodotProject(opts *RunGodotOptions) (string, error) {
 [application]
 
 config/name="CCL GDScript Test"
-config/features=PackedStringArray("4.5", "Forward Plus")
+config/features=PackedStringArray("4.6", "Forward Plus")
 `
 	if err := os.WriteFile(
 		filepath.Join(opts.TargetPath, "project.godot"),

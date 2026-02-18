@@ -33,6 +33,56 @@ func _init():
 		quit(1)
 		return
 
+	# Test binary serialization/deserialization
+	var user_bin = user.serialize_binary()
+	var user_from_bin = user_script.deserialize_binary(user_bin)
+	if user_from_bin == null:
+		print("Error: deserialize_binary returned null")
+		quit(1)
+		return
+	if user_from_bin.username != "test_user":
+		print("Error: Binary username mismatch")
+		quit(1)
+		return
+	if user_from_bin.skin == null or user_from_bin.skin.basic == null or user_from_bin.skin.basic.r != 255:
+		print("Error: Binary nested model mismatch")
+		quit(1)
+		return
+
+	# Test JSON serialization/deserialization
+	var user_json = user.serialize_json()
+	var user_from_json = user_script.deserialize_json(user_json)
+	if user_from_json == null:
+		print("Error: deserialize_json returned null")
+		quit(1)
+		return
+	if user_from_json.username != "test_user":
+		print("Error: JSON username mismatch")
+		quit(1)
+		return
+	if user_from_json.skin == null or user_from_json.skin.basic == null or user_from_json.skin.basic.r != 255:
+		print("Error: JSON nested model mismatch")
+		quit(1)
+		return
+
+	var json_checker = JSON.new()
+	if json_checker.parse(user_json) != OK:
+		print("Error: JSON parse failed for user_json")
+		quit(1)
+		return
+	if typeof(json_checker.data) != TYPE_DICTIONARY:
+		print("Error: JSON result is not a dictionary")
+		quit(1)
+		return
+	if not json_checker.data.has("user_id"):
+		print("Error: JsonPropertyName did not apply for user_id")
+		quit(1)
+		return
+	if json_checker.data["user_id"] != "user123":
+		print("Error: JsonPropertyName value mismatch")
+		quit(1)
+		return
+
 	# Test PositionInfo (direct access)
 	var pos = PositionInfo.new()
 	pos.x = 10

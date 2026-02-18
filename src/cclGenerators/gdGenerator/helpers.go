@@ -25,12 +25,12 @@ func GenerateCode(options *gen.CodeGenerationOptions) (*gen.CodeGenerationResult
 		options.PackageName = pathParts[len(pathParts)-1]
 	}
 
-	goCtx := &GDScriptGenerationContext{
+	gdCtx := &GDScriptGenerationContext{
 		CodeGenerationBase: &gen.CodeGenerationBase{
 			Options: options,
 		},
 	}
-	err := goCtx.GenerateCode()
+	err := gdCtx.GenerateCode()
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +38,6 @@ func GenerateCode(options *gen.CodeGenerationOptions) (*gen.CodeGenerationResult
 	return &gen.CodeGenerationResult{
 		SourceLanguage: gValues.LanguageCCL.String(),
 		TargetLanguage: CurrentLanguage.String(),
-		OutputFiles:    goCtx.OutputFiles,
+		OutputFiles:    gdCtx.OutputFiles,
 	}, nil
 }

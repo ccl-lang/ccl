@@ -7,14 +7,16 @@ import (
 )
 
 // SnakeToTitle converts a snake_case string to TitleCase.
-func SnakeToTitle(s string) string {
-	bd := strings.Builder{}
+func SnakeToTitle(str string) string {
+	str = ToSnakeCase(str)
+	allStrs := strings.Split(str, "_")
+	builder := strings.Builder{}
 
-	for _, split := range strings.Split(s, "_") {
-		bd.WriteString(ssg.Title(split))
+	for _, current := range allStrs {
+		builder.WriteString(ssg.Title(current))
 	}
 
-	return bd.String()
+	return builder.String()
 }
 
 // ToCamelCase converts a string to camelCase.
@@ -32,28 +34,58 @@ func ToPascalCase(str string) string {
 }
 
 // ToSnakeCase converts a CamelCase string to snake_case.
-func ToSnakeCase(camel string) (snake string) {
+func ToSnakeCase(str string) string {
 	var b strings.Builder
-	diff := 'a' - 'A'
-	l := len(camel)
-	for i, v := range camel {
-		// A is 65, a is 97
-		if v >= 'a' {
-			b.WriteRune(v)
+	runes := []rune(str)
+	str_len := len(runes)
+
+	// Track if the last character written was an underscore
+	// Initialize true to prevent leading underscores
+	lastUnderscore := true
+
+	for current_index := range str_len {
+		current_rune := runes[current_index]
+		nextIsLower := false
+		if current_index+1 < str_len && runes[current_index+1] >= 'a' && runes[current_index+1] <= 'z' {
+			nextIsLower = true
+		}
+
+		// 1. Handle delimiters (-, ., space, :)
+		// Convert them all to underscores for processing
+		if current_rune == '-' || current_rune == '.' || current_rune == ' ' ||
+			current_rune == ':' || current_rune == '_' {
+			if !lastUnderscore {
+				b.WriteRune('_')
+				lastUnderscore = true
+			}
 			continue
 		}
-		// v is capital letter here
-		// disregard first letter
-		// add underscore if last letter is capital letter
-		// add underscore when previous letter is lowercase
-		// add underscore when next letter is lowercase
-		if (i != 0 || i == l-1) && (          // head and tail
-		(i > 0 && rune(camel[i-1]) >= 'a') || // pre
-			(i < l-1 && rune(camel[i+1]) >= 'a')) { //next
-			b.WriteRune('_')
+
+		// 2. Handle Uppercase
+		if current_rune >= 'A' && current_rune <= 'Z' {
+			// Check if we need to insert an underscore before this capital
+			if !lastUnderscore {
+				prev := runes[current_index-1]
+				isPrevLower := (prev >= 'a' && prev <= 'z') || (prev >= '0' && prev <= '9')
+
+				// Insert _ if:
+				// a. Previous was lowercase/digit (camelCase -> camel_case)
+				// b. Previous was Upper but next is Lower (JSONId -> json_id)
+				if isPrevLower || (current_rune >= 'A' && current_rune <= 'Z' && nextIsLower) {
+					b.WriteRune('_')
+					lastUnderscore = true
+				}
+			}
+
+			// Convert to lowercase
+			current_rune = current_rune + 32
 		}
-		b.WriteRune(v + diff)
+
+		// 3. Write the character
+		b.WriteRune(current_rune)
+		lastUnderscore = false
 	}
+
 	return b.String()
 }
 
