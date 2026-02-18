@@ -242,7 +242,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 		cclValues.TypeNameInt32, cclValues.TypeNameInt64,
 		cclValues.TypeNameUint, cclValues.TypeNameUint8, cclValues.TypeNameUint16,
 		cclValues.TypeNameUint32, cclValues.TypeNameUint64, cclValues.TypeNameDateTime:
-		builder.WriteLine("if (").
+		builder.WriteLine("elif (").
 			Indent().
 			LineD("$value is int or $value is float or").
 			LineD("(($value is String or $value is StringName) and").
@@ -261,7 +261,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 			WriteLine("return null").
 			Unindent()
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
-		builder.WriteLine("if (").
+		builder.WriteLine("elif (").
 			Indent().
 			LineD("$value is int or $value is float or").
 			LineD("(($value is String or $value is StringName) and").
@@ -280,7 +280,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 			WriteLine("return null").
 			Unindent()
 	case cclValues.TypeNameBool:
-		builder.LineD("if $value is bool:").
+		builder.LineD("elif $value is bool:").
 			Indent().
 			LineD("$field = $value").
 			Unindent().
@@ -307,7 +307,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 			WriteLine("return null").
 			Unindent()
 	case cclValues.TypeNameBytes:
-		builder.LineD("if $value is String:").
+		builder.LineD("elif $value is String:").
 			Indent().
 			LineD("$field = Marshalls.base64_to_raw($value)").
 			Unindent().
@@ -325,13 +325,13 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 			Unindent()
 	default:
 		if field.IsCustomTypeModel() {
-			builder.LineD("if $value is Dictionary:").
+			builder.LineD("elif $value is Dictionary:").
 				Indent().
 				LineD("$field = $fieldT.deserialize_json_dict($value)").
 				Unindent().
 				WriteLine("else:").
 				Indent().
-				LineD("push_error(\"Expected base64 string for field $field in \" +").
+				LineD("push_error(\"Expected json object (Dictionary) for field $field in \" +").
 				Indent().
 				LineD("\"$model, but got \", $value)").
 				Unindent().
@@ -459,6 +459,10 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 			LineD("elif item is int or item is float:").
 			Indent().
 			LineD("$list.append(bool(item))").
+			Unindent().
+			LineD("elif item == null:").
+			Indent().
+			LineD("$list.append(false)").
 			Unindent().
 			WriteLine("else:").
 			Indent().
