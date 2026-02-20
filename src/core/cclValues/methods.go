@@ -179,7 +179,7 @@ func (f *ModelFieldDefinition) IsArray() bool {
 
 // IsCustomTypeModel returns true if the field's type is a custom model.
 func (f *ModelFieldDefinition) IsCustomTypeModel() bool {
-	return f != nil && f.Type.IsCustomTypeModel()
+	return f.Type.IsCustomTypeModel()
 }
 
 // IsNullable returns true if the field's type is nullable.
@@ -191,6 +191,11 @@ func (c *ModelFieldDefinition) IsNullable() bool {
 // GetFullTypeName returns the full type name of the field's type.
 func (f *ModelFieldDefinition) GetFullTypeName() string {
 	return f.Type.GetDefinition().GetFullName()
+}
+
+// GetModelFullName returns the full name of the model owning this field.
+func (f *ModelFieldDefinition) GetModelFullName() string {
+	return f.OwnedBy.GetFullName()
 }
 
 // GetName returns the name of the field.

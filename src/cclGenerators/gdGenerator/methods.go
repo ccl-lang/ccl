@@ -45,16 +45,24 @@ func (c *GDScriptGenerationContext) GenerateCode() error {
 }
 
 func (c *GDScriptGenerationContext) generateCodeForModel(model *CCLModel) error {
-	modelName := model.GetFullName()
+	modelFullName := model.GetFullName()
+	modelName := model.GetName()
 	builder := codeBuilder.NewCodeBuilderWithOptions(&codeBuilder.CodeBuilderOptions{
 		IndentationStr:  "\t",
 		NewLineStr:      "\n",
 		EnableDebugInfo: c.Options.GenerateDebugInfo,
 	})
-	c.ModelClasses[modelName] = builder
+	c.ModelClasses[modelFullName] = builder
 
-	builder.BeginSection(modelName)
+	builder.BeginSection(modelFullName)
 	defer builder.EndSection()
+
+	builder.MapVarPairs(
+		"model", modelName,
+	)
+	defer builder.UnmapVar(
+		"model",
+	)
 
 	err := c.generateModelClass(builder, model)
 	if err != nil {

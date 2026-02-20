@@ -35,7 +35,7 @@ func (c *CodeBuilder) checkSection() {
 	if c.currentSection == "" {
 		// Developer misuse: this is an invariant violation, not a user error.
 		// Panicking here is intentional to surface incorrect builder usage quickly.
-		panic("CodeBuilder: illegal usage of CodeBuilder without initiating a section")
+		panic("CodeBuilder: illegal usage of CodeBuilder without initiating a section" + panicStatement)
 	}
 }
 
@@ -111,14 +111,14 @@ func (c *CodeBuilder) AppendNamespaceDeclaration(strValue string) *CodeBuilder {
 // to avoid deadlocks, you SHOULD call EndSection() when you are done with this section.
 func (c *CodeBuilder) BeginSection(section string) *CodeBuilder {
 	if section == "" {
-		panic("CodeBuilder: section name cannot be empty")
+		panic("CodeBuilder: section name cannot be empty" + panicStatement)
 	}
 
 	if c.currentSection != "" {
 		if c.currentSection == section {
 			return c
 		}
-		panic("CodeBuilder: cannot begin a new section without ending the previous one")
+		panic("CodeBuilder: cannot begin a new section without ending the previous one" + panicStatement)
 	}
 
 	c.mut.Lock()
@@ -134,7 +134,7 @@ func (c *CodeBuilder) BeginSection(section string) *CodeBuilder {
 // EndSection ends the current section and releases the lock.
 func (c *CodeBuilder) EndSection() *CodeBuilder {
 	if c.currentSection == "" {
-		panic("CodeBuilder: cannot end a section when no section is active")
+		panic("CodeBuilder: cannot end a section when no section is active" + panicStatement)
 	}
 
 	c.currentSection = ""
@@ -160,12 +160,24 @@ func (c *CodeBuilder) mapVar(varName, realVarName string) *CodeBuilder {
 // NOTE: these are NOT global vars. these vars will be added inside of the current section.
 func (c *CodeBuilder) MapVarPairs(values ...string) *CodeBuilder {
 	if len(values)%2 != 0 {
-		panic("CodeBuilder: MapVarPairs method was called with invalid length")
+		panic("CodeBuilder: MapVarPairs method was called with invalid length" + panicStatement)
 	}
 
 	c.checkSection()
 	for i := 0; i < len(values); i += 2 {
 		c.mapVar(values[i], values[i+1])
+	}
+
+	return c
+}
+
+// ExpectMappedVars will make sure all the passed varNames exist as a mapped-var inside
+// of the code builder and if it doesn't exist, it will panic.
+func (c *CodeBuilder) ExpectMappedVars(varNames ...string) *CodeBuilder {
+	for _, current := range varNames {
+		if !c.mappedVars.valueExists(c.currentSection, current) {
+			panic("CodeBuilder: mapped var does not exist: " + current + panicStatement)
+		}
 	}
 
 	return c
@@ -455,6 +467,24 @@ func (c *CodeBuilder) Build(orderedKeys []string) *CodeBuildResult {
 }
 
 //---------------------------------------------------------
+
+// valueExists returns true if the value exists in any place.
+// this method only cares about the existence, it won't check if
+// the value is empty or not.
+func (v *codeBuilderVars) valueExists(section, name string) bool {
+	if section == "" {
+		_, exists := v.globalVars[name]
+		return exists
+	}
+
+	sectionMap, ok := v.perSections[section]
+	if !ok {
+		return false
+	}
+
+	_, ok = sectionMap[name]
+	return ok
+}
 
 // getValue returns value of a var by its name either from the section name OR from
 // the global vars. Pass empty section name to force getting from global vars.

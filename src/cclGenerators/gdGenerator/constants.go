@@ -9,3 +9,7 @@ const (
 const (
 	DefaultFileNamingStyle = gValues.StyleSnakeCase
 )
+
+const (
+	modelResultName = "model_result"
+)

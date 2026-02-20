@@ -20,7 +20,7 @@ func (c *GDScriptGenerationContext) generateSerializeJsonMethods(
 	if err := c.generateDeserializeJsonDictMethod(model, builder); err != nil {
 		return err
 	}
-	if err := c.generateDeserializeJsonMethod(model, builder); err != nil {
+	if err := c.generateDeserializeJsonMethod(builder); err != nil {
 		return err
 	}
 
@@ -71,13 +71,22 @@ func (c *GDScriptGenerationContext) generateDeserializeJsonDictMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	builder.WriteLine("static func deserialize_json_dict(data: Dictionary) -> " + model.Name + ":").
+	builder.ExpectMappedVars(
+		"model",
+	).MapVarPairs(
+		"modelResult", modelResultName,
+	)
+	defer builder.UnmapVar(
+		"modelResult",
+	)
+
+	builder.LineD("static func deserialize_json_dict(data: Dictionary) -> $model:").
 		Indent().
-		WriteLine("if data == null:").
+		WriteLine("if not data:").
 		Indent().
 		WriteLine("return null").
 		UnindentLine().
-		WriteLine("var model_result = " + model.Name + ".new()").
+		LineD("var $modelResult = $model.new()").
 		NewLine()
 
 	for _, field := range model.Fields {
@@ -87,35 +96,31 @@ func (c *GDScriptGenerationContext) generateDeserializeJsonDictMethod(
 		}
 
 		if field.IsArray() {
-			err = c.generateArrayDeserializeJson("model_result", field, jsonName, builder)
+			err = c.generateArrayDeserializeJson(field, jsonName, builder)
 			if err != nil {
 				return nil
 			}
 			continue
 		}
 
-		err = c.generateFieldDeserializeJson("model_result", field, jsonName, builder)
+		err = c.generateFieldDeserializeJson(field, jsonName, builder)
 		if err != nil {
 			return err
 		}
 	}
 
-	builder.WriteLine("return model_result").
+	builder.WriteLine("return $modelResult").
 		UnindentLine()
 
 	return nil
 }
 
+// generateDeserializeJsonMethod generates code for deserializing json method.
+// The method expects `model` mapped-var to be present in the builder.
 func (c *GDScriptGenerationContext) generateDeserializeJsonMethod(
-	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	modelName := model.GetName()
-
-	builder.MapVarPairs(
-		"model", modelName,
-	)
-	defer builder.UnmapVar(
+	builder.ExpectMappedVars(
 		"model",
 	)
 
@@ -233,30 +238,29 @@ func (c *GDScriptGenerationContext) generateArraySerializeJson(
 }
 
 func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
-	resultName string,
 	field *CCLField,
 	jsonName string,
 	builder *codeBuilder.CodeBuilder,
 ) error {
 	fieldRawName := cclUtils.ToSnakeCase(field.Name)
 	targetFieldTypeName := field.Type.GetName()
-	resultField := resultName + "." + fieldRawName
+	resultField := modelResultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
 	modelName := field.OwnedBy.GetName()
 
-	builder.MapVarPairs(
+	builder.ExpectMappedVars(
+		"model",
+	).MapVarPairs(
 		"jsonName", jsonName,
 		"value", valueName,
 		"field", resultField,
 		"fieldT", targetFieldTypeName,
-		"model", modelName,
 	)
 	defer builder.UnmapVar(
 		"jsonName",
 		"value",
 		"field",
 		"fieldT",
-		"model",
 	)
 
 	// TODO #21: maybe we can have default value (from ccl) instead of null here?
@@ -391,11 +395,11 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 }
 
 func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
-	resultName string,
 	field *CCLField,
 	jsonName string,
 	builder *codeBuilder.CodeBuilder,
 ) error {
+	resultName := "model_result"
 	targetFieldType := field.Type.GetUnderlyingType()
 	targetFieldTypeName := targetFieldType.GetName()
 	fieldTargetLangType := c.getGDScriptType(field)
