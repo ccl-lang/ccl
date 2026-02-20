@@ -23,6 +23,12 @@ const (
 	StyleKebabCase  = "kebab-case"
 )
 
+// binary serialization endian values
+const (
+	EndianLittle = "little"
+	EndianBig    = "big"
+)
+
 // namespaces constants
 const (
 	DefaultMainNamespace = "main"

@@ -5,12 +5,23 @@ import (
 	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 func (c *GDScriptGenerationContext) generateSerializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
+	endian, err := c.GetBinarySerializationEndian(CurrentLanguage, model)
+	if err != nil {
+		return err
+	}
+	bigEndian := "false"
+	if endian == gValues.EndianBig {
+		bigEndian = "true"
+	}
+
 	builder.WriteLine("func serialize_binary() -> PackedByteArray:").
 		Indent().
 		WriteLine("var buffer = StreamPeerBuffer.new()").
+		WriteLine("buffer.big_endian = " + bigEndian).
 		NewLine()
 
 	for _, field := range model.Fields {
@@ -182,6 +193,15 @@ func (c *GDScriptGenerationContext) generateArraySerializeBinary(
 }
 
 func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
+	endian, err := c.GetBinarySerializationEndian(CurrentLanguage, model)
+	if err != nil {
+		return err
+	}
+	bigEndian := "false"
+	if endian == gValues.EndianBig {
+		bigEndian = "true"
+	}
+
 	builder.ExpectMappedVars(
 		"model",
 	).MapVarPairs(
@@ -199,6 +219,7 @@ func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLMo
 		WriteLine("return null").
 		UnindentLine().
 		WriteLine("var buffer = StreamPeerBuffer.new()").
+		WriteLine("buffer.big_endian = " + bigEndian).
 		WriteLine("buffer.data_array = data")
 
 	builder.LineD("var $modelResult = $model.new()").

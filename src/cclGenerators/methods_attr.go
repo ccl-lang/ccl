@@ -3,6 +3,7 @@ package cclGenerators
 import (
 	"slices"
 
+	"github.com/ccl-lang/ccl/src/core/cclErrors"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
@@ -165,6 +166,40 @@ func (c *CodeGenerationBase) NeedsSerializationType(
 		currentModel,
 	)
 	return slices.Contains(collection.GetParamsAtAsStrings(0), sType)
+}
+
+// GetBinarySerializationEndian returns the requested endianness for binary
+// serialization. Supported values are "big" and "small" (little-endian).
+// Defaults to "small" to preserve backwards compatibility.
+func (c *CodeGenerationBase) GetBinarySerializationEndian(
+	targetLang gValues.LanguageType,
+	currentModel *cclValues.ModelDefinition,
+) (string, error) {
+	attr := c.GetModelOrGlobalAttribute(targetLang, "BinarySerializationEndian", currentModel)
+	if attr == nil {
+		return gValues.EndianLittle, nil
+	}
+
+	param := attr.GetParamAt(0)
+	if param == nil || param.GetAsString() == "" {
+		return "", &cclErrors.ValidationError{
+			Message: "BinarySerializationEndian requires a non-empty string parameter",
+		}
+	}
+
+	endian := param.GetAsString()
+	switch endian {
+	case gValues.EndianBig:
+		return endian, nil
+	case gValues.EndianLittle:
+		return endian, nil
+	case "small": // considered alias to "little"
+		return gValues.EndianLittle, nil
+	default:
+		return "", &cclErrors.ValidationError{
+			Message: "Unsupported BinarySerializationEndian value: " + endian,
+		}
+	}
 }
 
 //---------------------------------------------------------

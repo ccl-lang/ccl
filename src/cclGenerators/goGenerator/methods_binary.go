@@ -4,11 +4,21 @@ import (
 	"strings"
 
 	"github.com/ccl-lang/ccl/src/core/cclValues"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 //---------------------------------------------------------
 
 func (c *GoGenerationContext) generateSerializeBinaryMethod(model *CCLModel) error {
+	endian, err := c.GetBinarySerializationEndian(CurrentLanguage, model)
+	if err != nil {
+		return err
+	}
+	binaryEndianInit := "binary.LittleEndian"
+	if endian == gValues.EndianBig {
+		binaryEndianInit = "binary.BigEndian"
+	}
+
 	c.MethodsCode.NewLine().
 		WriteLine("func (m *" + model.Name + ") SerializeBinary() ([]byte, error) {").
 		Indent().
@@ -21,6 +31,7 @@ func (c *GoGenerationContext) generateSerializeBinaryMethod(model *CCLModel) err
 		NewLine()
 
 	c.MethodsCode.WriteLine("buf := new(bytes.Buffer)").
+		WriteLine("binaryEndian := " + binaryEndianInit).
 		NewLine()
 	for _, field := range model.Fields {
 		if field.IsArray() {
@@ -50,7 +61,7 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 	isCustomType := field.Type.IsCustomTypeModel()
 	switch fieldTypeName {
 	case cclValues.TypeNameString:
-		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {").
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, uint32(len(m." + field.Name + "))); err != nil {").
 			Indent().
 			WriteLine("return nil, err").
 			Unindent().
@@ -61,7 +72,7 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 			Unindent().
 			WriteLine("}")
 	case cclValues.TypeNameBytes:
-		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {").
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, uint32(len(m." + field.Name + "))); err != nil {").
 			Indent().
 			WriteLine("return nil, err").
 			Unindent().
@@ -72,7 +83,7 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 			Unindent().
 			WriteLine("}")
 	case cclValues.TypeNameDateTime:
-		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, m." + field.Name + ".UnixNano()); err != nil {").
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, m." + field.Name + ".UnixNano()); err != nil {").
 			Indent().
 			WriteLine("return nil, err").
 			Unindent().
@@ -86,12 +97,12 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 				WriteLine("return nil, err").
 				Unindent().
 				WriteLine("}").
-				WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(" + currentBytesName + "))); err != nil {").
+				WriteLine("if err := binary.Write(buf, binaryEndian, uint32(len(" + currentBytesName + "))); err != nil {").
 				Indent().
 				WriteLine("return nil, err").
 				Unindent().
 				WriteLine("}").
-				WriteLine("if err := binary.Write(buf, binary.LittleEndian, " + currentBytesName + "); err != nil {").
+				WriteLine("if err := binary.Write(buf, binaryEndian, " + currentBytesName + "); err != nil {").
 				Indent().
 				WriteLine("return nil, err").
 				Unindent().
@@ -102,7 +113,7 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 				// binary.Write does not support int type directly, so we need to convert it to int32
 				toWriteStr = "int32(m." + field.Name + ")"
 			}
-			c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, " + toWriteStr + "); err != nil {").
+			c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, " + toWriteStr + "); err != nil {").
 				Indent().
 				WriteLine("return nil, err").
 				Unindent().
@@ -115,7 +126,7 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField) error {
 	targetFieldType := field.Type.GetUnderlyingType()
 	isCustomType := targetFieldType.IsCustomTypeModel()
-	c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(m." + field.Name + "))); err != nil {").
+	c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, uint32(len(m." + field.Name + "))); err != nil {").
 		Indent().
 		WriteLine("return nil, err").
 		Unindent().
@@ -124,7 +135,7 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField
 		Indent()
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
-		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(elem))); err != nil {").
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, uint32(len(elem))); err != nil {").
 			Indent().
 			WriteLine("return nil, err").
 			Unindent().
@@ -135,7 +146,7 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField
 			Unindent().
 			WriteLine("}")
 	case cclValues.TypeNameBytes:
-		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(elem))); err != nil {").
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, uint32(len(elem))); err != nil {").
 			Indent().
 			WriteLine("return nil, err").
 			Unindent().
@@ -146,7 +157,7 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField
 			Unindent().
 			WriteLine("}")
 	case cclValues.TypeNameDateTime:
-		c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, elem.UnixNano()); err != nil {").
+		c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, elem.UnixNano()); err != nil {").
 			Indent().
 			WriteLine("return nil, err").
 			Unindent().
@@ -160,18 +171,18 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField
 				WriteLine("return nil, err").
 				Unindent().
 				WriteLine("}").
-				WriteLine("if err := binary.Write(buf, binary.LittleEndian, uint32(len(" + currentBytesName + "))); err != nil {").
+				WriteLine("if err := binary.Write(buf, binaryEndian, uint32(len(" + currentBytesName + "))); err != nil {").
 				Indent().
 				WriteLine("return nil, err").
 				Unindent().
 				WriteLine("}").
-				WriteLine("if err := binary.Write(buf, binary.LittleEndian, " + currentBytesName + "); err != nil {").
+				WriteLine("if err := binary.Write(buf, binaryEndian, " + currentBytesName + "); err != nil {").
 				Indent().
 				WriteLine("return nil, err").
 				Unindent().
 				WriteLine("}")
 		} else {
-			c.MethodsCode.WriteLine("if err := binary.Write(buf, binary.LittleEndian, elem); err != nil {").
+			c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, elem); err != nil {").
 				Indent().
 				WriteLine("return nil, err").
 				Unindent().
@@ -185,6 +196,15 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField
 }
 
 func (c *GoGenerationContext) generateDeserializeBinaryMethod(model *CCLModel) error {
+	endian, err := c.GetBinarySerializationEndian(CurrentLanguage, model)
+	if err != nil {
+		return err
+	}
+	binaryEndianInit := "binary.LittleEndian"
+	if endian == gValues.EndianBig {
+		binaryEndianInit = "binary.BigEndian"
+	}
+
 	c.MethodsCode.WriteLine("func (m *" + model.Name + ") DeserializeBinary(data []byte) error {").
 		Indent().
 		// add nil checker or when the len(data) is 0 or (len(data) == 1 and data[0] == 0)
@@ -195,6 +215,7 @@ func (c *GoGenerationContext) generateDeserializeBinaryMethod(model *CCLModel) e
 		WriteLine("}").
 		NewLine().
 		WriteLine("buf := bytes.NewReader(data)").
+		WriteLine("binaryEndian := " + binaryEndianInit).
 		NewLine()
 
 	for _, field := range model.Fields {
@@ -232,7 +253,7 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 	switch fieldTypeName {
 	case cclValues.TypeNameString:
 		c.MethodsCode.WriteLine("var " + fLenName + " uint32").
-			WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + fLenName + "); err != nil {").
+			WriteLine("if err := binary.Read(buf, binaryEndian, &" + fLenName + "); err != nil {").
 			Indent().
 			WriteLine("return err").
 			Unindent().
@@ -246,7 +267,7 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 			WriteLine("m." + field.Name + " = string(" + fNameStrBytes + ")")
 	case cclValues.TypeNameBytes:
 		c.MethodsCode.WriteLine("var " + fLenName + " uint32").
-			WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + fLenName + "); err != nil {").
+			WriteLine("if err := binary.Read(buf, binaryEndian, &" + fLenName + "); err != nil {").
 			Indent().
 			WriteLine("return err").
 			Unindent().
@@ -260,7 +281,7 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 			WriteLine("m." + field.Name + " = bytesData")
 	case cclValues.TypeNameDateTime:
 		c.MethodsCode.WriteLine("var " + fNameUnix + " int64").
-			WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + fNameUnix + "); err != nil {").
+			WriteLine("if err := binary.Read(buf, binaryEndian, &" + fNameUnix + "); err != nil {").
 			Indent().
 			WriteLine("return err").
 			Unindent().
@@ -270,12 +291,12 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 		if isCustomType {
 			// read the length of the next buffer that we need
 			// var basicLen uint32
-			// if err := binary.Read(buf, binary.LittleEndian, &basicLen); err != nil {
+			// if err := binary.Read(buf, binaryEndian, &basicLen); err != nil {
 			// 	return err
 			// }
 			lenVarName := fName + "BytesLen"
 			c.MethodsCode.WriteLine("var " + lenVarName + " uint32").
-				WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + lenVarName + "); err != nil {").
+				WriteLine("if err := binary.Read(buf, binaryEndian, &" + lenVarName + "); err != nil {").
 				Indent().
 				WriteLine("return err").
 				Unindent().
@@ -306,7 +327,7 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 				// binary.Read does not support int type directly, so we need to read it into an int32 first
 				toReadName := "tmp" + field.Name
 				c.MethodsCode.WriteLine("var " + toReadName + " int32").
-					WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + toReadName + "); err != nil {").
+					WriteLine("if err := binary.Read(buf, binaryEndian, &" + toReadName + "); err != nil {").
 					Indent().
 					WriteLine("return err").
 					Unindent().
@@ -316,7 +337,7 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 			}
 
 			// all other types can be read directly
-			c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &m." + field.Name + "); err != nil {").
+			c.MethodsCode.WriteLine("if err := binary.Read(buf, binaryEndian, &m." + field.Name + "); err != nil {").
 				Indent().
 				WriteLine("return err").
 				Unindent().
@@ -340,7 +361,7 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 	}
 
 	c.MethodsCode.WriteLine("var " + fLenName + " uint32").
-		WriteLine("if err := binary.Read(buf, binary.LittleEndian, &" + fLenName + "); err != nil {").
+		WriteLine("if err := binary.Read(buf, binaryEndian, &" + fLenName + "); err != nil {").
 		Indent().
 		WriteLine("return err").
 		Unindent().
@@ -351,7 +372,7 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
 		c.MethodsCode.WriteLine("var elemLen uint32").
-			WriteLine("if err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {").
+			WriteLine("if err := binary.Read(buf, binaryEndian, &elemLen); err != nil {").
 			Indent().
 			WriteLine("return err").
 			Unindent().
@@ -365,7 +386,7 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 			WriteLine("m." + field.Name + "[i] = string(elemBytes)")
 	case cclValues.TypeNameBytes:
 		c.MethodsCode.WriteLine("var elemLen uint32").
-			WriteLine("if err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {").
+			WriteLine("if err := binary.Read(buf, binaryEndian, &elemLen); err != nil {").
 			Indent().
 			WriteLine("return err").
 			Unindent().
@@ -379,7 +400,7 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 			WriteLine("m." + field.Name + "[i] = elemBytes")
 	case cclValues.TypeNameDateTime:
 		c.MethodsCode.WriteLine("var elemUnix int64").
-			WriteLine("if err := binary.Read(buf, binary.LittleEndian, &elemUnix); err != nil {").
+			WriteLine("if err := binary.Read(buf, binaryEndian, &elemUnix); err != nil {").
 			Indent().
 			WriteLine("return err").
 			Unindent().
@@ -396,7 +417,7 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 			// we need to read the bytes from the buffer
 			// and then deserialize the element
 			c.MethodsCode.WriteLine("var elemLen uint32").
-				WriteLine("if err := binary.Read(buf, binary.LittleEndian, &elemLen); err != nil {").
+				WriteLine("if err := binary.Read(buf, binaryEndian, &elemLen); err != nil {").
 				Indent().
 				WriteLine("return err").
 				Unindent().
@@ -414,7 +435,7 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 				WriteLine("}").
 				WriteLine("m." + field.Name + "[i] = elem")
 		} else {
-			c.MethodsCode.WriteLine("if err := binary.Read(buf, binary.LittleEndian, &m." + field.Name + "[i]); err != nil {").
+			c.MethodsCode.WriteLine("if err := binary.Read(buf, binaryEndian, &m." + field.Name + "[i]); err != nil {").
 				Indent().
 				WriteLine("return err").
 				Unindent().
