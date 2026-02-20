@@ -167,5 +167,6 @@ model ServerUpdatePlayerJoin {
 
 model UsersList {
     Users: UserInfo[];
+    photos: bytes[];
     MoreUsers: UserInfo[];
 }

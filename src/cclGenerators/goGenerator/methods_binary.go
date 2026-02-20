@@ -3,6 +3,7 @@ package goGenerator
 import (
 	"strings"
 
+	"github.com/ccl-lang/ccl/src/core/cclErrors"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
@@ -428,6 +429,7 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 
 func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLField) error {
 	targetFieldType := field.Type.GetUnderlyingType()
+	targetFieldTypeName := targetFieldType.GetName()
 	isCustomType := targetFieldType.IsCustomTypeModel()
 	isPointer := isCustomType //TODO: Find a way to specify this
 	fieldName := field.Name
@@ -436,9 +438,20 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 	fLenName := fName + "Len"
 	// fNameStrBytes := fName + "StrBytes"
 	// fNameUnix := fName + "Unix"
-	fieldRealType := targetFieldType.GetName()
-	if isPointer {
-		fieldRealType = "*" + fieldRealType
+	fieldRealType := ""
+	if isCustomType {
+		fieldRealType = "*" + targetFieldTypeName
+	} else {
+		mappedType, ok := CCLTypesToGoTypes[targetFieldTypeName]
+		if !ok {
+			return &cclErrors.UnsupportedFieldTypeError{
+				TypeName:       targetFieldTypeName,
+				FieldName:      fieldName,
+				ModelName:      field.GetModelFullName(),
+				TargetLanguage: CurrentLanguage.String(),
+			}
+		}
+		fieldRealType = mappedType
 	}
 
 	c.MethodsCode.MapVarPairs(
