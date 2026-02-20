@@ -145,7 +145,29 @@ func (c *CodeBuilder) EndSection() *CodeBuilder {
 // MapVar will basically map a variable name to its true real name
 func (c *CodeBuilder) MapVar(varName, realVarName string) *CodeBuilder {
 	c.checkSection()
+	c.mapVar(varName, realVarName)
+	return c
+}
+
+// mapVar internal method for map var.
+func (c *CodeBuilder) mapVar(varName, realVarName string) *CodeBuilder {
 	c.mappedVars.setVar(c.currentSection, varName, realVarName)
+	return c
+}
+
+// MapVarPairs tries to call MapVar method using pairs as (name, realName) from the passed argument.
+// It's worthy to note that the passed args' length MUST BE even, otherwise this method will panic.
+// NOTE: these are NOT global vars. these vars will be added inside of the current section.
+func (c *CodeBuilder) MapVarPairs(values ...string) *CodeBuilder {
+	if len(values)%2 != 0 {
+		panic("CodeBuilder: MapVarPairs method was called with invalid length")
+	}
+
+	c.checkSection()
+	for i := 0; i < len(values); i += 2 {
+		c.mapVar(values[i], values[i+1])
+	}
+
 	return c
 }
 
@@ -359,6 +381,8 @@ func (c *CodeBuilder) String(orderedKeys []string) string {
 }
 
 // Build builds the code and returns the result.
+// You can specify which sections to build (and by what order) by passing `orderedKeys`
+// arg to this method; pass nil for building all sections.
 func (c *CodeBuilder) Build(orderedKeys []string) *CodeBuildResult {
 	if len(orderedKeys) == 0 || (len(orderedKeys) == 1 && orderedKeys[0] == "*") {
 		orderedKeys = GetDefaultOrderedSections()

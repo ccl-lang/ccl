@@ -179,7 +179,7 @@ model ServerUpdatePlayerJoin {
 model UsersList {
     Users: UserInfo[];
     usernames: string[];
-    // photos: bytes[];
+    photos: bytes[];
     something: ServerUpdatePlayerLeave[];
     MoreUsers: UserInfo[];
 }

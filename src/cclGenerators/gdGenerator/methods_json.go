@@ -1,6 +1,7 @@
 package gdGenerator
 
 import (
+	"github.com/ccl-lang/ccl/src/core/cclErrors"
 	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
@@ -86,11 +87,17 @@ func (c *GDScriptGenerationContext) generateDeserializeJsonDictMethod(
 		}
 
 		if field.IsArray() {
-			c.generateArrayDeserializeJson("model_result", model.Name, field, jsonName, builder)
+			err = c.generateArrayDeserializeJson("model_result", field, jsonName, builder)
+			if err != nil {
+				return nil
+			}
 			continue
 		}
 
-		c.generateFieldDeserializeJson("model_result", model.Name, field, jsonName, builder)
+		err = c.generateFieldDeserializeJson("model_result", field, jsonName, builder)
+		if err != nil {
+			return err
+		}
 	}
 
 	builder.WriteLine("return model_result").
@@ -103,9 +110,18 @@ func (c *GDScriptGenerationContext) generateDeserializeJsonMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	builder.WriteLine("static func deserialize_json(json_text: String) -> " + model.Name + ":").
+	modelName := model.GetName()
+
+	builder.MapVarPairs(
+		"model", modelName,
+	)
+	defer builder.UnmapVar(
+		"model",
+	)
+
+	builder.LineD("static func deserialize_json(json_text: String) -> $model:").
 		Indent().
-		WriteLine("if json_text == \"\":").
+		WriteLine(`if not json_text:`).
 		Indent().
 		WriteLine("return null").
 		UnindentLine().
@@ -113,15 +129,15 @@ func (c *GDScriptGenerationContext) generateDeserializeJsonMethod(
 		WriteLine("var err = json.parse(json_text)").
 		WriteLine("if err != OK:").
 		Indent().
-		WriteLine("push_error(\"Failed to parse JSON for " + model.Name + ": \" + json.get_error_message())").
+		LineD(`push_error("Failed to parse JSON for $model: " + json.get_error_message())`).
 		WriteLine("return null").
 		UnindentLine().
-		WriteLine("if typeof(json.data) != TYPE_DICTIONARY:").
+		WriteLine("if not (json.data is Dictionary):").
 		Indent().
-		WriteLine("push_error(\"Expected JSON object for " + model.Name + "\")").
+		LineD(`push_error("Expected JSON object for $model, got ", json.data)`).
 		WriteLine("return null").
 		UnindentLine().
-		WriteLine("return " + model.Name + ".deserialize_json_dict(json.data)").
+		LineD(`return $model.deserialize_json_dict(json.data)`).
 		UnindentLine()
 
 	return nil
@@ -133,17 +149,26 @@ func (c *GDScriptGenerationContext) generateFieldSerializeJson(
 	builder *codeBuilder.CodeBuilder,
 ) {
 	fieldRawName := cclUtils.ToSnakeCase(field.Name)
-	fieldName := "self." + fieldRawName
+	resultField := "self." + fieldRawName
+
+	builder.MapVarPairs(
+		"field", resultField,
+		"jsonName", jsonName,
+	)
+	defer builder.UnmapVar(
+		"field",
+		"jsonName",
+	)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("data[\"" + jsonName + "\"] = Marshalls.raw_to_base64(" + fieldName + ")")
+		builder.LineD(`data["$jsonName"] = Marshalls.raw_to_base64($field)`)
 	default:
-		if field.Type.IsCustomTypeModel() {
-			builder.WriteLine("data[\"" + jsonName + "\"] = " +
-				fieldName + ".serialize_json_dict() if " + fieldName + " else null")
+		if field.IsCustomTypeModel() {
+			builder.WriteLine(`@warning_ignore("incompatible_ternary")`).
+				LineD(`data["$jsonName"] = $field.serialize_json_dict() if $field else null`)
 		} else {
-			builder.WriteLine("data[\"" + jsonName + "\"] = " + fieldName)
+			builder.LineD(`data["$jsonName"] = $field`)
 		}
 	}
 
@@ -154,17 +179,22 @@ func (c *GDScriptGenerationContext) generateArraySerializeJson(
 	field *CCLField,
 	jsonName string,
 	builder *codeBuilder.CodeBuilder,
-) {
+) error {
 	targetFieldType := field.Type.GetUnderlyingType()
 	fieldRawName := cclUtils.ToSnakeCase(field.Name)
-	fieldName := "self." + fieldRawName
+	resultField := "self." + fieldRawName
 	listName := fieldRawName + "_list"
 
-	builder.MapVar("list", listName).
-		MapVar("field", fieldName).
-		MapVar("jsonName", jsonName)
-
-	defer builder.UnmapVar("list", "field", "jsonName")
+	builder.MapVarPairs(
+		"list", listName,
+		"field", resultField,
+		"jsonName", jsonName,
+	)
+	defer builder.UnmapVar(
+		"list",
+		"field",
+		"jsonName",
+	)
 
 	builder.LineD("var $list = []").
 		LineD("if $field != null:").
@@ -180,46 +210,47 @@ func (c *GDScriptGenerationContext) generateArraySerializeJson(
 			// this will definitely break for < godot 4.0 (e.g. 3.x)
 			// but then we are using lots of other features which are not available
 			// for 3.x and lower anyway...
-			builder.WriteLine("@warning_ignore(\"incompatible_ternary\")").
+			builder.WriteLine(`@warning_ignore("incompatible_ternary")`).
 				LineD("$list.append(item.serialize_json_dict() if item else null)")
 		} else {
+			// are we sure about this plain else? are all "non-custom types" out there
+			// supported by json schema (or at least Godot's json serializer)?
+			// well, if that's not the case, this is the place where it should be added
+			// in future.
 			builder.LineD("$list.append(item)")
 		}
 	}
 
 	builder.Unindent().
-		LineD("data[\"$jsonName\"] = $list").
+		LineD(`data["$jsonName"] = $list`).
 		Unindent().
 		WriteLine("else:").
 		Indent().
-		LineD("data[\"$jsonName\"] = null").
+		LineD(`data["$jsonName"] = null`).
 		UnindentLine()
+
+	return nil
 }
 
 func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 	resultName string,
-	modelName string,
 	field *CCLField,
 	jsonName string,
 	builder *codeBuilder.CodeBuilder,
-) {
+) error {
 	fieldRawName := cclUtils.ToSnakeCase(field.Name)
+	targetFieldTypeName := field.Type.GetName()
 	resultField := resultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
+	modelName := field.OwnedBy.GetName()
 
-	builder.MapVar("jsonName", jsonName).
-		MapVar("value", valueName).
-		MapVar("field", resultField).
-		MapVar("fieldT", field.Type.GetName()).
-		MapVar("model", modelName).
-		// TODO #21: maybe we can have default value (from ccl) instead of null here?
-		LineD("var $value = data.get(\"$jsonName\", null)").
-		LineD("if $value == null:").
-		Indent().
-		// TODO #21: maybe we can have default value (from ccl) instead of pass here?
-		LineD("pass").
-		Unindent()
-
+	builder.MapVarPairs(
+		"jsonName", jsonName,
+		"value", valueName,
+		"field", resultField,
+		"fieldT", targetFieldTypeName,
+		"model", modelName,
+	)
 	defer builder.UnmapVar(
 		"jsonName",
 		"value",
@@ -228,7 +259,15 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 		"model",
 	)
 
-	switch field.Type.GetName() {
+	// TODO #21: maybe we can have default value (from ccl) instead of null here?
+	builder.
+		LineD(`var $value = data.get("$jsonName", null)`).
+		LineD("if $value == null:").
+		Indent().
+		LineD("pass").
+		Unindent()
+
+	switch targetFieldTypeName {
 	case cclValues.TypeNameString:
 		builder.LineD("elif $value is String:").
 			Indent().
@@ -254,9 +293,9 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 			Unindent().
 			WriteLine("else:").
 			Indent().
-			LineD("push_error(\"Expected number for field $field in \" +").
+			LineD(`push_error("Expected number for field $field in " +`).
 			Indent().
-			LineD("\"$model, but got \", $value)").
+			LineD(`"$model, but got ", $value)`).
 			Unindent().
 			WriteLine("return null").
 			Unindent()
@@ -273,9 +312,9 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 			Unindent().
 			WriteLine("else:").
 			Indent().
-			LineD("push_error(\"Expected float for field $field in \" +").
+			LineD(`push_error("Expected float for field $field in " +`).
 			Indent().
-			LineD("\"$model, but got \", $value)").
+			LineD(`"$model, but got ", $value)`).
 			Unindent().
 			WriteLine("return null").
 			Unindent()
@@ -286,11 +325,11 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 			Unindent().
 			LineD("elif $value is String or $value is StringName:").
 			Indent().
-			LineD("$field =  (").
+			LineD("$field = (").
 			Indent().
 			LineD("!$value.is_empty() and").
-			LineD("$value != \"0\" and").
-			LineD("$value.to_lower() != \"false\"").
+			LineD(`$value != "0" and`).
+			LineD(`$value.to_lower() != "false"`).
 			Unindent().
 			WriteLine(")").
 			Unindent().
@@ -300,9 +339,9 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 			Unindent().
 			WriteLine("else:").
 			Indent().
-			LineD("push_error(\"Expected bool for field $field in \" +").
+			LineD(`push_error("Expected bool for field $field in " +`).
 			Indent().
-			LineD("\"$model, but got \", $value)").
+			LineD(`"$model, but got ", $value)`).
 			Unindent().
 			WriteLine("return null").
 			Unindent()
@@ -317,9 +356,9 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 			Unindent().
 			WriteLine("else:").
 			Indent().
-			LineD("push_error(\"Expected base64 string for field $field in \" +").
+			LineD(`push_error("Expected base64 string for field $field in " +`).
 			Indent().
-			LineD("\"$model, but got \", $value)").
+			LineD(`"$model, but got ", $value)`).
 			Unindent().
 			WriteLine("return null").
 			Unindent()
@@ -331,46 +370,61 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 				Unindent().
 				WriteLine("else:").
 				Indent().
-				LineD("push_error(\"Expected json object (Dictionary) for field $field in \" +").
+				LineD(`push_error("Expected json object (Dictionary) for field $field in " +`).
 				Indent().
-				LineD("\"$model, but got \", $value)").
+				LineD(`"$model, but got ", $value)`).
 				Unindent().
 				WriteLine("return null").
 				Unindent()
+		} else {
+			return &cclErrors.UnsupportedFieldTypeError{
+				TypeName:       targetFieldTypeName,
+				ModelName:      modelName,
+				FieldName:      fieldRawName,
+				TargetLanguage: CurrentLanguage.String(),
+			}
 		}
 	}
+
+	builder.NewLine()
+	return nil
 }
 
 func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 	resultName string,
-	modelName string,
 	field *CCLField,
 	jsonName string,
 	builder *codeBuilder.CodeBuilder,
-) {
+) error {
 	targetFieldType := field.Type.GetUnderlyingType()
+	targetFieldTypeName := targetFieldType.GetName()
+	fieldTargetLangType := c.getGDScriptType(field)
 	fieldRawName := cclUtils.ToSnakeCase(field.Name)
 	resultField := resultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
 	listName := fieldRawName + "_list"
+	modelName := field.OwnedBy.GetName()
 
-	builder.MapVar("field", resultField).
-		MapVar("fieldT", targetFieldType.GetName()).
-		MapVar("value", valueName).
-		MapVar("jsonName", jsonName).
-		MapVar("list", listName).
-		MapVar("model", modelName)
-
+	builder.MapVarPairs(
+		"field", resultField,
+		"fieldT", targetFieldTypeName,
+		"fieldTargetT", fieldTargetLangType,
+		"value", valueName,
+		"jsonName", jsonName,
+		"list", listName,
+		"model", modelName,
+	)
 	defer builder.UnmapVar(
 		"field",
 		"fieldT",
+		"fieldTargetT",
 		"value",
 		"jsonName",
 		"list",
 		"model",
 	)
 
-	builder.LineD("var $value = data.get(\"$jsonName\", null)").
+	builder.LineD(`var $value = data.get("$jsonName", null)`).
 		LineD("if $value == null:").
 		Indent().
 		WriteLine("# we can't iterate over it later if it stays null").
@@ -378,18 +432,18 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 		Unindent().
 		LineD("elif not ($value is Array):").
 		Indent().
-		LineD("push_error(\"Expected array type for field $field in \" +").
+		LineD(`push_error("Expected array type for field $field in " +`).
 		Indent().
-		LineD("\"$model, but got \", $value)").
+		LineD(`"$model, but got ", $value)`).
 		Unindent().
 		WriteLine("return null").
 		Unindent()
 
-	builder.LineD("var $list = [] as " + c.getGDScriptType(field)).
+	builder.LineD("var $list = [] as $fieldTargetT").
 		LineD("for item in $value:").
 		Indent()
 
-	switch targetFieldType.GetName() {
+	switch targetFieldTypeName {
 	case cclValues.TypeNameString:
 		builder.LineD("if item is String:").
 			Indent().
@@ -415,13 +469,12 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 			Unindent().
 			WriteLine("else:").
 			Indent().
-			LineD("push_error(\"Expected number for every element of field $field in \" +").
+			LineD(`push_error("Expected number for every element of field $field in " +`).
 			Indent().
-			LineD("\"$model, but got \", item)").
+			LineD(`"$model, but got ", item)`).
 			Unindent().
 			WriteLine("return null").
 			Unindent()
-
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
 		builder.WriteLine("if (").
 			Indent().
@@ -435,9 +488,9 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 			Unindent().
 			WriteLine("else:").
 			Indent().
-			LineD("push_error(\"Expected float for every element of field $field in \" +").
+			LineD(`push_error("Expected float for every element of field $field in " +`).
 			Indent().
-			LineD("\"$model, but got \", item)").
+			LineD(`"$model, but got ", item)`).
 			Unindent().
 			WriteLine("return null").
 			Unindent()
@@ -451,8 +504,8 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 			LineD("$list.append(").
 			Indent().
 			WriteLine("!item.is_empty() and").
-			WriteLine("item != \"0\" and").
-			WriteLine("item.to_lower() != \"false\"").
+			WriteLine(`item != "0" and`).
+			WriteLine(`item.to_lower() != "false"`).
 			Unindent().
 			WriteLine(")").
 			Unindent().
@@ -466,9 +519,9 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 			Unindent().
 			WriteLine("else:").
 			Indent().
-			LineD("push_error(\"Expected bool for every element of field $field in \" +").
+			LineD(`push_error("Expected bool for every element of field $field in " +`).
 			Indent().
-			LineD("\"$model, but got \", item)").
+			LineD(`"$model, but got ", item)`).
 			Unindent().
 			WriteLine("return null").
 			Unindent()
@@ -483,23 +536,25 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 			Unindent().
 			WriteLine("else:").
 			Indent().
-			LineD("push_error(\"Expected base64 string for every element of field $field in \" +").
+			LineD(`push_error("Expected base64 string for every element of field $field in " +`).
 			Indent().
-			LineD("\"$model, but got \", item)").
+			LineD(`"$model, but got ", item)`).
 			Unindent().
 			WriteLine("return null").
 			Unindent()
 	default:
 		if targetFieldType.IsCustomTypeModel() {
+			// in case you are asking yourself why this condition isn't before the switch:
+			// because null can't be assigned to ALL of the primitive types in gdscript
 			builder.WriteLine("if item == null:").
 				Indent().
 				LineD("$list.append(null)").
 				Unindent().
 				WriteLine("elif not (item is Dictionary):").
 				Indent().
-				LineD("push_error(\"Expected object items for every element of field $field in \" +").
+				LineD(`push_error("Expected object items for every element of field $field in " +`).
 				Indent().
-				LineD("\"$model, but got \", item)").
+				LineD(`"$model, but got ", item)`).
 				Unindent().
 				WriteLine("return null").
 				Unindent().
@@ -507,10 +562,19 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 				Indent().
 				LineD("$list.append($fieldT.deserialize_json_dict(item))").
 				Unindent()
+		} else {
+			return &cclErrors.UnsupportedFieldTypeError{
+				TypeName:       targetFieldTypeName,
+				ModelName:      modelName,
+				FieldName:      fieldRawName,
+				TargetLanguage: CurrentLanguage.String(),
+			}
 		}
 	}
 
 	builder.Unindent().
 		LineD("$field = $list").
 		NewLine()
+
+	return nil
 }
