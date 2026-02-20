@@ -43,7 +43,10 @@ func (c *GDScriptGenerationContext) generateSerializeJsonDictMethod(
 		}
 
 		if field.IsArray() {
-			c.generateArraySerializeJson(field, jsonName, builder)
+			err = c.generateArraySerializeJson(field, jsonName, builder)
+			if err != nil {
+				return err
+			}
 			continue
 		}
 
@@ -98,7 +101,7 @@ func (c *GDScriptGenerationContext) generateDeserializeJsonDictMethod(
 		if field.IsArray() {
 			err = c.generateArrayDeserializeJson(field, jsonName, builder)
 			if err != nil {
-				return nil
+				return err
 			}
 			continue
 		}
@@ -109,7 +112,7 @@ func (c *GDScriptGenerationContext) generateDeserializeJsonDictMethod(
 		}
 	}
 
-	builder.WriteLine("return $modelResult").
+	builder.LineD("return $modelResult").
 		UnindentLine()
 
 	return nil
@@ -399,24 +402,24 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 	jsonName string,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	resultName := "model_result"
 	targetFieldType := field.Type.GetUnderlyingType()
 	targetFieldTypeName := targetFieldType.GetName()
 	fieldTargetLangType := c.getGDScriptType(field)
 	fieldRawName := cclUtils.ToSnakeCase(field.Name)
-	resultField := resultName + "." + fieldRawName
+	resultField := modelResultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
 	listName := fieldRawName + "_list"
 	modelName := field.OwnedBy.GetName()
 
-	builder.MapVarPairs(
+	builder.ExpectMappedVars(
+		"model",
+	).MapVarPairs(
 		"field", resultField,
 		"fieldT", targetFieldTypeName,
 		"fieldTargetT", fieldTargetLangType,
 		"value", valueName,
 		"jsonName", jsonName,
 		"list", listName,
-		"model", modelName,
 	)
 	defer builder.UnmapVar(
 		"field",
@@ -425,7 +428,6 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 		"value",
 		"jsonName",
 		"list",
-		"model",
 	)
 
 	builder.LineD(`var $value = data.get("$jsonName", null)`).

@@ -39,7 +39,7 @@ func (c *GDScriptGenerationContext) generateFieldSerializeBinary(
 	field *CCLField,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	fieldRawName := cclUtils.ToSnakeCase(field.Name)
+	fieldRawName := cclUtils.ToSnakeCase(field.GetName())
 	resultField := "self." + fieldRawName
 	modelName := field.OwnedBy.GetName()
 	targetFieldTypeName := field.Type.GetName()
@@ -187,6 +187,9 @@ func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLMo
 	).MapVarPairs(
 		"modelResult", modelResultName,
 	)
+	defer builder.UnmapVar(
+		"modelResult",
+	)
 
 	builder.LineD("static func deserialize_binary(data: PackedByteArray) -> $model:").
 		Indent().
@@ -217,7 +220,7 @@ func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLMo
 		}
 	}
 
-	builder.WriteLine("return $modeResult").
+	builder.LineD("return $modelResult").
 		UnindentLine()
 
 	return nil
@@ -282,9 +285,9 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
 	default:
 		// Custom type handling
 		if field.IsCustomTypeModel() {
-			builder.WriteLine("var $fieldLen = buffer.get_u32()").
-				WriteLine("var $fieldBytes = buffer.get_data($fieldLen)[1]").
-				WriteLine("$field = $fieldT.deserialize_binary($fieldBytes)")
+			builder.LineD("var $fieldLen = buffer.get_u32()").
+				LineD("var $fieldBytes = buffer.get_data($fieldLen)[1]").
+				LineD("$field = $fieldT.deserialize_binary($fieldBytes)")
 		} else {
 			return &cclErrors.UnsupportedFieldTypeError{
 				TypeName:       targetFieldTypeName,
@@ -325,8 +328,8 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	)
 
 	builder.LineD("var $fieldLen = buffer.get_u32()").
-		WriteLine("$field = [] as $fieldTargetT").
-		WriteLine("for i in range($fieldLen):").
+		LineD("$field = [] as $fieldTargetT").
+		LineD("for i in range($fieldLen):").
 		Indent()
 
 	switch targetFieldTypeName {
@@ -337,34 +340,34 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 			WriteLine("return null").
 			Unindent().
 			WriteLine("var item = buffer.get_data(item_len)[1].get_string_from_utf8()").
-			WriteLine(resultField + ".append(item)")
+			LineD("$field.append(item)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteLine(resultField + ".append(buffer.get_32())")
+		builder.LineD("$field.append(buffer.get_32())")
 	case cclValues.TypeNameInt8:
-		builder.WriteLine(resultField + ".append(buffer.get_8())")
+		builder.LineD("$field.append(buffer.get_8())")
 	case cclValues.TypeNameInt16:
-		builder.WriteLine(resultField + ".append(buffer.get_16())")
+		builder.LineD("$field.append(buffer.get_16())")
 	case cclValues.TypeNameInt64:
-		builder.WriteLine(resultField + ".append(buffer.get_64())")
+		builder.LineD("$field.append(buffer.get_64())")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteLine(resultField + ".append(buffer.get_u32())")
+		builder.LineD("$field.append(buffer.get_u32())")
 	case cclValues.TypeNameUint8:
-		builder.WriteLine(resultField + ".append(buffer.get_u8())")
+		builder.LineD("$field.append(buffer.get_u8())")
 	case cclValues.TypeNameUint16:
-		builder.WriteLine(resultField + ".append(buffer.get_u16())")
+		builder.LineD("$field.append(buffer.get_u16())")
 	case cclValues.TypeNameUint64:
-		builder.WriteLine(resultField + ".append(buffer.get_u64())")
+		builder.LineD("$field.append(buffer.get_u64())")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
-		builder.WriteLine(resultField + ".append(buffer.get_float())")
+		builder.LineD("$field.append(buffer.get_float())")
 	case cclValues.TypeNameBool:
-		builder.WriteLine(resultField + ".append(buffer.get_8() != 0)")
+		builder.LineD("$field.append(buffer.get_8() != 0)")
 	case cclValues.TypeNameBytes:
 		builder.WriteLine("var item_len = buffer.get_u32()").
 			WriteLine("if item_len > buffer.get_size() - buffer.get_position():").
 			Indent().
 			WriteLine("return null").
 			Unindent().
-			WriteLine(resultField + ".append(buffer.get_data(item_len)[1])")
+			LineD("$field.append(buffer.get_data(item_len)[1])")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
 			builder.WriteLine("var item_len = buffer.get_u32()").
@@ -373,8 +376,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 				WriteLine("return null").
 				Unindent().
 				WriteLine("var item_bytes = buffer.get_data(item_len)[1]").
-				WriteLine(resultField + ".append(" +
-					targetFieldType.GetName() + ".deserialize_binary(item_bytes))")
+				LineD("$field.append($fieldT.deserialize_binary(item_bytes))")
 		} else {
 			return &cclErrors.UnsupportedFieldTypeError{
 				TypeName:       targetFieldTypeName,
