@@ -13,7 +13,9 @@ A basic example of the ccl grammar is as follow:
 #[CCLVersion("1.0.0")]
 #[SerializationType("binary")]
 
-// This is a comment
+// by default, the binary serialization endianness is little,
+// you can uncomment this line and use this attribute to change it.
+// #[BinarySerializationEndian("big")]
 
 // models can also have attribute on them.
 [SerializationType("binary")]

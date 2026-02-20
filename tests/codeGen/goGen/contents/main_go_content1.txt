@@ -8,6 +8,12 @@ import (
 )
 
 func main() {
+	check := func(condition bool, message string) {
+		if !condition {
+			panic(message)
+		}
+	}
+
 	// Test creating a UserInfo
 	user := models.UserInfo{
 		Id:       "user123",
@@ -18,6 +24,10 @@ func main() {
 				R: 255,
 				G: 0,
 				B: 0,
+			},
+			Texture: &models.TextureSkin{
+				Texture:      []string{},
+				SomeIntegers: []int64{},
 			},
 		},
 	}
@@ -33,11 +43,8 @@ func main() {
 		panic(fmt.Sprintf("Failed to deserialize user: %v", err))
 	}
 
-	if user.Username != "test_user" {
-		panic("Username mismatch")
-	} else if deserializedUser.Username != "test_user" {
-		panic("Deserialized username mismatch")
-	}
+	check(user.Username == "test_user", "Username mismatch")
+	check(deserializedUser.Username == "test_user", "Deserialized username mismatch")
 
 	// Test creating a PositionInfo
 	pos := models.PositionInfo{
@@ -46,9 +53,7 @@ func main() {
 		Z: 30,
 	}
 
-	if pos.X != 10 {
-		panic("PositionInfo X mismatch")
-	}
+	check(pos.X == 10, "PositionInfo X mismatch")
 
 	positionBinary, err := pos.SerializeBinary()
 	if err != nil {
@@ -61,9 +66,105 @@ func main() {
 		panic(fmt.Sprintf("Failed to deserialize position: %v", err))
 	}
 
-	if pos.X != 10 {
-		panic("PositionInfo X mismatch")
+	check(pos.X == 10, "PositionInfo X mismatch")
+
+	// Test TextureSkin with arrays
+	texture := models.TextureSkin{
+		Texture:      []string{"a.png", "b.png", "c.png"},
+		SomeIntegers: []int64{1, 2, 3, 4, 5},
 	}
+	textureBinary, err := texture.SerializeBinary()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to serialize texture skin: %v", err))
+	}
+
+	deserializedTexture := &models.TextureSkin{}
+	err = deserializedTexture.DeserializeBinary(textureBinary)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to deserialize texture skin: %v", err))
+	}
+
+	check(len(deserializedTexture.Texture) == len(texture.Texture), "Texture array length mismatch")
+	for i, item := range texture.Texture {
+		check(deserializedTexture.Texture[i] == item, "Texture array item mismatch")
+	}
+	check(len(deserializedTexture.SomeIntegers) == len(texture.SomeIntegers), "SomeIntegers array length mismatch")
+	for i, item := range texture.SomeIntegers {
+		check(deserializedTexture.SomeIntegers[i] == item, "SomeIntegers array item mismatch")
+	}
+
+	// Test UsersList with arrays of custom models
+	user2 := &models.UserInfo{
+		Id:       "user456",
+		Username: "second_user",
+		Skin: &models.SkinInfo{
+			Type: 1,
+			Basic: &models.BasicSkin{
+				R: 10,
+				G: 20,
+				B: 30,
+			},
+			Texture: &models.TextureSkin{
+				Texture:      []string{"t1.png"},
+				SomeIntegers: []int64{9, 8},
+			},
+		},
+	}
+	user3 := &models.UserInfo{
+		Id:       "user789",
+		Username: "third_user",
+		Skin: &models.SkinInfo{
+			Type: 2,
+			Basic: &models.BasicSkin{
+				R: 1,
+				G: 2,
+				B: 3,
+			},
+			Texture: &models.TextureSkin{
+				Texture:      []string{"t2.png", "t3.png"},
+				SomeIntegers: []int64{7},
+			},
+		},
+	}
+
+	usersList := models.UsersList{
+		Users:     []*models.UserInfo{&user, user2},
+		MoreUsers: []*models.UserInfo{user3},
+	}
+
+	usersListBinary, err := usersList.SerializeBinary()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to serialize users list: %v", err))
+	}
+
+	deserializedUsersList := &models.UsersList{}
+	err = deserializedUsersList.DeserializeBinary(usersListBinary)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to deserialize users list: %v", err))
+	}
+
+	check(len(deserializedUsersList.Users) == len(usersList.Users), "UsersList.Users length mismatch")
+	check(len(deserializedUsersList.MoreUsers) == len(usersList.MoreUsers), "UsersList.MoreUsers length mismatch")
+
+	check(deserializedUsersList.Users[0].Id == usersList.Users[0].Id, "UsersList.Users[0].Id mismatch")
+	check(deserializedUsersList.Users[0].Username == usersList.Users[0].Username, "UsersList.Users[0].Username mismatch")
+	check(deserializedUsersList.Users[0].Skin != nil, "UsersList.Users[0].Skin is nil")
+	check(deserializedUsersList.Users[0].Skin.Basic != nil, "UsersList.Users[0].Skin.Basic is nil")
+	check(deserializedUsersList.Users[0].Skin.Texture != nil, "UsersList.Users[0].Skin.Texture is nil")
+
+	check(deserializedUsersList.Users[1].Id == usersList.Users[1].Id, "UsersList.Users[1].Id mismatch")
+	check(deserializedUsersList.Users[1].Username == usersList.Users[1].Username, "UsersList.Users[1].Username mismatch")
+	check(deserializedUsersList.Users[1].Skin != nil, "UsersList.Users[1].Skin is nil")
+	check(deserializedUsersList.Users[1].Skin.Basic != nil, "UsersList.Users[1].Skin.Basic is nil")
+	check(deserializedUsersList.Users[1].Skin.Texture != nil, "UsersList.Users[1].Skin.Texture is nil")
+	check(len(deserializedUsersList.Users[1].Skin.Texture.Texture) == len(usersList.Users[1].Skin.Texture.Texture), "UsersList.Users[1].Skin.Texture.Texture length mismatch")
+	check(deserializedUsersList.Users[1].Skin.Texture.Texture[0] == usersList.Users[1].Skin.Texture.Texture[0], "UsersList.Users[1].Skin.Texture.Texture[0] mismatch")
+
+	check(deserializedUsersList.MoreUsers[0].Id == usersList.MoreUsers[0].Id, "UsersList.MoreUsers[0].Id mismatch")
+	check(deserializedUsersList.MoreUsers[0].Username == usersList.MoreUsers[0].Username, "UsersList.MoreUsers[0].Username mismatch")
+	check(deserializedUsersList.MoreUsers[0].Skin != nil, "UsersList.MoreUsers[0].Skin is nil")
+	check(deserializedUsersList.MoreUsers[0].Skin.Basic != nil, "UsersList.MoreUsers[0].Skin.Basic is nil")
+	check(deserializedUsersList.MoreUsers[0].Skin.Texture != nil, "UsersList.MoreUsers[0].Skin.Texture is nil")
 
 	fmt.Println("Runtime verification successful!")
 }

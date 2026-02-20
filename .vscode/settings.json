@@ -13,7 +13,9 @@
         "goroutines",
         "Linef",
         "memoryview",
+        "Println",
         "sbyte",
+        "Sprintf",
         "staticmethod",
         "stdlib",
         "subarray"

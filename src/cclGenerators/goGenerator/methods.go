@@ -332,18 +332,30 @@ func (c *GoGenerationContext) GenerateMethods() error {
 }
 
 func (c *GoGenerationContext) generateMethodsForModel(currentModel *CCLModel) error {
+	modelName := currentModel.GetName()
+	c.MethodsCode.MapVarPairs(
+		"model", "*"+modelName,
+		"modelName", modelName,
+		"modelIdConst", "ModelId"+modelName,
+	)
+	defer c.MethodsCode.UnmapVar(
+		"model",
+		"modelName",
+		"modelIdConst",
+	)
+
 	c.MethodsCode.NewLine().
 		WriteLine("//------------------------------------------------------------").
 		NewLine().
-		WriteLine("func (m *" + currentModel.Name + ") GetModelId() int {").
+		LineD("func (m $model) GetModelId() int {").
 		Indent().
-		WriteLine("return ModelId" + currentModel.Name).
+		LineD("return $modelIdConst").
 		Unindent().
 		WriteLine("}")
 
 	// generate CloneEmpty() method
 	if c.NeedsCloneMethods(gValues.LanguageGo, currentModel) {
-		c.generateCloneMethods(currentModel)
+		c.generateCloneMethods()
 	}
 
 	if c.NeedsBinarySerialization(gValues.LanguageGo, currentModel) {

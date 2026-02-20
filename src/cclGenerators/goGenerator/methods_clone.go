@@ -2,29 +2,34 @@ package goGenerator
 
 //---------------------------------------------------------
 
-func (c *GoGenerationContext) generateCloneMethods(currentModel *CCLModel) error {
+func (c *GoGenerationContext) generateCloneMethods() error {
+	c.MethodsCode.ExpectMappedVars(
+		"model",
+		"modelName",
+	)
+
 	c.MethodsCode.NewLine().
-		WriteLine("func (m *" + currentModel.Name + ") CloneEmpty() *" + currentModel.Name + " {").
+		LineD("func (m $model) CloneEmpty() $model {").
 		Indent().
 		WriteLine("if m == nil {").
 		Indent().
 		WriteLine("return nil").
 		Unindent().
 		WriteLine("}").
-		WriteLine("return &" + currentModel.Name + "{}").
+		LineD("return &$modelName{}").
 		Unindent().
 		WriteLine("}")
 
 	if c.Options.CCLDefinition.HasGlobalAttribute("AddSerializableInterface") {
 		c.MethodsCode.NewLine().
-			WriteLine("func (m *" + currentModel.Name + ") CloneEmptySerializable() Serializable {").
+			LineD("func (m $model) CloneEmptySerializable() Serializable {").
 			Indent().
 			WriteLine("if m == nil {").
 			Indent().
 			WriteLine("return nil").
 			Unindent().
 			WriteLine("}").
-			WriteLine("return &" + currentModel.Name + "{}").
+			LineD("return &$modelName{}").
 			Unindent().
 			WriteLine("}")
 	}
