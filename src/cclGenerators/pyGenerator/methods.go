@@ -130,13 +130,18 @@ func (c *PythonGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 				}
 			}
 
-			if field.IsCustomTypeModel() {
+			importType := field.Type
+			if field.IsArray() {
+				importType = importType.GetUnderlyingType()
+			}
+
+			if importType != nil && importType.IsCustomTypeModel() {
 				// this needs extra import
-				importLine, err := c.getImportLineForType(field.Type.GetDefinition())
+				importLine, err := c.getImportLineForType(importType.GetDefinition())
 				if err != nil {
 					return err
 				}
-				builder.DoImport(field.GetFullTypeName(), importLine)
+				builder.DoImport(importType.GetDefinition().GetFullName(), importLine)
 			}
 			fieldName := cclUtils.ToSnakeCase(field.Name)
 			builder.WriteLine("self." + fieldName + ": " + varType + " = " + defaultValue)

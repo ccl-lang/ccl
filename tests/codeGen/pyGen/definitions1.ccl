@@ -1,7 +1,7 @@
 // ccl example file: definitions.ccl
 // how to run:
 // go build .
-// ./ccl.exe generate --language go --source examples/definitions.ccl --output examples/go_gen2
+// ./ccl.exe generate --language py --source tests/codeGen/pyGen/definitions1.ccl --output tests/codeGen/pyGen/ccl_py_test_1/models
 
 #[CCLVersion("1.0.0")]
 #[SerializationType("binary")]

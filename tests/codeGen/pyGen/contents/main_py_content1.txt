@@ -7,7 +7,7 @@ import struct
 # Add the current directory to sys.path to ensure we can import the generated models
 sys.path.append(os.getcwd())
 
-from models import UserInfo, SkinInfo, BasicSkin, PositionInfo
+from models import UserInfo, SkinInfo, BasicSkin, PositionInfo, UsersList
 
 def test_user():
 	print("Testing UserInfo...")
@@ -25,6 +25,13 @@ def test_user():
 	
 	skin.basic = basic_skin
 	user.skin = skin
+
+	all_users = UsersList()
+	all_users.users = []
+	all_users.users.append(user)
+	other_users = UsersList.deserialize_binary(all_users.serialize_binary())
+	if len(other_users.users) != len(all_users.users):
+		raise ValueError("length of users are not equal!")
 
 	# Test serialization
 	user_binary = user.serialize_binary()
