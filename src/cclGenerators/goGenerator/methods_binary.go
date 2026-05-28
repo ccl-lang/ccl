@@ -323,9 +323,13 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 			Unindent().
 			WriteLine("}").
 			LineD("$fieldStrBytes := make([]byte, $fieldLen)").
+			LineD("if $fieldLen > 0 {").
+			Indent().
 			LineD("if _, err := buf.Read($fieldStrBytes); err != nil {").
 			Indent().
 			WriteLine("return err").
+			Unindent().
+			WriteLine("}").
 			Unindent().
 			WriteLine("}").
 			LineD("$field = string($fieldStrBytes)")
@@ -337,9 +341,13 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 			Unindent().
 			WriteLine("}").
 			LineD("bytesData := make([]byte, $fieldLen)").
+			LineD("if $fieldLen > 0 {").
+			Indent().
 			WriteLine("if _, err := buf.Read(bytesData); err != nil {").
 			Indent().
 			WriteLine("return err").
+			Unindent().
+			WriteLine("}").
 			Unindent().
 			WriteLine("}").
 			LineD("$field = bytesData")
@@ -376,9 +384,13 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 				WriteLine("}")
 
 			c.MethodsCode.LineD("$fieldBytes := make([]byte, $fieldBytesLen)").
+				LineD("if $fieldBytesLen > 0 {").
+				Indent().
 				LineD("if _, err := buf.Read($fieldBytes); err != nil {").
 				Indent().
 				WriteLine("return err").
+				Unindent().
+				WriteLine("}").
 				Unindent().
 				WriteLine("}")
 
@@ -483,9 +495,13 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 			Unindent().
 			WriteLine("}").
 			WriteLine("elemBytes := make([]byte, elemLen)").
+			WriteLine("if elemLen > 0 {").
+			Indent().
 			WriteLine("if _, err := buf.Read(elemBytes); err != nil {").
 			Indent().
 			WriteLine("return err").
+			Unindent().
+			WriteLine("}").
 			Unindent().
 			WriteLine("}").
 			LineD("$field[i] = string(elemBytes)")
@@ -497,9 +513,13 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 			Unindent().
 			WriteLine("}").
 			WriteLine("elemBytes := make([]byte, elemLen)").
+			WriteLine("if elemLen > 0 {").
+			Indent().
 			WriteLine("if _, err := buf.Read(elemBytes); err != nil {").
 			Indent().
 			WriteLine("return err").
+			Unindent().
+			WriteLine("}").
 			Unindent().
 			WriteLine("}").
 			LineD("$field[i] = elemBytes")
@@ -528,9 +548,13 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 				Unindent().
 				WriteLine("}").
 				WriteLine("elemBytes := make([]byte, elemLen)").
+				WriteLine("if elemLen > 0 {").
+				Indent().
 				WriteLine("if _, err := buf.Read(elemBytes); err != nil {").
 				Indent().
 				WriteLine("return err").
+				Unindent().
+				WriteLine("}").
 				Unindent().
 				WriteLine("}").
 				WriteLine("if err := elem.DeserializeBinary(elemBytes); err != nil {").
