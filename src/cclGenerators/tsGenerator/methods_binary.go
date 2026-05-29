@@ -97,8 +97,9 @@ func (c *TypeScriptGenerationContext) generateFieldSerializeBinary(field *CCLFie
 				Unindent().
 				WriteLine("} else {").
 				Indent().
-				WriteLine("dataView.setUint32(0, 0, true);").
+				WriteLine("dataView.setUint32(0, 1, true);").
 				WriteLine("for (let i = 0; i < 4; i++) buffer.push(dataView.getUint8(i));").
+				WriteLine("buffer.push(0);").
 				UnindentLine().
 				WriteLine("}")
 		}
@@ -164,8 +165,9 @@ func (c *TypeScriptGenerationContext) generateArraySerializeBinary(field *CCLFie
 				Unindent().
 				WriteLine("} else {").
 				Indent().
-				WriteLine("dataView.setUint32(0, 0, true);").
+				WriteLine("dataView.setUint32(0, 1, true);").
 				WriteLine("for (let i = 0; i < 4; i++) buffer.push(dataView.getUint8(i));").
+				WriteLine("buffer.push(0);").
 				UnindentLine().
 				WriteLine("}")
 		}
@@ -177,7 +179,7 @@ func (c *TypeScriptGenerationContext) generateArraySerializeBinary(field *CCLFie
 func (c *TypeScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
 	builder.WriteLine("public static deserializeBinary(data: Uint8Array): " + model.Name + " | null {").
 		Indent().
-		WriteLine("if (!data || data.length === 0) return null;").
+		WriteLine("if (!data || data.length === 0 || (data.length === 1 && data[0] === 0)) return null;").
 		WriteLine("const view = new DataView(data.buffer, data.byteOffset, data.byteLength);").
 		WriteLine("let offset = 0;").
 		WriteLine("const result = new " + model.Name + "();").
@@ -265,6 +267,7 @@ func (c *TypeScriptGenerationContext) generateFieldDeserializeBinary(field *CCLF
 				Indent().
 				WriteLine("const len = view.getUint32(offset, true);").
 				WriteLine("offset += 4;").
+				WriteLine("if (len > data.length - offset) return null;").
 				WriteLine("const bytes = data.subarray(offset, offset + len);").
 				WriteLine(resultField + " = " + field.Type.GetName() + ".deserializeBinary(bytes);").
 				WriteLine("offset += len;").
@@ -333,6 +336,7 @@ func (c *TypeScriptGenerationContext) generateArrayDeserializeBinary(field *CCLF
 		if targetFieldType.IsCustomTypeModel() {
 			builder.WriteLine("const itemLen = view.getUint32(offset, true);").
 				WriteLine("offset += 4;").
+				WriteLine("if (itemLen > data.length - offset) return null;").
 				WriteLine("const bytes = data.subarray(offset, offset + itemLen);").
 				WriteLine(resultField + ".push(" + targetFieldType.GetName() + ".deserializeBinary(bytes));").
 				WriteLine("offset += itemLen;")
