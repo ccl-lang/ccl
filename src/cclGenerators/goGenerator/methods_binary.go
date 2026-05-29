@@ -150,6 +150,7 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(field *CCLField
 
 func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField) error {
 	targetFieldType := field.Type.GetUnderlyingType()
+	targetFieldTypeName := targetFieldType.GetName()
 	isCustomType := targetFieldType.IsCustomTypeModel()
 	fieldName := field.Name
 	fieldVar := "m." + fieldName
@@ -171,7 +172,7 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField
 		WriteLine("}").
 		LineD("for _, elem := range $field {").
 		Indent()
-	switch targetFieldType.GetName() {
+	switch targetFieldTypeName {
 	case cclValues.TypeNameString:
 		c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, uint32(len(elem))); err != nil {").
 			Indent().
@@ -219,11 +220,18 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField
 				Unindent().
 				WriteLine("}")
 		} else {
-			c.MethodsCode.WriteLine("if err := binary.Write(buf, binaryEndian, elem); err != nil {").
+			toWriteStr := "elem"
+			if targetFieldTypeName == cclValues.TypeNameInt {
+				// binary.Write does not support int type directly, so we need to convert it to int32
+				toWriteStr = "int32(elem)"
+			}
+			c.MethodsCode.MapVarPairs("toWrite", toWriteStr)
+			c.MethodsCode.LineD("if err := binary.Write(buf, binaryEndian, $toWrite); err != nil {").
 				Indent().
 				WriteLine("return nil, err").
 				Unindent().
 				WriteLine("}")
+			c.MethodsCode.UnmapVar("toWrite")
 		}
 	}
 
@@ -565,6 +573,18 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 				LineD("$field[i] = elem")
 			c.MethodsCode.UnmapVar("fieldType")
 		} else {
+			if targetFieldTypeName == cclValues.TypeNameInt {
+				// binary.Read does not support int type directly, so we need to read it into an int32 first
+				c.MethodsCode.WriteLine("var elem int32").
+					WriteLine("if err := binary.Read(buf, binaryEndian, &elem); err != nil {").
+					Indent().
+					WriteLine("return err").
+					Unindent().
+					WriteLine("}").
+					LineD("$field[i] = int(elem)")
+				break
+			}
+
 			c.MethodsCode.LineD("if err := binary.Read(buf, binaryEndian, &$field[i]); err != nil {").
 				Indent().
 				WriteLine("return err").

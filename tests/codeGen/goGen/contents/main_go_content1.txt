@@ -27,6 +27,7 @@ func main() {
 			},
 			Texture: &models.TextureSkin{
 				Texture:      []string{},
+				SomeInts:     []int{},
 				SomeIntegers: []int64{},
 			},
 		},
@@ -71,6 +72,7 @@ func main() {
 	// Test TextureSkin with arrays
 	texture := models.TextureSkin{
 		Texture:      []string{"a.png", "b.png", "c.png"},
+		SomeInts:     []int{1, 2, 3, 4, 5},
 		SomeIntegers: []int64{1, 2, 3, 4, 5},
 	}
 	textureBinary, err := texture.SerializeBinary()
@@ -87,6 +89,10 @@ func main() {
 	check(len(deserializedTexture.Texture) == len(texture.Texture), "Texture array length mismatch")
 	for i, item := range texture.Texture {
 		check(deserializedTexture.Texture[i] == item, "Texture array item mismatch")
+	}
+	check(len(deserializedTexture.SomeInts) == len(texture.SomeInts), "SomeInts array length mismatch")
+	for i, item := range texture.SomeInts {
+		check(deserializedTexture.SomeInts[i] == item, "SomeInts array item mismatch")
 	}
 	check(len(deserializedTexture.SomeIntegers) == len(texture.SomeIntegers), "SomeIntegers array length mismatch")
 	for i, item := range texture.SomeIntegers {
@@ -106,6 +112,7 @@ func main() {
 			},
 			Texture: &models.TextureSkin{
 				Texture:      []string{"t1.png"},
+				SomeInts:     []int{9, 8},
 				SomeIntegers: []int64{9, 8},
 			},
 		},
@@ -122,6 +129,7 @@ func main() {
 			},
 			Texture: &models.TextureSkin{
 				Texture:      []string{"t2.png", "t3.png"},
+				SomeInts:     []int{7},
 				SomeIntegers: []int64{7},
 			},
 		},

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ccl-lang/ccl/src/cclGenerators"
@@ -62,6 +63,18 @@ func TestGdGenerator1(t *testing.T) {
 	} else if result == nil {
 		t.Fatalf("Unknown error: failed to generate code")
 		return
+	}
+
+	for _, outputFile := range result.OutputFiles {
+		data, err := os.ReadFile(outputFile)
+		if err != nil {
+			t.Fatalf("Failed to read generated file %s: %v", outputFile, err)
+		}
+		content := string(data)
+		expectedContent := strings.TrimRight(content, " \t\r\n") + "\n"
+		if content != expectedContent {
+			t.Fatalf("Generated file %s has trailing EOF whitespace", outputFile)
+		}
 	}
 
 	fmt.Printf("Running GDScript code from: %s\n", tmpDir)

@@ -34,6 +34,7 @@ model BasicSkin {
 
 model TextureSkin {
     Texture: string[];
+    SomeInts: int[];
     SomeIntegers: int64[];
 }
 

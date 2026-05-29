@@ -97,7 +97,9 @@ func (c *GDScriptGenerationContext) generateCodeForModel(model *CCLModel) error 
 	}
 
 	fullPath := path + fileName + ".gd"
-	err = c.WriteCodeFile(fullPath, builder.Build(c.ModelSections[modelName]))
+	buildResult := builder.Build(c.ModelSections[modelName])
+	buildResult.Code = strings.TrimRight(buildResult.Code, " \t\r\n") + "\n"
+	err = c.WriteCodeFile(fullPath, buildResult)
 	if err != nil {
 		return err
 	}
