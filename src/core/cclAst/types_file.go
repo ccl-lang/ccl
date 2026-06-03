@@ -6,9 +6,16 @@ import "github.com/ccl-lang/ccl/src/core/cclUtils"
 type CCLFileAST struct {
 	FilePath         string
 	Namespace        string
+	Imports          []*ImportDecl
 	GlobalAttributes []*GlobalAttributeNode
 	Models           []*ModelDecl
 	SourcePosition   *cclUtils.SourceCodePosition
+}
+
+// ImportDecl represents a source-file import declaration in CCL.
+type ImportDecl struct {
+	Path           string
+	SourcePosition *cclUtils.SourceCodePosition
 }
 
 // ModelDecl represents a model declaration in CCL.

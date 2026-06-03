@@ -1,0 +1,4 @@
+model ImportedGdThing {
+    Name: string;
+    Count: int32;
+}

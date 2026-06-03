@@ -25,7 +25,8 @@ const (
 
 // general ccl keyword names
 const (
-	KeywordNameModel = "model"
+	KeywordNameImport = "import"
+	KeywordNameModel  = "model"
 )
 
 // ccl type flags.

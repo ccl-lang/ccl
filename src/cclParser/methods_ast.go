@@ -31,6 +31,23 @@ func (p *CCLAstParser) ParseAsAST() (*cclAst.CCLFileAST, error) {
 			continue
 		}
 
+		if p.current.Type == cclLexer.TokenTypeKeywordImport {
+			if len(currentPendingAttributes) > 0 {
+				lastAttr := currentPendingAttributes[len(currentPendingAttributes)-1]
+				return nil, &InvalidAttributeUsageError{
+					SourcePosition: lastAttr.SourcePosition,
+				}
+			}
+
+			importDecl, err := p.parseImportDeclAst()
+			if err != nil {
+				return nil, err
+			}
+
+			fileAst.Imports = append(fileAst.Imports, importDecl)
+			continue
+		}
+
 		if p.isCurrentAttribute() {
 			afterAttribute := p.peekAfterAttribute()
 			if afterAttribute == cclLexer.TokenTypeEOF {

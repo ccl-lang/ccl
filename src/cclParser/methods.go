@@ -133,6 +133,7 @@ func (p *CCLAstParser) getCurrentSourceLine(lineNum int) string {
 // getSourcePosition returns the current source position.
 func (p *CCLAstParser) getSourcePosition() *cclUtils.SourceCodePosition {
 	return &cclUtils.SourceCodePosition{
+		FilePath:   p.Options.SourceFilePath,
 		Line:       p.current.Line,
 		Column:     p.current.Column,
 		SourceLine: p.getCurrentSourceLine(p.current.Line),
@@ -145,6 +146,7 @@ func (p *CCLAstParser) getSourcePositionForToken(token *cclLexer.CCLToken) *cclU
 	}
 
 	return &cclUtils.SourceCodePosition{
+		FilePath:   p.Options.SourceFilePath,
 		Line:       token.Line,
 		Column:     token.Column,
 		SourceLine: p.getCurrentSourceLine(token.Line),

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 type RunGodotOptions struct {
@@ -19,11 +20,15 @@ func getGodotCmd(args ...string) *exec.Cmd {
 	// This handles Linux/Mac and correctly configured Windows machines
 	path, err := exec.LookPath("godot")
 	if err == nil {
-		return exec.Command(path, args...)
+		return newGodotCommand(path, args...)
 	}
 
 	// 2. If LookPath failed, we might be in a complex Windows environment.
 	if runtime.GOOS == "windows" {
+		if path, err := lookPathWithPowerShellPathext("godot"); err == nil {
+			return newGodotCommand(path, args...)
+		}
+
 		// Check if 'bash' is available (GitHub Actions and Git Bash users have this).
 		// This solves the "godot not recognized" error on GH Actions.
 		if _, err := exec.LookPath("bash"); err == nil {
@@ -40,6 +45,44 @@ func getGodotCmd(args ...string) *exec.Cmd {
 
 	// Default for Linux/Mac if not found in PATH (will likely fail execution later)
 	return exec.Command("godot", args...)
+}
+
+func newGodotCommand(path string, args ...string) *exec.Cmd {
+	if runtime.GOOS == "windows" && strings.EqualFold(filepath.Ext(path), ".ps1") {
+		powerShellArgs := append(
+			[]string{"-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path},
+			args...,
+		)
+		return exec.Command("powershell.exe", powerShellArgs...)
+	}
+
+	return exec.Command(path, args...)
+}
+
+func lookPathWithPowerShellPathext(fileName string) (string, error) {
+	currentPathext := os.Getenv("PATHEXT")
+	if hasPathext(currentPathext, ".PS1") {
+		return exec.LookPath(fileName)
+	}
+
+	if currentPathext == "" {
+		os.Setenv("PATHEXT", ".PS1")
+	} else {
+		os.Setenv("PATHEXT", currentPathext+";.PS1")
+	}
+	defer os.Setenv("PATHEXT", currentPathext)
+
+	return exec.LookPath(fileName)
+}
+
+func hasPathext(pathext string, targetExt string) bool {
+	for _, currentExt := range strings.Split(pathext, ";") {
+		if strings.EqualFold(strings.TrimSpace(currentExt), targetExt) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // RunGodotProject runs a Godot project located at targetPath with the provided runnerContent script.

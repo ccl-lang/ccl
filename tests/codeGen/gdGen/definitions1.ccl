@@ -6,6 +6,7 @@
 #[CCLVersion("1.0.0")]
 #[SerializationType("binary")]
 #[SerializationType("json")]
+import "imported_definitions.ccl";
 
 // Basic geometric types
 model PositionInfo {

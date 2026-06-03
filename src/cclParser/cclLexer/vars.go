@@ -8,6 +8,7 @@ var (
 		TokenTypeError:              "ERROR",
 		TokenTypeComment:            "COMMENT",
 		TokenTypeHash:               "HASH",
+		TokenTypeKeywordImport:      "KEYWORD_IMPORT",
 		TokenTypeKeywordModel:       "KEYWORD_MODEL",
 		TokenTypeIdentifier:         "IDENTIFIER",
 		TokenTypeColon:              "COLON",
@@ -95,6 +96,11 @@ var (
 		'|': {
 			'|': TokenTypeOr,
 		},
+	}
+
+	keywordTokenTypes = map[string]CCLTokenType{
+		cclValues.KeywordNameImport: TokenTypeKeywordImport,
+		cclValues.KeywordNameModel:  TokenTypeKeywordModel,
 	}
 )
 

@@ -1,4 +1,5 @@
-program         = { global_attribute }, { model_definition } ;
+program         = { import_declaration | global_attribute | model_definition } ;
+import_declaration = 'import', string_literal, ';' ;
 global_attribute = '#', '[', identifier, [ '(', string_literal, ')' ], ']' ;
 model_definition = { local_attribute }, 'model', identifier, '{', { field_definition }, '}' ;
 local_attribute  = '[', identifier, [ '(', string_literal, ')' ], ']' ;
@@ -13,6 +14,7 @@ identifier       = IDENTIFIER ;
 ']'              = RIGHT_BRACKET ;
 '('              = LEFT_PARENTHESIS ;
 ')'              = RIGHT_PARENTHESIS ;
+'import'        = KEYWORD_IMPORT ;
 'model'          = KEYWORD_MODEL ;
 ':'              = COLON ;
 ';'              = SEMICOLON ;

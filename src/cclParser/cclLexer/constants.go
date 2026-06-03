@@ -9,6 +9,7 @@ const (
 	TokenTypeEOF                                  // end of file
 	TokenTypeComment                              // a comment
 	TokenTypeHash                                 // #
+	TokenTypeKeywordImport                        // import
 	TokenTypeKeywordModel                         // model
 	TokenTypeKeywordRequired                      // required
 	TokenTypeKeywordPublic                        // public

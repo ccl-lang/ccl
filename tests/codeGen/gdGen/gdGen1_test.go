@@ -77,6 +77,11 @@ func TestGdGenerator1(t *testing.T) {
 		}
 	}
 
+	importedOutputPath := filepath.Join(tmpDir, "models", "imported_gd_thing.gd")
+	if _, err := os.Stat(importedOutputPath); err != nil {
+		t.Fatalf("Expected imported CCL model to generate %s: %v", importedOutputPath, err)
+	}
+
 	fmt.Printf("Running GDScript code from: %s\n", tmpDir)
 
 	output, err := RunGodotProject(&RunGodotOptions{
