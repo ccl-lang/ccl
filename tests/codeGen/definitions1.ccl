@@ -1,10 +1,10 @@
-// ccl example file: definitions.ccl
-// how to run:
-// go build .
-// ./ccl.exe generate --language py --source tests/codeGen/pyGen/definitions1.ccl --output tests/codeGen/pyGen/ccl_py_test_1/models
+// Shared CCL fixture for all code generation tests.
+// Add generator feature coverage here when it should apply to every language.
 
 #[CCLVersion("1.0.0")]
 #[SerializationType("binary")]
+#[SerializationType("json")]
+import "imported_definitions.ccl";
 
 // Basic geometric types
 model PositionInfo {
@@ -34,6 +34,7 @@ model BasicSkin {
 
 model TextureSkin {
     Texture: string[];
+    SomeInts: int[];
     SomeIntegers: int64[];
 }
 
@@ -50,6 +51,7 @@ model SkinInfo {
 
 // UserInfo and RoomInfo types
 model UserInfo {
+    [JsonPropertyName("user_id")]
     Id: string;
     Username: string;
     Skin: SkinInfo;
@@ -74,8 +76,17 @@ model AuthGuestRequest {
     Username: string;
 }
 
+model SomeTestObj {
+    hello: string;
+}
+
 model AuthGuestAnswer {
     RpcId: uint16;
+    some_property: string;
+    some_float: float;
+    Success: bool;
+    some_bytes: bytes;
+    my_field: SomeTestObj;
     Token: string;
 }
 
@@ -167,7 +178,8 @@ model ServerUpdatePlayerJoin {
 
 model UsersList {
     Users: UserInfo[];
+    usernames: string[];
+    photos: bytes[];
+    something: ServerUpdatePlayerLeave[];
     MoreUsers: UserInfo[];
 }
-
-

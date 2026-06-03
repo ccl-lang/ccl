@@ -10,14 +10,12 @@ import (
 	"github.com/ccl-lang/ccl/src/cclGenerators"
 	"github.com/ccl-lang/ccl/src/cclLoader"
 	"github.com/ccl-lang/ccl/src/cclParser"
-)
-
-const (
-	tsSource1_1 = "definitions1_1.ccl"
-	tsSource1_2 = "definitions1_2.ccl"
+	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
 var (
+	tsSource1 = filepath.Join("..", "definitions1.ccl")
+
 	//go:embed contents/main_ts_content1_1.txt
 	mainTSContent1_1 string
 
@@ -46,10 +44,10 @@ func TestTSGenerator1_1(t *testing.T) {
 
 	// Parse CCL
 	parsedDefinitions, parseErr := cclParser.ParseCCLSourceFile(&cclParser.CCLParseOptions{
-		SourceFilePath: tsSource1_1,
+		SourceFilePath: tsSource1,
 	})
 	if parseErr != nil {
-		t.Fatalf("Error: failed to parse source file %s: %v\n", tsSource1_1, parseErr)
+		t.Fatalf("Error: failed to parse source file %s: %v\n", tsSource1, parseErr)
 		return
 	}
 
@@ -101,12 +99,13 @@ func TestTSGenerator1_2(t *testing.T) {
 
 	// Parse CCL
 	parsedDefinitions, parseErr := cclParser.ParseCCLSourceFile(&cclParser.CCLParseOptions{
-		SourceFilePath: tsSource1_2,
+		SourceFilePath: tsSource1,
 	})
 	if parseErr != nil {
-		t.Fatalf("Error: failed to parse source file %s: %v\n", tsSource1_2, parseErr)
+		t.Fatalf("Error: failed to parse source file %s: %v\n", tsSource1, parseErr)
 		return
 	}
+	addSingleFileGenerationAttribute(parsedDefinitions, "generated.ts")
 
 	// Generate Code
 	cclLoader.LoadGenerators()
@@ -133,4 +132,23 @@ func TestTSGenerator1_2(t *testing.T) {
 		return
 	}
 	fmt.Printf("Output:\n%s\n", output)
+}
+
+func addSingleFileGenerationAttribute(
+	definition *cclValues.SourceCodeDefinition,
+	fileName string,
+) {
+	enabledParam := &cclValues.ParameterInstance{}
+	enabledParam.ChangeValue(true)
+
+	fileNameParam := &cclValues.ParameterInstance{}
+	fileNameParam.ChangeValue(fileName)
+
+	definition.GlobalAttributes = append(definition.GlobalAttributes, &cclValues.AttributeUsageInfo{
+		Name: "CCLGenerateSingleFile",
+		Parameters: []*cclValues.ParameterInstance{
+			enabledParam,
+			fileNameParam,
+		},
+	})
 }

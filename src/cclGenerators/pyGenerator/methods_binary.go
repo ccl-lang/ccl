@@ -116,6 +116,9 @@ func (c *PythonGenerationContext) generateArraySerializeBinary(field *CCLField, 
 		builder.WriteLine("buffer.extend(struct.pack('<d', item))")
 	case cclValues.TypeNameBool:
 		builder.WriteLine("buffer.extend(struct.pack('<b', 1 if item else 0))")
+	case cclValues.TypeNameBytes:
+		builder.WriteLine("buffer.extend(struct.pack('<I', len(item)))").
+			WriteLine("buffer.extend(item)")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
 			builder.WriteLine("if item:").
@@ -296,6 +299,15 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 	case cclValues.TypeNameBool:
 		builder.WriteLine(resultField + ".append(struct.unpack_from('<b', buffer, offset)[0] != 0)").
 			WriteLine("offset += 1")
+	case cclValues.TypeNameBytes:
+		builder.WriteLine("item_len = struct.unpack_from('<I', buffer, offset)[0]").
+			WriteLine("offset += 4").
+			WriteLine("if item_len > len(buffer) - offset:").
+			Indent().
+			WriteLine("return None").
+			Unindent().
+			WriteLine(resultField + ".append(bytes(buffer[offset:offset+item_len]))").
+			WriteLine("offset += item_len")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
 			builder.WriteLine("item_len = struct.unpack_from('<I', buffer, offset)[0]").

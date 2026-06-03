@@ -12,11 +12,9 @@ import (
 	"github.com/ccl-lang/ccl/src/cclParser"
 )
 
-const (
-	goSource1 = "definitions1.ccl"
-)
-
 var (
+	goSource1 = filepath.Join("..", "definitions1.ccl")
+
 	//go:embed contents/main_go_content1.txt
 	mainGoContent1 string
 )
