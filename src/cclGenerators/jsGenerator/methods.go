@@ -118,18 +118,33 @@ func (c *JavaScriptGenerationContext) generateCodeForModel(model *CCLModel) erro
 }
 
 func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.CodeBuilder, model *CCLModel) error {
-	builder.WriteLine("export class " + model.Name + " {").
+	modelIdConstName := "MODEL_ID_" + strings.ToUpper(caseUtils.ToSnakeCase(model.Name))
+	builder.MapVarPairs(
+		"model", model.Name,
+		"modelIdConst", modelIdConstName,
+		"modelId", ssg.ToBase10(model.ModelId),
+	)
+	defer builder.UnmapVar(
+		"model",
+		"modelIdConst",
+		"modelId",
+	)
+
+	builder.LineD("export class $model {").
 		Indent()
 
 	// Write model ID constant
-	modelIdConstName := "MODEL_ID_" + strings.ToUpper(caseUtils.ToSnakeCase(model.Name))
-	builder.WriteLine("static " + modelIdConstName + " = " + ssg.ToBase10(model.ModelId) + ";").
+	builder.LineD("static $modelIdConst = $modelId;").
 		NewLine()
 
 	// Fields
 	for _, field := range model.Fields {
 		fieldName := caseUtils.ToCamelCase(field.Name)
-		builder.WriteLine(fieldName + ";")
+		builder.MapVarPairs(
+			"field", fieldName,
+		)
+		builder.LineD("$field;")
+		builder.UnmapVar("field")
 	}
 	builder.NewLine()
 
@@ -161,9 +176,21 @@ func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		}
 
 		if defaultValue != "null" {
-			builder.WriteLine("this." + fieldName + " = " + defaultValue + ";")
+			builder.MapVarPairs(
+				"defaultValue", defaultValue,
+				"field", fieldName,
+			)
+			builder.LineD("this.$field = $defaultValue;")
+			builder.UnmapVar(
+				"defaultValue",
+				"field",
+			)
 		} else {
-			builder.WriteLine("this." + fieldName + " = null;")
+			builder.MapVarPairs(
+				"field", fieldName,
+			)
+			builder.LineD("this.$field = null;")
+			builder.UnmapVar("field")
 		}
 	}
 	builder.Unindent().
@@ -173,7 +200,7 @@ func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 	// Get Model ID
 	builder.WriteLine("getModelId() {").
 		Indent().
-		WriteLine("return " + model.Name + "." + modelIdConstName + ";").
+		LineD("return $model.$modelIdConst;").
 		Unindent().
 		WriteLine("}").
 		NewLine()
@@ -181,7 +208,7 @@ func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 	// Clone Empty
 	builder.WriteLine("cloneEmpty() {").
 		Indent().
-		WriteLine("return new " + model.Name + "();").
+		LineD("return new $model();").
 		Unindent().
 		WriteLine("}").
 		NewLine()

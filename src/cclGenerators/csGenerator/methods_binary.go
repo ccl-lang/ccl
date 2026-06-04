@@ -7,15 +7,15 @@ import (
 )
 
 func (c *CSharpGenerationContext) generateSerializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
-	builder.WriteLine("public byte[] SerializeBinary()")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("using (var ms = new MemoryStream())")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("using (var writer = new BinaryWriter(ms, Encoding.UTF8, true))")
-	builder.WriteLine("{")
-	builder.Indent()
+	builder.WriteLine("public byte[] SerializeBinary()").
+		WriteLine("{").
+		Indent().
+		WriteLine("using (var ms = new MemoryStream())").
+		WriteLine("{").
+		Indent().
+		WriteLine("using (var writer = new BinaryWriter(ms, Encoding.UTF8, true))").
+		WriteLine("{").
+		Indent()
 
 	for i := range model.Fields {
 		field := model.Fields[i]
@@ -27,72 +27,78 @@ func (c *CSharpGenerationContext) generateSerializeBinaryMethod(model *CCLModel,
 		c.generateFieldSerializeBinary(field, builder)
 	}
 
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.WriteLine("return ms.ToArray();")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.NewLine()
+	builder.Unindent().
+		WriteLine("}").
+		WriteLine("return ms.ToArray();").
+		Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}").
+		NewLine()
 	return nil
 }
 
 func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
 	fieldName := "this." + caseUtils.ToPascalCase(field.Name)
+	builder.MapVarPairs(
+		"field", fieldName,
+	)
+	defer builder.UnmapVar(
+		"field",
+	)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine("{")
-		builder.Indent()
-		builder.WriteLine("var strBytes = Encoding.UTF8.GetBytes(" + fieldName + " ?? \"\");")
-		builder.WriteLine("writer.Write((uint)strBytes.Length);")
-		builder.WriteLine("writer.Write(strBytes);")
-		builder.Unindent()
-		builder.WriteLine("}")
+		builder.WriteLine("{").
+			Indent().
+			LineD(`var strBytes = Encoding.UTF8.GetBytes($field ?? "");`).
+			WriteLine("writer.Write((uint)strBytes.Length);").
+			WriteLine("writer.Write(strBytes);").
+			Unindent().
+			WriteLine("}")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteLine("writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write($field);")
 	case cclValues.TypeNameInt8:
-		builder.WriteLine("writer.Write((sbyte)" + fieldName + ");")
+		builder.LineD("writer.Write((sbyte)$field);")
 	case cclValues.TypeNameInt16:
-		builder.WriteLine("writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write($field);")
 	case cclValues.TypeNameInt64:
-		builder.WriteLine("writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write($field);")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteLine("writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write($field);")
 	case cclValues.TypeNameUint8:
-		builder.WriteLine("writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write($field);")
 	case cclValues.TypeNameUint16:
-		builder.WriteLine("writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write($field);")
 	case cclValues.TypeNameUint64:
-		builder.WriteLine("writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write($field);")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
-		builder.WriteLine("writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write($field);")
 	case cclValues.TypeNameFloat64:
-		builder.WriteLine("writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write($field);")
 	case cclValues.TypeNameBool:
-		builder.WriteLine("writer.Write((byte)(" + fieldName + " ? 1 : 0));")
+		builder.LineD("writer.Write((byte)($field ? 1 : 0));")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("writer.Write((uint)(" + fieldName + "?.Length ?? 0));")
-		builder.WriteLine("if (" + fieldName + " != null) writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write((uint)($field?.Length ?? 0));").
+			LineD("if ($field != null) writer.Write($field);")
 	case cclValues.TypeNameDateTime:
-		builder.WriteLine("writer.Write(" + fieldName + ");")
+		builder.LineD("writer.Write($field);")
 	default:
 		if field.IsCustomTypeModel() {
-			builder.WriteLine("if (" + fieldName + " != null)")
-			builder.WriteLine("{")
-			builder.Indent()
-			builder.WriteLine("var customBytes = " + fieldName + ".SerializeBinary();")
-			builder.WriteLine("writer.Write((uint)customBytes.Length);")
-			builder.WriteLine("writer.Write(customBytes);")
-			builder.Unindent()
-			builder.WriteLine("}")
-			builder.WriteLine("else")
-			builder.WriteLine("{")
-			builder.Indent()
-			builder.WriteLine("writer.Write((uint)0);")
-			builder.Unindent()
-			builder.WriteLine("}")
+			builder.LineD("if ($field != null)").
+				WriteLine("{").
+				Indent().
+				LineD("var customBytes = $field.SerializeBinary();").
+				WriteLine("writer.Write((uint)customBytes.Length);").
+				WriteLine("writer.Write(customBytes);").
+				Unindent().
+				WriteLine("}").
+				WriteLine("else").
+				WriteLine("{").
+				Indent().
+				WriteLine("writer.Write((uint)0);").
+				Unindent().
+				WriteLine("}")
 		}
 	}
 }
@@ -100,14 +106,20 @@ func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
 	fieldName := "this." + caseUtils.ToPascalCase(field.Name)
 	targetFieldType := field.Type.GetUnderlyingType()
+	builder.MapVarPairs(
+		"field", fieldName,
+	)
+	defer builder.UnmapVar(
+		"field",
+	)
 
-	builder.WriteLine("writer.Write((uint)(" + fieldName + "?.Count ?? 0));")
-	builder.WriteLine("if (" + fieldName + " != null)")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("foreach (var item in " + fieldName + ")")
-	builder.WriteLine("{")
-	builder.Indent()
+	builder.LineD("writer.Write((uint)($field?.Count ?? 0));").
+		LineD("if ($field != null)").
+		WriteLine("{").
+		Indent().
+		LineD("foreach (var item in $field)").
+		WriteLine("{").
+		Indent()
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
@@ -155,24 +167,31 @@ func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, 
 		}
 	}
 
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.Unindent()
-	builder.WriteLine("}")
+	builder.Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}")
 }
 
 func (c *CSharpGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
-	builder.WriteLine("public static " + model.Name + " DeserializeBinary(byte[] data)")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("if (data == null || data.Length == 0) return null;")
-	builder.WriteLine("var result = new " + model.Name + "();")
-	builder.WriteLine("using (var ms = new MemoryStream(data))")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("using (var reader = new BinaryReader(ms, Encoding.UTF8))")
-	builder.WriteLine("{")
-	builder.Indent()
+	builder.MapVarPairs(
+		"model", model.Name,
+	)
+	defer builder.UnmapVar(
+		"model",
+	)
+
+	builder.LineD("public static $model DeserializeBinary(byte[] data)").
+		WriteLine("{").
+		Indent().
+		WriteLine("if (data == null || data.Length == 0) return null;").
+		LineD("var result = new $model();").
+		WriteLine("using (var ms = new MemoryStream(data))").
+		WriteLine("{").
+		Indent().
+		WriteLine("using (var reader = new BinaryReader(ms, Encoding.UTF8))").
+		WriteLine("{").
+		Indent()
 
 	for _, field := range model.Fields {
 		if field.IsArray() {
@@ -183,75 +202,83 @@ func (c *CSharpGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 		c.generateFieldDeserializeBinary(field, builder)
 	}
 
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.WriteLine("return result;")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.NewLine()
+	builder.Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}").
+		WriteLine("return result;").
+		Unindent().
+		WriteLine("}").
+		NewLine()
 	return nil
 }
 
 func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
 	fieldName := caseUtils.ToPascalCase(field.Name)
 	resultField := "result." + fieldName
+	builder.MapVarPairs(
+		"field", resultField,
+		"type", field.Type.GetName(),
+	)
+	defer builder.UnmapVar(
+		"field",
+		"type",
+	)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine("{")
-		builder.Indent()
-		builder.WriteLine("var len = reader.ReadUInt32();")
-		builder.WriteLine("var bytes = reader.ReadBytes((int)len);")
-		builder.WriteLine(resultField + " = Encoding.UTF8.GetString(bytes);")
-		builder.Unindent()
-		builder.WriteLine("}")
+		builder.WriteLine("{").
+			Indent().
+			WriteLine("var len = reader.ReadUInt32();").
+			WriteLine("var bytes = reader.ReadBytes((int)len);").
+			LineD("$field = Encoding.UTF8.GetString(bytes);").
+			Unindent().
+			WriteLine("}")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteLine(resultField + " = reader.ReadInt32();")
+		builder.LineD("$field = reader.ReadInt32();")
 	case cclValues.TypeNameInt8:
-		builder.WriteLine(resultField + " = reader.ReadSByte();")
+		builder.LineD("$field = reader.ReadSByte();")
 	case cclValues.TypeNameInt16:
-		builder.WriteLine(resultField + " = reader.ReadInt16();")
+		builder.LineD("$field = reader.ReadInt16();")
 	case cclValues.TypeNameInt64:
-		builder.WriteLine(resultField + " = reader.ReadInt64();")
+		builder.LineD("$field = reader.ReadInt64();")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteLine(resultField + " = reader.ReadUInt32();")
+		builder.LineD("$field = reader.ReadUInt32();")
 	case cclValues.TypeNameUint8:
-		builder.WriteLine(resultField + " = reader.ReadByte();")
+		builder.LineD("$field = reader.ReadByte();")
 	case cclValues.TypeNameUint16:
-		builder.WriteLine(resultField + " = reader.ReadUInt16();")
+		builder.LineD("$field = reader.ReadUInt16();")
 	case cclValues.TypeNameUint64:
-		builder.WriteLine(resultField + " = reader.ReadUInt64();")
+		builder.LineD("$field = reader.ReadUInt64();")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
-		builder.WriteLine(resultField + " = reader.ReadSingle();")
+		builder.LineD("$field = reader.ReadSingle();")
 	case cclValues.TypeNameFloat64:
-		builder.WriteLine(resultField + " = reader.ReadDouble();")
+		builder.LineD("$field = reader.ReadDouble();")
 	case cclValues.TypeNameBool:
-		builder.WriteLine(resultField + " = reader.ReadByte() != 0;")
+		builder.LineD("$field = reader.ReadByte() != 0;")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("{")
-		builder.Indent()
-		builder.WriteLine("var len = reader.ReadUInt32();")
-		builder.WriteLine(resultField + " = reader.ReadBytes((int)len);")
-		builder.Unindent()
-		builder.WriteLine("}")
+		builder.WriteLine("{").
+			Indent().
+			WriteLine("var len = reader.ReadUInt32();").
+			LineD("$field = reader.ReadBytes((int)len);").
+			Unindent().
+			WriteLine("}")
 	case cclValues.TypeNameDateTime:
-		builder.WriteLine(resultField + " = reader.ReadInt64();")
+		builder.LineD("$field = reader.ReadInt64();")
 	default:
 		if field.IsCustomTypeModel() {
-			builder.WriteLine("{")
-			builder.Indent()
-			builder.WriteLine("var len = reader.ReadUInt32();")
-			builder.WriteLine("if (len > 0)")
-			builder.WriteLine("{")
-			builder.Indent()
-			builder.WriteLine("var bytes = reader.ReadBytes((int)len);")
-			builder.WriteLine(resultField + " = " + field.Type.GetName() + ".DeserializeBinary(bytes);")
-			builder.Unindent()
-			builder.WriteLine("}")
-			builder.Unindent()
-			builder.WriteLine("}")
+			builder.WriteLine("{").
+				Indent().
+				WriteLine("var len = reader.ReadUInt32();").
+				WriteLine("if (len > 0)").
+				WriteLine("{").
+				Indent().
+				WriteLine("var bytes = reader.ReadBytes((int)len);").
+				LineD("$field = $type.DeserializeBinary(bytes);").
+				Unindent().
+				WriteLine("}").
+				Unindent().
+				WriteLine("}")
 		}
 	}
 }
@@ -260,63 +287,73 @@ func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField
 	fieldName := caseUtils.ToPascalCase(field.Name)
 	resultField := "result." + fieldName
 	targetFieldType := field.Type.GetUnderlyingType()
+	builder.MapVarPairs(
+		"field", resultField,
+		"fieldType", c.getCSharpType(field),
+		"type", targetFieldType.GetName(),
+	)
+	defer builder.UnmapVar(
+		"field",
+		"fieldType",
+		"type",
+	)
 
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("var len = reader.ReadUInt32();")
-	builder.WriteLine(resultField + " = new " + c.getCSharpType(field) + "();")
-	builder.WriteLine("for (var i = 0; i < len; i++)")
-	builder.WriteLine("{")
-	builder.Indent()
+	builder.WriteLine("{").
+		Indent().
+		WriteLine("var len = reader.ReadUInt32();").
+		LineD("$field = new $fieldType();").
+		WriteLine("for (var i = 0; i < len; i++)").
+		WriteLine("{").
+		Indent()
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
 		builder.WriteLine("var itemLen = reader.ReadUInt32();")
 		builder.WriteLine("var bytes = reader.ReadBytes((int)itemLen);")
-		builder.WriteLine(resultField + ".Add(Encoding.UTF8.GetString(bytes));")
+		builder.LineD("$field.Add(Encoding.UTF8.GetString(bytes));")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteLine(resultField + ".Add(reader.ReadInt32());")
+		builder.LineD("$field.Add(reader.ReadInt32());")
 	case cclValues.TypeNameInt8:
-		builder.WriteLine(resultField + ".Add(reader.ReadSByte());")
+		builder.LineD("$field.Add(reader.ReadSByte());")
 	case cclValues.TypeNameInt16:
-		builder.WriteLine(resultField + ".Add(reader.ReadInt16());")
+		builder.LineD("$field.Add(reader.ReadInt16());")
 	case cclValues.TypeNameInt64:
-		builder.WriteLine(resultField + ".Add(reader.ReadInt64());")
+		builder.LineD("$field.Add(reader.ReadInt64());")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteLine(resultField + ".Add(reader.ReadUInt32());")
+		builder.LineD("$field.Add(reader.ReadUInt32());")
 	case cclValues.TypeNameUint8:
-		builder.WriteLine(resultField + ".Add(reader.ReadByte());")
+		builder.LineD("$field.Add(reader.ReadByte());")
 	case cclValues.TypeNameUint16:
-		builder.WriteLine(resultField + ".Add(reader.ReadUInt16());")
+		builder.LineD("$field.Add(reader.ReadUInt16());")
 	case cclValues.TypeNameUint64:
-		builder.WriteLine(resultField + ".Add(reader.ReadUInt64());")
+		builder.LineD("$field.Add(reader.ReadUInt64());")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
-		builder.WriteLine(resultField + ".Add(reader.ReadSingle());")
+		builder.LineD("$field.Add(reader.ReadSingle());")
 	case cclValues.TypeNameFloat64:
-		builder.WriteLine(resultField + ".Add(reader.ReadDouble());")
+		builder.LineD("$field.Add(reader.ReadDouble());")
 	case cclValues.TypeNameBool:
-		builder.WriteLine(resultField + ".Add(reader.ReadByte() != 0);")
+		builder.LineD("$field.Add(reader.ReadByte() != 0);")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
-			builder.WriteLine("var itemLen = reader.ReadUInt32();")
-			builder.WriteLine("if (itemLen > 0)")
-			builder.WriteLine("{")
-			builder.Indent()
-			builder.WriteLine("var bytes = reader.ReadBytes((int)itemLen);")
-			builder.WriteLine(resultField + ".Add(" + targetFieldType.GetName() + ".DeserializeBinary(bytes));")
-			builder.Unindent()
-			builder.WriteLine("}")
-			builder.WriteLine("else")
-			builder.WriteLine("{")
-			builder.Indent()
-			builder.WriteLine(resultField + ".Add(null);")
-			builder.Unindent()
-			builder.WriteLine("}")
+			builder.WriteLine("var itemLen = reader.ReadUInt32();").
+				WriteLine("if (itemLen > 0)").
+				WriteLine("{").
+				Indent().
+				WriteLine("var bytes = reader.ReadBytes((int)itemLen);").
+				LineD("$field.Add($type.DeserializeBinary(bytes));").
+				Unindent().
+				WriteLine("}").
+				WriteLine("else").
+				WriteLine("{").
+				Indent().
+				LineD("$field.Add(null);").
+				Unindent().
+				WriteLine("}")
 		}
 	}
 
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.Unindent()
-	builder.WriteLine("}")
+	builder.Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}")
 }

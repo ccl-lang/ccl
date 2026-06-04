@@ -32,51 +32,62 @@ func (c *PythonGenerationContext) generateSerializeBinaryMethod(model *CCLModel,
 func (c *PythonGenerationContext) generateFieldSerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
 	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	fieldName := "self." + fieldRawName
+	builder.MapVarPairs(
+		"field", fieldName,
+		"rawField", fieldRawName,
+		"rawFieldBytes", fieldRawName+"_bytes",
+	)
+	defer builder.UnmapVar(
+		"field",
+		"rawField",
+		"rawFieldBytes",
+	)
+
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(fieldRawName + "_bytes = " + fieldName + ".encode(\"utf-8\")").
-			WriteLine("buffer.extend(struct.pack('<I', len(" + fieldRawName + "_bytes)))").
-			WriteLine("buffer.extend(" + fieldRawName + "_bytes)")
+		builder.LineD(`$rawFieldBytes = $field.encode("utf-8")`).
+			LineD("buffer.extend(struct.pack('<I', len($rawFieldBytes)))").
+			LineD("buffer.extend($rawFieldBytes)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteLine("buffer.extend(struct.pack('<i', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<i', $field))")
 	case cclValues.TypeNameInt8:
-		builder.WriteLine("buffer.extend(struct.pack('<b', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<b', $field))")
 	case cclValues.TypeNameInt16:
-		builder.WriteLine("buffer.extend(struct.pack('<h', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<h', $field))")
 	case cclValues.TypeNameInt64:
-		builder.WriteLine("buffer.extend(struct.pack('<q', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<q', $field))")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteLine("buffer.extend(struct.pack('<I', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<I', $field))")
 	case cclValues.TypeNameUint8:
-		builder.WriteLine("buffer.extend(struct.pack('<B', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<B', $field))")
 	case cclValues.TypeNameUint16:
-		builder.WriteLine("buffer.extend(struct.pack('<H', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<H', $field))")
 	case cclValues.TypeNameUint64:
-		builder.WriteLine("buffer.extend(struct.pack('<Q', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<Q', $field))")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
-		builder.WriteLine("buffer.extend(struct.pack('<f', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<f', $field))")
 	case cclValues.TypeNameFloat64:
-		builder.WriteLine("buffer.extend(struct.pack('<d', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<d', $field))")
 	case cclValues.TypeNameBool:
-		builder.WriteLine("buffer.extend(struct.pack('<b', 1 if " + fieldName + " else 0))")
+		builder.LineD("buffer.extend(struct.pack('<b', 1 if $field else 0))")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("buffer.extend(struct.pack('<I', len(" + fieldName + ")))").
-			WriteLine("buffer.extend(" + fieldName + ")")
+		builder.LineD("buffer.extend(struct.pack('<I', len($field)))").
+			LineD("buffer.extend($field)")
 	case cclValues.TypeNameDateTime:
-		builder.WriteLine("buffer.extend(struct.pack('<q', " + fieldName + "))")
+		builder.LineD("buffer.extend(struct.pack('<q', $field))")
 	default:
 		// Custom type handling
 		if field.IsCustomTypeModel() {
-			builder.WriteLine("if " + fieldName + ":").
+			builder.LineD("if $field:").
 				Indent().
-				WriteLine(fieldRawName + "_bytes = " + fieldName + ".serialize_binary()").
+				LineD("$rawFieldBytes = $field.serialize_binary()").
 				Unindent().
 				WriteLine("else:").
 				Indent().
-				WriteLine(fieldRawName + "_bytes = b'\\x00'").
+				LineD("$rawFieldBytes = b'\\x00'").
 				Unindent().
-				WriteLine("buffer.extend(struct.pack('<I', len(" + fieldRawName + "_bytes)))").
-				WriteLine("buffer.extend(" + fieldRawName + "_bytes)")
+				LineD("buffer.extend(struct.pack('<I', len($rawFieldBytes)))").
+				LineD("buffer.extend($rawFieldBytes)")
 		}
 	}
 	builder.NewLine()
@@ -85,8 +96,13 @@ func (c *PythonGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 func (c *PythonGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
 	targetFieldType := field.Type.GetUnderlyingType()
 	fieldName := "self." + caseUtils.ToSnakeCase(field.Name)
-	builder.WriteLine("buffer.extend(struct.pack('<I', len(" + fieldName + ")))").
-		WriteLine("for item in " + fieldName + ":").
+	builder.MapVarPairs(
+		"field", fieldName,
+	)
+	defer builder.UnmapVar("field")
+
+	builder.LineD("buffer.extend(struct.pack('<I', len($field)))").
+		LineD("for item in $field:").
 		Indent()
 
 	switch targetFieldType.GetName() {
@@ -137,8 +153,17 @@ func (c *PythonGenerationContext) generateArraySerializeBinary(field *CCLField, 
 }
 
 func (c *PythonGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
+	builder.MapVarPairs(
+		"model", model.Name,
+		"result", "model_result",
+	)
+	defer builder.UnmapVar(
+		"model",
+		"result",
+	)
+
 	builder.WriteLine("@staticmethod").
-		WriteLine("def deserialize_binary(data: bytes) -> " + model.Name + " | None:").
+		LineD("def deserialize_binary(data: bytes) -> $model | None:").
 		Indent().
 		// null-safety check
 		WriteLine("if not data or len(data) == 0 or (len(data) == 1 and data[0] == 0):").
@@ -150,7 +175,7 @@ func (c *PythonGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 		NewLine()
 
 	resultName := "model_result"
-	builder.WriteLine(resultName + " = " + model.Name + "()").
+	builder.LineD("$result = $model()").
 		NewLine()
 
 	for _, field := range model.Fields {
@@ -162,7 +187,7 @@ func (c *PythonGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 		c.generateFieldDeserializeBinary(resultName, field, builder)
 	}
 
-	builder.WriteLine("return " + resultName).
+	builder.LineD("return $result").
 		UnindentLine().
 		NewLine()
 	return nil
@@ -175,66 +200,80 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 ) {
 	fieldName := caseUtils.ToSnakeCase(field.Name)
 	resultField := resultName + "." + fieldName
+	builder.MapVarPairs(
+		"field", resultField,
+		"len", fieldName+"_len",
+		"rawField", fieldName,
+		"rawFieldBytes", fieldName+"_bytes",
+		"type", field.Type.GetName(),
+	)
+	defer builder.UnmapVar(
+		"field",
+		"len",
+		"rawField",
+		"rawFieldBytes",
+		"type",
+	)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(fieldName + "_len = struct.unpack_from('<I', buffer, offset)[0]").
+		builder.LineD("$len = struct.unpack_from('<I', buffer, offset)[0]").
 			WriteLine("offset += 4").
-			WriteLine("if " + fieldName + "_len > len(buffer) - offset:").
+			LineD("if $len > len(buffer) - offset:").
 			Indent().
 			WriteLine("return None").
 			Unindent().
-			WriteLine(resultField + " = bytes(buffer[offset:offset+" + fieldName + "_len]).decode(\"utf-8\")").
-			WriteLine("offset += " + fieldName + "_len")
+			LineD(`$field = bytes(buffer[offset:offset+$len]).decode("utf-8")`).
+			LineD("offset += $len")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteLine(resultField + " = struct.unpack_from('<i', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<i', buffer, offset)[0]").
 			WriteLine("offset += 4")
 	case cclValues.TypeNameInt8:
-		builder.WriteLine(resultField + " = struct.unpack_from('<b', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<b', buffer, offset)[0]").
 			WriteLine("offset += 1")
 	case cclValues.TypeNameInt16:
-		builder.WriteLine(resultField + " = struct.unpack_from('<h', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<h', buffer, offset)[0]").
 			WriteLine("offset += 2")
 	case cclValues.TypeNameInt64:
-		builder.WriteLine(resultField + " = struct.unpack_from('<q', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<q', buffer, offset)[0]").
 			WriteLine("offset += 8")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteLine(resultField + " = struct.unpack_from('<I', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<I', buffer, offset)[0]").
 			WriteLine("offset += 4")
 	case cclValues.TypeNameUint8:
-		builder.WriteLine(resultField + " = struct.unpack_from('<B', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<B', buffer, offset)[0]").
 			WriteLine("offset += 1")
 	case cclValues.TypeNameUint16:
-		builder.WriteLine(resultField + " = struct.unpack_from('<H', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<H', buffer, offset)[0]").
 			WriteLine("offset += 2")
 	case cclValues.TypeNameUint64:
-		builder.WriteLine(resultField + " = struct.unpack_from('<Q', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<Q', buffer, offset)[0]").
 			WriteLine("offset += 8")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
-		builder.WriteLine(resultField + " = struct.unpack_from('<f', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<f', buffer, offset)[0]").
 			WriteLine("offset += 4")
 	case cclValues.TypeNameFloat64:
-		builder.WriteLine(resultField + " = struct.unpack_from('<d', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<d', buffer, offset)[0]").
 			WriteLine("offset += 8")
 	case cclValues.TypeNameBool:
-		builder.WriteLine(resultField + " = struct.unpack_from('<b', buffer, offset)[0] != 0").
+		builder.LineD("$field = struct.unpack_from('<b', buffer, offset)[0] != 0").
 			WriteLine("offset += 1")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine(fieldName + "_len = struct.unpack_from('<I', buffer, offset)[0]").
+		builder.LineD("$len = struct.unpack_from('<I', buffer, offset)[0]").
 			WriteLine("offset += 4").
-			WriteLine(resultField + " = bytes(buffer[offset:offset+" + fieldName + "_len])").
-			WriteLine("offset += " + fieldName + "_len")
+			LineD("$field = bytes(buffer[offset:offset+$len])").
+			LineD("offset += $len")
 	case cclValues.TypeNameDateTime:
-		builder.WriteLine(resultField + " = struct.unpack_from('<q', buffer, offset)[0]").
+		builder.LineD("$field = struct.unpack_from('<q', buffer, offset)[0]").
 			WriteLine("offset += 8")
 	default:
 		// Custom type handling
 		if field.IsCustomTypeModel() {
-			builder.WriteLine(fieldName + "_len = struct.unpack_from('<I', buffer, offset)[0]").
+			builder.LineD("$len = struct.unpack_from('<I', buffer, offset)[0]").
 				WriteLine("offset += 4").
-				WriteLine(fieldName + "_bytes = bytes(buffer[offset:offset+" + fieldName + "_len])").
-				WriteLine("offset += " + fieldName + "_len").
-				WriteLine(resultField + " = " + field.Type.GetName() + ".deserialize_binary(" + fieldName + "_bytes)")
+				LineD("$rawFieldBytes = bytes(buffer[offset:offset+$len])").
+				LineD("offset += $len").
+				LineD("$field = $type.deserialize_binary($rawFieldBytes)")
 		}
 	}
 	builder.NewLine()
@@ -248,11 +287,21 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 	targetFieldType := field.Type.GetUnderlyingType()
 	fieldName := caseUtils.ToSnakeCase(field.Name)
 	resultField := resultName + "." + fieldName
+	builder.MapVarPairs(
+		"field", resultField,
+		"len", fieldName+"_len",
+		"type", targetFieldType.GetName(),
+	)
+	defer builder.UnmapVar(
+		"field",
+		"len",
+		"type",
+	)
 
-	builder.WriteLine(fieldName + "_len = struct.unpack_from('<I', buffer, offset)[0]").
+	builder.LineD("$len = struct.unpack_from('<I', buffer, offset)[0]").
 		WriteLine("offset += 4").
-		WriteLine(resultField + " = []").
-		WriteLine("for _ in range(" + fieldName + "_len):").
+		LineD("$field = []").
+		LineD("for _ in range($len):").
 		Indent()
 
 	switch targetFieldType.GetName() {
@@ -265,39 +314,39 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 			Unindent().
 			WriteLine("item = bytes(buffer[offset:offset+item_len]).decode(\"utf-8\")").
 			WriteLine("offset += item_len").
-			WriteLine(resultField + ".append(item)")
+			LineD("$field.append(item)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<i', buffer, offset)[0])").
+		builder.LineD("$field.append(struct.unpack_from('<i', buffer, offset)[0])").
 			WriteLine("offset += 4")
 	case cclValues.TypeNameInt8:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<b', buffer, offset)[0])").
+		builder.LineD("$field.append(struct.unpack_from('<b', buffer, offset)[0])").
 			WriteLine("offset += 1")
 	case cclValues.TypeNameInt16:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<h', buffer, offset)[0])").
+		builder.LineD("$field.append(struct.unpack_from('<h', buffer, offset)[0])").
 			WriteLine("offset += 2")
 	case cclValues.TypeNameInt64:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<q', buffer, offset)[0])").
+		builder.LineD("$field.append(struct.unpack_from('<q', buffer, offset)[0])").
 			WriteLine("offset += 8")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<I', buffer, offset)[0])").
+		builder.LineD("$field.append(struct.unpack_from('<I', buffer, offset)[0])").
 			WriteLine("offset += 4")
 	case cclValues.TypeNameUint8:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<B', buffer, offset)[0])").
+		builder.LineD("$field.append(struct.unpack_from('<B', buffer, offset)[0])").
 			WriteLine("offset += 1")
 	case cclValues.TypeNameUint16:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<H', buffer, offset)[0])").
+		builder.LineD("$field.append(struct.unpack_from('<H', buffer, offset)[0])").
 			WriteLine("offset += 2")
 	case cclValues.TypeNameUint64:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<Q', buffer, offset)[0])").
+		builder.LineD("$field.append(struct.unpack_from('<Q', buffer, offset)[0])").
 			WriteLine("offset += 8")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<f', buffer, offset)[0])").
+		builder.LineD("$field.append(struct.unpack_from('<f', buffer, offset)[0])").
 			WriteLine("offset += 4")
 	case cclValues.TypeNameFloat64:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<d', buffer, offset)[0])").
+		builder.LineD("$field.append(struct.unpack_from('<d', buffer, offset)[0])").
 			WriteLine("offset += 8")
 	case cclValues.TypeNameBool:
-		builder.WriteLine(resultField + ".append(struct.unpack_from('<b', buffer, offset)[0] != 0)").
+		builder.LineD("$field.append(struct.unpack_from('<b', buffer, offset)[0] != 0)").
 			WriteLine("offset += 1")
 	case cclValues.TypeNameBytes:
 		builder.WriteLine("item_len = struct.unpack_from('<I', buffer, offset)[0]").
@@ -306,7 +355,7 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 			Indent().
 			WriteLine("return None").
 			Unindent().
-			WriteLine(resultField + ".append(bytes(buffer[offset:offset+item_len]))").
+			LineD("$field.append(bytes(buffer[offset:offset+item_len]))").
 			WriteLine("offset += item_len")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
@@ -318,7 +367,7 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 				Unindent().
 				WriteLine("item_bytes = bytes(buffer[offset:offset+item_len])").
 				WriteLine("offset += item_len").
-				WriteLine(resultField + ".append(" + targetFieldType.GetName() + ".deserialize_binary(item_bytes))")
+				LineD("$field.append($type.deserialize_binary(item_bytes))")
 		}
 	}
 	builder.UnindentLine()

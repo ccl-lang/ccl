@@ -74,14 +74,19 @@ func (c *PythonGenerationContext) generateDeserializeJsonDictMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) error {
+	builder.MapVarPairs(
+		"model", model.Name,
+	)
+	defer builder.UnmapVar("model")
+
 	builder.WriteLine("@staticmethod").
-		WriteLine("def deserialize_json_dict(data: dict) -> \"" + model.Name + "\" | None:").
+		LineD(`def deserialize_json_dict(data: dict) -> "$model" | None:`).
 		Indent().
 		WriteLine("if not isinstance(data, dict):").
 		Indent().
 		WriteLine("return None").
 		UnindentLine().
-		WriteLine("model_result = " + model.Name + "()").
+		LineD("model_result = $model()").
 		NewLine()
 
 	for _, field := range model.Fields {
@@ -113,8 +118,13 @@ func (c *PythonGenerationContext) generateDeserializeJsonMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) {
+	builder.MapVarPairs(
+		"model", model.Name,
+	)
+	defer builder.UnmapVar("model")
+
 	builder.WriteLine("@staticmethod").
-		WriteLine("def deserialize_json(json_text: str) -> \"" + model.Name + "\" | None:").
+		LineD(`def deserialize_json(json_text: str) -> "$model" | None:`).
 		Indent().
 		WriteLine("if not json_text:").
 		Indent().
@@ -128,7 +138,7 @@ func (c *PythonGenerationContext) generateDeserializeJsonMethod(
 		Indent().
 		WriteLine("return None").
 		UnindentLine().
-		WriteLine("return " + model.Name + ".deserialize_json_dict(data)").
+		LineD("return $model.deserialize_json_dict(data)").
 		UnindentLine().
 		NewLine()
 }
@@ -140,15 +150,23 @@ func (c *PythonGenerationContext) generateFieldSerializeJson(
 ) error {
 	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	fieldName := "self." + fieldRawName
+	builder.MapVarPairs(
+		"field", fieldName,
+		"jsonName", jsonName,
+	)
+	defer builder.UnmapVar(
+		"field",
+		"jsonName",
+	)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("data[\"" + jsonName + "\"] = base64.b64encode(" + fieldName + ").decode(\"ascii\")")
+		builder.LineD(`data["$jsonName"] = base64.b64encode($field).decode("ascii")`)
 	default:
 		if field.IsCustomTypeModel() {
-			builder.WriteLine("data[\"" + jsonName + "\"] = " + fieldName + ".serialize_json_dict() if " + fieldName + " is not None else None")
+			builder.LineD(`data["$jsonName"] = $field.serialize_json_dict() if $field is not None else None`)
 		} else if c.isPythonJsonPrimitive(field.Type) {
-			builder.WriteLine("data[\"" + jsonName + "\"] = " + fieldName)
+			builder.LineD(`data["$jsonName"] = $field`)
 		} else {
 			return &cclErrors.UnsupportedFieldTypeError{
 				TypeName:       field.Type.GetName(),
@@ -172,21 +190,31 @@ func (c *PythonGenerationContext) generateArraySerializeJson(
 	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	fieldName := "self." + fieldRawName
 	listName := fieldRawName + "_json_list"
+	builder.MapVarPairs(
+		"field", fieldName,
+		"jsonName", jsonName,
+		"list", listName,
+	)
+	defer builder.UnmapVar(
+		"field",
+		"jsonName",
+		"list",
+	)
 
-	builder.WriteLine(listName + " = []").
-		WriteLine("if " + fieldName + " is not None:").
+	builder.LineD("$list = []").
+		LineD("if $field is not None:").
 		Indent().
-		WriteLine("for item in " + fieldName + ":").
+		LineD("for item in $field:").
 		Indent()
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameBytes:
-		builder.WriteLine(listName + ".append(base64.b64encode(item).decode(\"ascii\"))")
+		builder.LineD(`$list.append(base64.b64encode(item).decode("ascii"))`)
 	default:
 		if targetFieldType.IsCustomTypeModel() {
-			builder.WriteLine(listName + ".append(item.serialize_json_dict() if item is not None else None)")
+			builder.LineD("$list.append(item.serialize_json_dict() if item is not None else None)")
 		} else if c.isPythonJsonPrimitive(targetFieldType) {
-			builder.WriteLine(listName + ".append(item)")
+			builder.LineD("$list.append(item)")
 		} else {
 			return &cclErrors.UnsupportedFieldTypeError{
 				TypeName:       targetFieldType.GetName(),
@@ -199,7 +227,7 @@ func (c *PythonGenerationContext) generateArraySerializeJson(
 
 	builder.Unindent().
 		Unindent().
-		WriteLine("data[\"" + jsonName + "\"] = " + listName).
+		LineD(`data["$jsonName"] = $list`).
 		NewLine()
 
 	return nil
@@ -213,35 +241,47 @@ func (c *PythonGenerationContext) generateFieldDeserializeJson(
 	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	resultField := "model_result." + fieldRawName
 	valueName := fieldRawName + "_value"
+	builder.MapVarPairs(
+		"field", resultField,
+		"jsonName", jsonName,
+		"type", field.Type.GetName(),
+		"value", valueName,
+	)
+	defer builder.UnmapVar(
+		"field",
+		"jsonName",
+		"type",
+		"value",
+	)
 
-	builder.WriteLine(valueName + " = data.get(\"" + jsonName + "\", None)").
-		WriteLine("if " + valueName + " is not None:").
+	builder.LineD(`$value = data.get("$jsonName", None)`).
+		LineD("if $value is not None:").
 		Indent()
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(resultField + " = str(" + valueName + ")")
+		builder.LineD("$field = str($value)")
 	case cclValues.TypeNameBool:
-		builder.WriteLine("if isinstance(" + valueName + ", bool):").
+		builder.LineD("if isinstance($value, bool):").
 			Indent().
-			WriteLine(resultField + " = " + valueName).
+			LineD("$field = $value").
 			Unindent().
-			WriteLine("elif isinstance(" + valueName + ", str):").
+			LineD("elif isinstance($value, str):").
 			Indent().
-			WriteLine(resultField + " = " + valueName + ".lower() not in (\"\", \"0\", \"false\")").
+			LineD(`$field = $value.lower() not in ("", "0", "false")`).
 			Unindent().
 			WriteLine("else:").
 			Indent().
-			WriteLine(resultField + " = bool(" + valueName + ")").
+			LineD("$field = bool($value)").
 			Unindent()
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("if not isinstance(" + valueName + ", str):").
+		builder.LineD("if not isinstance($value, str):").
 			Indent().
 			WriteLine("return None").
 			Unindent().
 			WriteLine("try:").
 			Indent().
-			WriteLine(resultField + " = base64.b64decode(" + valueName + ")").
+			LineD("$field = base64.b64decode($value)").
 			Unindent().
 			WriteLine("except ValueError:").
 			Indent().
@@ -251,7 +291,7 @@ func (c *PythonGenerationContext) generateFieldDeserializeJson(
 		if c.isPythonJsonInteger(field.Type) {
 			builder.WriteLine("try:").
 				Indent().
-				WriteLine(resultField + " = int(" + valueName + ")").
+				LineD("$field = int($value)").
 				Unindent().
 				WriteLine("except (TypeError, ValueError):").
 				Indent().
@@ -260,15 +300,15 @@ func (c *PythonGenerationContext) generateFieldDeserializeJson(
 		} else if c.isPythonJsonFloat(field.Type) {
 			builder.WriteLine("try:").
 				Indent().
-				WriteLine(resultField + " = float(" + valueName + ")").
+				LineD("$field = float($value)").
 				Unindent().
 				WriteLine("except (TypeError, ValueError):").
 				Indent().
 				WriteLine("return None").
 				Unindent()
 		} else if field.IsCustomTypeModel() {
-			builder.WriteLine(resultField + " = " + field.Type.GetName() + ".deserialize_json_dict(" + valueName + ")").
-				WriteLine("if " + resultField + " is None:").
+			builder.LineD("$field = $type.deserialize_json_dict($value)").
+				LineD("if $field is None:").
 				Indent().
 				WriteLine("return None").
 				Unindent()
@@ -298,39 +338,53 @@ func (c *PythonGenerationContext) generateArrayDeserializeJson(
 	resultField := "model_result." + fieldRawName
 	valueName := fieldRawName + "_value"
 	itemName := fieldRawName + "_item"
+	builder.MapVarPairs(
+		"field", resultField,
+		"item", itemName,
+		"jsonName", jsonName,
+		"type", targetFieldType.GetName(),
+		"value", valueName,
+	)
+	defer builder.UnmapVar(
+		"field",
+		"item",
+		"jsonName",
+		"type",
+		"value",
+	)
 
-	builder.WriteLine(valueName + " = data.get(\"" + jsonName + "\", None)").
-		WriteLine("if " + valueName + " is None:").
+	builder.LineD(`$value = data.get("$jsonName", None)`).
+		LineD("if $value is None:").
 		Indent().
-		WriteLine(resultField + " = []").
+		LineD("$field = []").
 		Unindent().
-		WriteLine("elif not isinstance(" + valueName + ", list):").
+		LineD("elif not isinstance($value, list):").
 		Indent().
 		WriteLine("return None").
 		Unindent().
 		WriteLine("else:").
 		Indent().
-		WriteLine(resultField + " = []").
-		WriteLine("for item in " + valueName + ":").
+		LineD("$field = []").
+		LineD("for item in $value:").
 		Indent()
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(resultField + ".append(str(item))")
+		builder.LineD("$field.append(str(item))")
 	case cclValues.TypeNameBool:
 		builder.WriteLine("if isinstance(item, bool):").
 			Indent().
-			WriteLine(itemName + " = item").
+			LineD("$item = item").
 			Unindent().
 			WriteLine("elif isinstance(item, str):").
 			Indent().
-			WriteLine(itemName + " = item.lower() not in (\"\", \"0\", \"false\")").
+			LineD(`$item = item.lower() not in ("", "0", "false")`).
 			Unindent().
 			WriteLine("else:").
 			Indent().
-			WriteLine(itemName + " = bool(item)").
+			LineD("$item = bool(item)").
 			Unindent().
-			WriteLine(resultField + ".append(" + itemName + ")")
+			LineD("$field.append($item)")
 	case cclValues.TypeNameBytes:
 		builder.WriteLine("if not isinstance(item, str):").
 			Indent().
@@ -338,47 +392,47 @@ func (c *PythonGenerationContext) generateArrayDeserializeJson(
 			Unindent().
 			WriteLine("try:").
 			Indent().
-			WriteLine(itemName + " = base64.b64decode(item)").
+			LineD("$item = base64.b64decode(item)").
 			Unindent().
 			WriteLine("except ValueError:").
 			Indent().
 			WriteLine("return None").
 			Unindent().
-			WriteLine(resultField + ".append(" + itemName + ")")
+			LineD("$field.append($item)")
 	default:
 		if c.isPythonJsonInteger(targetFieldType) {
 			builder.WriteLine("try:").
 				Indent().
-				WriteLine(itemName + " = int(item)").
+				LineD("$item = int(item)").
 				Unindent().
 				WriteLine("except (TypeError, ValueError):").
 				Indent().
 				WriteLine("return None").
 				Unindent().
-				WriteLine(resultField + ".append(" + itemName + ")")
+				LineD("$field.append($item)")
 		} else if c.isPythonJsonFloat(targetFieldType) {
 			builder.WriteLine("try:").
 				Indent().
-				WriteLine(itemName + " = float(item)").
+				LineD("$item = float(item)").
 				Unindent().
 				WriteLine("except (TypeError, ValueError):").
 				Indent().
 				WriteLine("return None").
 				Unindent().
-				WriteLine(resultField + ".append(" + itemName + ")")
+				LineD("$field.append($item)")
 		} else if targetFieldType.IsCustomTypeModel() {
 			builder.WriteLine("if item is None:").
 				Indent().
-				WriteLine(resultField + ".append(None)").
+				LineD("$field.append(None)").
 				Unindent().
 				WriteLine("else:").
 				Indent().
-				WriteLine(itemName + " = " + targetFieldType.GetName() + ".deserialize_json_dict(item)").
-				WriteLine("if " + itemName + " is None:").
+				LineD("$item = $type.deserialize_json_dict(item)").
+				LineD("if $item is None:").
 				Indent().
 				WriteLine("return None").
 				Unindent().
-				WriteLine(resultField + ".append(" + itemName + ")").
+				LineD("$field.append($item)").
 				Unindent()
 		} else {
 			return &cclErrors.UnsupportedFieldTypeError{

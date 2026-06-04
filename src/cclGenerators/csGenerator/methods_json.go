@@ -14,10 +14,13 @@ func (c *CSharpGenerationContext) generateSerializeJsonMethods(
 	if err := c.generateSerializeJsonObjectMethod(model, builder); err != nil {
 		return err
 	}
+
 	c.generateSerializeJsonMethod(builder)
+
 	if err := c.generateDeserializeJsonObjectMethod(model, builder); err != nil {
 		return err
 	}
+
 	c.generateDeserializeJsonMethod(model, builder)
 	return nil
 }
@@ -26,11 +29,11 @@ func (c *CSharpGenerationContext) generateSerializeJsonObjectMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	builder.WriteLine("public JsonObject SerializeJsonObject()")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("var data = new JsonObject();")
-	builder.NewLine()
+	builder.WriteLine("public JsonObject SerializeJsonObject()").
+		WriteLine("{").
+		Indent().
+		WriteLine("var data = new JsonObject();").
+		NewLine()
 
 	for _, field := range model.Fields {
 		jsonName, err := c.GetJsonFieldName(CurrentLanguage, model, field)
@@ -50,36 +53,43 @@ func (c *CSharpGenerationContext) generateSerializeJsonObjectMethod(
 		}
 	}
 
-	builder.WriteLine("return data;")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.NewLine()
+	builder.WriteLine("return data;").
+		Unindent().
+		WriteLine("}").
+		NewLine()
 	return nil
 }
 
 func (c *CSharpGenerationContext) generateSerializeJsonMethod(builder *codeBuilder.CodeBuilder) {
-	builder.WriteLine("public string SerializeJson()")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("return SerializeJsonObject().ToJsonString();")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.NewLine()
+	builder.WriteLine("public string SerializeJson()").
+		WriteLine("{").
+		Indent().
+		WriteLine("return SerializeJsonObject().ToJsonString();").
+		Unindent().
+		WriteLine("}").
+		NewLine()
 }
 
 func (c *CSharpGenerationContext) generateDeserializeJsonObjectMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	builder.WriteLine("public static " + model.Name + " DeserializeJsonObject(JsonNode node)")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("try")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("if (node == null || node is not JsonObject data) return null;")
-	builder.WriteLine("var result = new " + model.Name + "();")
-	builder.NewLine()
+	builder.MapVarPairs(
+		"model", model.Name,
+	)
+	defer builder.UnmapVar(
+		"model",
+	)
+
+	builder.LineD("public static $model DeserializeJsonObject(JsonNode node)").
+		WriteLine("{").
+		Indent().
+		WriteLine("try").
+		WriteLine("{").
+		Indent().
+		WriteLine("if (node == null || node is not JsonObject data) return null;").
+		LineD("var result = new $model();").
+		NewLine()
 
 	for _, field := range model.Fields {
 		jsonName, err := c.GetJsonFieldName(CurrentLanguage, model, field)
@@ -99,18 +109,18 @@ func (c *CSharpGenerationContext) generateDeserializeJsonObjectMethod(
 		}
 	}
 
-	builder.WriteLine("return result;")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.WriteLine("catch")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("return null;")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.NewLine()
+	builder.WriteLine("return result;").
+		Unindent().
+		WriteLine("}").
+		WriteLine("catch").
+		WriteLine("{").
+		Indent().
+		WriteLine("return null;").
+		Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}").
+		NewLine()
 	return nil
 }
 
@@ -118,25 +128,32 @@ func (c *CSharpGenerationContext) generateDeserializeJsonMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) {
-	builder.WriteLine("public static " + model.Name + " DeserializeJson(string jsonText)")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("if (string.IsNullOrEmpty(jsonText)) return null;")
-	builder.WriteLine("try")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("return DeserializeJsonObject(JsonNode.Parse(jsonText));")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.WriteLine("catch")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("return null;")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.NewLine()
+	builder.MapVarPairs(
+		"model", model.Name,
+	)
+	defer builder.UnmapVar(
+		"model",
+	)
+
+	builder.LineD("public static $model DeserializeJson(string jsonText)").
+		WriteLine("{").
+		Indent().
+		WriteLine("if (string.IsNullOrEmpty(jsonText)) return null;").
+		WriteLine("try").
+		WriteLine("{").
+		Indent().
+		WriteLine("return DeserializeJsonObject(JsonNode.Parse(jsonText));").
+		Unindent().
+		WriteLine("}").
+		WriteLine("catch").
+		WriteLine("{").
+		Indent().
+		WriteLine("return null;").
+		Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}").
+		NewLine()
 }
 
 func (c *CSharpGenerationContext) generateFieldSerializeJson(
@@ -145,18 +162,28 @@ func (c *CSharpGenerationContext) generateFieldSerializeJson(
 	builder *codeBuilder.CodeBuilder,
 ) error {
 	fieldName := "this." + caseUtils.ToPascalCase(field.Name)
+	builder.MapVarPairs(
+		"field", fieldName,
+		"jsonName", jsonName,
+	)
+	defer builder.UnmapVar(
+		"field",
+		"jsonName",
+	)
+
 	switch field.Type.GetName() {
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("data[\"" + jsonName + "\"] = Convert.ToBase64String(" + fieldName + " ?? new byte[0]);")
+		builder.LineD(`data["$jsonName"] = Convert.ToBase64String($field ?? new byte[0]);`)
 	default:
 		if field.IsCustomTypeModel() {
-			builder.WriteLine("data[\"" + jsonName + "\"] = " + fieldName + " != null ? " + fieldName + ".SerializeJsonObject() : null;")
+			builder.LineD(`data["$jsonName"] = $field != null ? $field.SerializeJsonObject() : null;`)
 		} else if c.isCSharpJsonPrimitive(field.Type) {
-			builder.WriteLine("data[\"" + jsonName + "\"] = " + fieldName + ";")
+			builder.LineD(`data["$jsonName"] = $field;`)
 		} else {
 			return c.unsupportedCSharpJsonField(field)
 		}
 	}
+
 	builder.NewLine()
 	return nil
 }
@@ -170,33 +197,44 @@ func (c *CSharpGenerationContext) generateArraySerializeJson(
 	fieldName := "this." + caseUtils.ToPascalCase(field.Name)
 	arrayName := caseUtils.ToCamelCase(field.Name) + "JsonArray"
 
-	builder.WriteLine("var " + arrayName + " = new JsonArray();")
-	builder.WriteLine("if (" + fieldName + " != null)")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("foreach (var item in " + fieldName + ")")
-	builder.WriteLine("{")
-	builder.Indent()
+	builder.MapVarPairs(
+		"array", arrayName,
+		"field", fieldName,
+		"jsonName", jsonName,
+	)
+	defer builder.UnmapVar(
+		"array",
+		"field",
+		"jsonName",
+	)
+
+	builder.LineD("var $array = new JsonArray();").
+		LineD("if ($field != null)").
+		WriteLine("{").
+		Indent().
+		LineD("foreach (var item in $field)").
+		WriteLine("{").
+		Indent()
 
 	switch targetType.GetName() {
 	case cclValues.TypeNameBytes:
-		builder.WriteLine(arrayName + ".Add(Convert.ToBase64String(item ?? new byte[0]));")
+		builder.LineD("$array.Add(Convert.ToBase64String(item ?? new byte[0]));")
 	default:
 		if targetType.IsCustomTypeModel() {
-			builder.WriteLine(arrayName + ".Add(item != null ? item.SerializeJsonObject() : null);")
+			builder.LineD("$array.Add(item != null ? item.SerializeJsonObject() : null);")
 		} else if c.isCSharpJsonPrimitive(targetType) {
-			builder.WriteLine(arrayName + ".Add(item);")
+			builder.LineD("$array.Add(item);")
 		} else {
 			return c.unsupportedCSharpJsonField(field)
 		}
 	}
 
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.WriteLine("data[\"" + jsonName + "\"] = " + arrayName + ";")
-	builder.NewLine()
+	builder.Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}").
+		LineD(`data["$jsonName"] = $array;`).
+		NewLine()
 	return nil
 }
 
@@ -209,31 +247,46 @@ func (c *CSharpGenerationContext) generateFieldDeserializeJson(
 	resultField := "result." + fieldName
 	nodeName := caseUtils.ToCamelCase(field.Name) + "Node"
 
-	builder.WriteLine("if (data.TryGetPropertyValue(\"" + jsonName + "\", out var " + nodeName + ") && " + nodeName + " != null)")
-	builder.WriteLine("{")
-	builder.Indent()
+	builder.MapVarPairs(
+		"field", resultField,
+		"fieldType", c.getCSharpType(field),
+		"jsonName", jsonName,
+		"node", nodeName,
+		"type", field.Type.GetName(),
+	)
+	defer builder.UnmapVar(
+		"field",
+		"fieldType",
+		"jsonName",
+		"node",
+		"type",
+	)
+
+	builder.LineD(`if (data.TryGetPropertyValue("$jsonName", out var $node) && $node != null)`).
+		WriteLine("{").
+		Indent()
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(resultField + " = " + nodeName + ".GetValue<string>();")
+		builder.LineD("$field = $node.GetValue<string>();")
 	case cclValues.TypeNameBool:
-		builder.WriteLine(resultField + " = " + nodeName + ".GetValue<bool>();")
+		builder.LineD("$field = $node.GetValue<bool>();")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine(resultField + " = Convert.FromBase64String(" + nodeName + ".GetValue<string>());")
+		builder.LineD("$field = Convert.FromBase64String($node.GetValue<string>());")
 	default:
 		if c.isCSharpJsonNumber(field.Type) {
-			builder.WriteLine(resultField + " = " + nodeName + ".GetValue<" + c.getCSharpType(field) + ">();")
+			builder.LineD("$field = $node.GetValue<$fieldType>();")
 		} else if field.IsCustomTypeModel() {
-			builder.WriteLine(resultField + " = " + field.Type.GetName() + ".DeserializeJsonObject(" + nodeName + ");")
-			builder.WriteLine("if (" + resultField + " == null) return null;")
+			builder.LineD("$field = $type.DeserializeJsonObject($node);").
+				LineD("if ($field == null) return null;")
 		} else {
 			return c.unsupportedCSharpJsonField(field)
 		}
 	}
 
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.NewLine()
+	builder.Unindent().
+		WriteLine("}").
+		NewLine()
 	return nil
 }
 
@@ -248,41 +301,59 @@ func (c *CSharpGenerationContext) generateArrayDeserializeJson(
 	nodeName := caseUtils.ToCamelCase(field.Name) + "Node"
 	arrayName := caseUtils.ToCamelCase(field.Name) + "Array"
 
-	builder.WriteLine("if (data.TryGetPropertyValue(\"" + jsonName + "\", out var " + nodeName + ") && " + nodeName + " != null)")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("if (" + nodeName + " is not JsonArray " + arrayName + ") return null;")
-	builder.WriteLine(resultField + " = new " + c.getCSharpType(field) + "();")
-	builder.WriteLine("foreach (var item in " + arrayName + ")")
-	builder.WriteLine("{")
-	builder.Indent()
-	builder.WriteLine("if (item == null) return null;")
+	builder.MapVarPairs(
+		"array", arrayName,
+		"arrayType", c.getCSharpType(field),
+		"field", resultField,
+		"itemType", c.getCSharpArrayItemType(targetType),
+		"jsonName", jsonName,
+		"node", nodeName,
+		"type", targetType.GetName(),
+	)
+	defer builder.UnmapVar(
+		"array",
+		"arrayType",
+		"field",
+		"itemType",
+		"jsonName",
+		"node",
+		"type",
+	)
+
+	builder.LineD(`if (data.TryGetPropertyValue("$jsonName", out var $node) && $node != null)`).
+		WriteLine("{").
+		Indent().
+		LineD("if ($node is not JsonArray $array) return null;").
+		LineD("$field = new $arrayType();").
+		LineD("foreach (var item in $array)").
+		WriteLine("{").
+		Indent().
+		WriteLine("if (item == null) return null;")
 
 	switch targetType.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(resultField + ".Add(item.GetValue<string>());")
+		builder.LineD("$field.Add(item.GetValue<string>());")
 	case cclValues.TypeNameBool:
-		builder.WriteLine(resultField + ".Add(item.GetValue<bool>());")
+		builder.LineD("$field.Add(item.GetValue<bool>());")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine(resultField + ".Add(Convert.FromBase64String(item.GetValue<string>()));")
+		builder.LineD("$field.Add(Convert.FromBase64String(item.GetValue<string>()));")
 	default:
 		if c.isCSharpJsonNumber(targetType) {
-			fieldType := c.getCSharpArrayItemType(targetType)
-			builder.WriteLine(resultField + ".Add(item.GetValue<" + fieldType + ">());")
+			builder.LineD("$field.Add(item.GetValue<$itemType>());")
 		} else if targetType.IsCustomTypeModel() {
-			builder.WriteLine("var itemValue = " + targetType.GetName() + ".DeserializeJsonObject(item);")
-			builder.WriteLine("if (itemValue == null) return null;")
-			builder.WriteLine(resultField + ".Add(itemValue);")
+			builder.LineD("var itemValue = $type.DeserializeJsonObject(item);").
+				WriteLine("if (itemValue == null) return null;").
+				LineD("$field.Add(itemValue);")
 		} else {
 			return c.unsupportedCSharpJsonField(field)
 		}
 	}
 
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.Unindent()
-	builder.WriteLine("}")
-	builder.NewLine()
+	builder.Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}").
+		NewLine()
 	return nil
 }
 

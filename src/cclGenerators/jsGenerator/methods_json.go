@@ -98,10 +98,15 @@ func (c *JavaScriptGenerationContext) generateDeserializeJsonObjectMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) error {
+	builder.MapVarPairs(
+		"model", model.Name,
+	)
+	defer builder.UnmapVar("model")
+
 	builder.WriteLine("static deserializeJsonObject(data) {").
 		Indent().
 		WriteLine("if (data === null || typeof data !== \"object\" || Array.isArray(data)) return null;").
-		WriteLine("const result = new " + model.Name + "();").
+		LineD("const result = new $model();").
 		NewLine()
 
 	for _, field := range model.Fields {
@@ -134,12 +139,17 @@ func (c *JavaScriptGenerationContext) generateDeserializeJsonMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) {
+	builder.MapVarPairs(
+		"model", model.Name,
+	)
+	defer builder.UnmapVar("model")
+
 	builder.WriteLine("static deserializeJson(jsonText) {").
 		Indent().
 		WriteLine("if (!jsonText) return null;").
 		WriteLine("try {").
 		Indent().
-		WriteLine("return " + model.Name + ".deserializeJsonObject(JSON.parse(jsonText));").
+		LineD("return $model.deserializeJsonObject(JSON.parse(jsonText));").
 		Unindent().
 		WriteLine("} catch (_) {").
 		Indent().
@@ -157,15 +167,25 @@ func (c *JavaScriptGenerationContext) generateFieldSerializeJson(
 	builder *codeBuilder.CodeBuilder,
 ) error {
 	fieldName := "this." + caseUtils.ToCamelCase(field.Name)
+	builder.MapVarPairs(
+		"field", fieldName,
+		"helperOwner", field.OwnedBy.GetName(),
+		"jsonName", jsonName,
+	)
+	defer builder.UnmapVar(
+		"field",
+		"helperOwner",
+		"jsonName",
+	)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("data[\"" + jsonName + "\"] = " + field.OwnedBy.GetName() + "._bytesToBase64(" + fieldName + ");")
+		builder.LineD(`data["$jsonName"] = $helperOwner._bytesToBase64($field);`)
 	default:
 		if field.IsCustomTypeModel() {
-			builder.WriteLine("data[\"" + jsonName + "\"] = " + fieldName + " ? " + fieldName + ".serializeJsonObject() : null;")
+			builder.LineD(`data["$jsonName"] = $field ? $field.serializeJsonObject() : null;`)
 		} else if c.isJavaScriptJsonPrimitive(field.Type) {
-			builder.WriteLine("data[\"" + jsonName + "\"] = " + fieldName + ";")
+			builder.LineD(`data["$jsonName"] = $field;`)
 		} else {
 			return &cclErrors.UnsupportedFieldTypeError{
 				TypeName:       field.Type.GetName(),
@@ -188,21 +208,33 @@ func (c *JavaScriptGenerationContext) generateArraySerializeJson(
 	targetFieldType := field.Type.GetUnderlyingType()
 	fieldName := "this." + caseUtils.ToCamelCase(field.Name)
 	listName := caseUtils.ToCamelCase(field.Name) + "JsonList"
+	builder.MapVarPairs(
+		"field", fieldName,
+		"helperOwner", field.OwnedBy.GetName(),
+		"jsonName", jsonName,
+		"list", listName,
+	)
+	defer builder.UnmapVar(
+		"field",
+		"helperOwner",
+		"jsonName",
+		"list",
+	)
 
-	builder.WriteLine("const " + listName + " = [];").
-		WriteLine("if (" + fieldName + ") {").
+	builder.LineD("const $list = [];").
+		LineD("if ($field) {").
 		Indent().
-		WriteLine("for (const item of " + fieldName + ") {").
+		LineD("for (const item of $field) {").
 		Indent()
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameBytes:
-		builder.WriteLine(listName + ".push(" + field.OwnedBy.GetName() + "._bytesToBase64(item));")
+		builder.LineD("$list.push($helperOwner._bytesToBase64(item));")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
-			builder.WriteLine(listName + ".push(item ? item.serializeJsonObject() : null);")
+			builder.LineD("$list.push(item ? item.serializeJsonObject() : null);")
 		} else if c.isJavaScriptJsonPrimitive(targetFieldType) {
-			builder.WriteLine(listName + ".push(item);")
+			builder.LineD("$list.push(item);")
 		} else {
 			return &cclErrors.UnsupportedFieldTypeError{
 				TypeName:       targetFieldType.GetName(),
@@ -217,7 +249,7 @@ func (c *JavaScriptGenerationContext) generateArraySerializeJson(
 		WriteLine("}").
 		Unindent().
 		WriteLine("}").
-		WriteLine("data[\"" + jsonName + "\"] = " + listName + ";").
+		LineD(`data["$jsonName"] = $list;`).
 		NewLine()
 
 	return nil
@@ -231,40 +263,54 @@ func (c *JavaScriptGenerationContext) generateFieldDeserializeJson(
 	fieldName := caseUtils.ToCamelCase(field.Name)
 	resultField := "result." + fieldName
 	valueName := fieldName + "Value"
+	builder.MapVarPairs(
+		"field", resultField,
+		"helperOwner", field.OwnedBy.GetName(),
+		"jsonName", jsonName,
+		"type", field.Type.GetName(),
+		"value", valueName,
+	)
+	defer builder.UnmapVar(
+		"field",
+		"helperOwner",
+		"jsonName",
+		"type",
+		"value",
+	)
 
-	builder.WriteLine("const " + valueName + " = data[\"" + jsonName + "\"];").
-		WriteLine("if (" + valueName + " !== undefined && " + valueName + " !== null) {").
+	builder.LineD(`const $value = data["$jsonName"];`).
+		LineD("if ($value !== undefined && $value !== null) {").
 		Indent()
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(resultField + " = String(" + valueName + ");")
+		builder.LineD("$field = String($value);")
 	case cclValues.TypeNameBool:
-		builder.WriteLine("if (typeof " + valueName + " === \"boolean\") {").
+		builder.LineD(`if (typeof $value === "boolean") {`).
 			Indent().
-			WriteLine(resultField + " = " + valueName + ";").
+			LineD("$field = $value;").
 			Unindent().
-			WriteLine("} else if (typeof " + valueName + " === \"string\") {").
+			LineD(`} else if (typeof $value === "string") {`).
 			Indent().
-			WriteLine(resultField + " = " + valueName + " !== \"\" && " + valueName + " !== \"0\" && " + valueName + ".toLowerCase() !== \"false\";").
+			LineD(`$field = $value !== "" && $value !== "0" && $value.toLowerCase() !== "false";`).
 			Unindent().
 			WriteLine("} else {").
 			Indent().
-			WriteLine(resultField + " = Boolean(" + valueName + ");").
+			LineD("$field = Boolean($value);").
 			Unindent().
 			WriteLine("}")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("const bytesValue = " + field.OwnedBy.GetName() + "._base64ToBytes(" + valueName + ");").
+		builder.LineD("const bytesValue = $helperOwner._base64ToBytes($value);").
 			WriteLine("if (bytesValue === null) return null;").
-			WriteLine(resultField + " = bytesValue;")
+			LineD("$field = bytesValue;")
 	default:
 		if c.isJavaScriptJsonNumber(field.Type) {
-			builder.WriteLine("const numberValue = Number(" + valueName + ");").
+			builder.LineD("const numberValue = Number($value);").
 				WriteLine("if (!Number.isFinite(numberValue)) return null;").
-				WriteLine(resultField + " = numberValue;")
+				LineD("$field = numberValue;")
 		} else if field.IsCustomTypeModel() {
-			builder.WriteLine(resultField + " = " + field.Type.GetName() + ".deserializeJsonObject(" + valueName + ");").
-				WriteLine("if (" + resultField + " === null) return null;")
+			builder.LineD("$field = $type.deserializeJsonObject($value);").
+				LineD("if ($field === null) return null;")
 		} else {
 			return &cclErrors.UnsupportedFieldTypeError{
 				TypeName:       field.Type.GetName(),
@@ -292,57 +338,73 @@ func (c *JavaScriptGenerationContext) generateArrayDeserializeJson(
 	resultField := "result." + fieldName
 	valueName := fieldName + "Value"
 	itemName := fieldName + "Item"
+	builder.MapVarPairs(
+		"field", resultField,
+		"helperOwner", field.OwnedBy.GetName(),
+		"item", itemName,
+		"jsonName", jsonName,
+		"type", targetFieldType.GetName(),
+		"value", valueName,
+	)
+	defer builder.UnmapVar(
+		"field",
+		"helperOwner",
+		"item",
+		"jsonName",
+		"type",
+		"value",
+	)
 
-	builder.WriteLine("const " + valueName + " = data[\"" + jsonName + "\"];").
-		WriteLine("if (" + valueName + " === undefined || " + valueName + " === null) {").
+	builder.LineD(`const $value = data["$jsonName"];`).
+		LineD("if ($value === undefined || $value === null) {").
 		Indent().
-		WriteLine(resultField + " = [];").
+		LineD("$field = [];").
 		Unindent().
 		WriteLine("} else {").
 		Indent().
-		WriteLine("if (!Array.isArray(" + valueName + ")) return null;").
-		WriteLine(resultField + " = [];").
-		WriteLine("for (const item of " + valueName + ") {").
+		LineD("if (!Array.isArray($value)) return null;").
+		LineD("$field = [];").
+		LineD("for (const item of $value) {").
 		Indent()
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(resultField + ".push(String(item));")
+		builder.LineD("$field.push(String(item));")
 	case cclValues.TypeNameBool:
-		builder.WriteLine("let " + itemName + ";").
+		builder.LineD("let $item;").
 			WriteLine("if (typeof item === \"boolean\") {").
 			Indent().
-			WriteLine(itemName + " = item;").
+			LineD("$item = item;").
 			Unindent().
 			WriteLine("} else if (typeof item === \"string\") {").
 			Indent().
-			WriteLine(itemName + " = item !== \"\" && item !== \"0\" && item.toLowerCase() !== \"false\";").
+			LineD(`$item = item !== "" && item !== "0" && item.toLowerCase() !== "false";`).
 			Unindent().
 			WriteLine("} else {").
 			Indent().
-			WriteLine(itemName + " = Boolean(item);").
+			LineD("$item = Boolean(item);").
 			Unindent().
 			WriteLine("}").
-			WriteLine(resultField + ".push(" + itemName + ");")
+			LineD("$field.push($item);")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine("const " + itemName + " = " + field.OwnedBy.GetName() + "._base64ToBytes(item);").
-			WriteLine("if (" + itemName + " === null) return null;").
-			WriteLine(resultField + ".push(" + itemName + ");")
+		builder.LineD("const $item = $helperOwner._base64ToBytes(item);").
+			LineD("if ($item === null) return null;").
+			LineD("$field.push($item);")
 	default:
 		if c.isJavaScriptJsonNumber(targetFieldType) {
-			builder.WriteLine("const " + itemName + " = Number(item);").
-				WriteLine("if (!Number.isFinite(" + itemName + ")) return null;").
-				WriteLine(resultField + ".push(" + itemName + ");")
+			builder.LineD("const $item = Number(item);").
+				LineD("if (!Number.isFinite($item)) return null;").
+				LineD("$field.push($item);")
 		} else if targetFieldType.IsCustomTypeModel() {
 			builder.WriteLine("if (item === null) {").
 				Indent().
-				WriteLine(resultField + ".push(null);").
+				LineD("$field.push(null);").
 				Unindent().
 				WriteLine("} else {").
 				Indent().
-				WriteLine("const " + itemName + " = " + targetFieldType.GetName() + ".deserializeJsonObject(item);").
-				WriteLine("if (" + itemName + " === null) return null;").
-				WriteLine(resultField + ".push(" + itemName + ");").
+				LineD("const $item = $type.deserializeJsonObject(item);").
+				LineD("if ($item === null) return null;").
+				LineD("$field.push($item);").
 				Unindent().
 				WriteLine("}")
 		} else {

@@ -118,12 +118,23 @@ func (c *TypeScriptGenerationContext) generateCodeForModel(model *CCLModel) erro
 }
 
 func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.CodeBuilder, model *CCLModel) error {
-	builder.WriteLine("export class " + model.Name + " {").
+	modelIdConstName := "MODEL_ID_" + strings.ToUpper(caseUtils.ToSnakeCase(model.Name))
+	builder.MapVarPairs(
+		"model", model.Name,
+		"modelIdConst", modelIdConstName,
+		"modelId", ssg.ToBase10(model.ModelId),
+	)
+	defer builder.UnmapVar(
+		"model",
+		"modelIdConst",
+		"modelId",
+	)
+
+	builder.LineD("export class $model {").
 		Indent()
 
 	// Write model ID constant
-	modelIdConstName := "MODEL_ID_" + strings.ToUpper(caseUtils.ToSnakeCase(model.Name))
-	builder.WriteLine("public static readonly " + modelIdConstName + " = " + ssg.ToBase10(model.ModelId) + ";").
+	builder.LineD("public static readonly $modelIdConst = $modelId;").
 		NewLine()
 
 	// Fields
@@ -133,7 +144,15 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		if field.IsNullable() {
 			tsType = tsType + " | null"
 		}
-		builder.WriteLine("public " + fieldName + ": " + tsType + ";")
+		builder.MapVarPairs(
+			"field", fieldName,
+			"type", tsType,
+		)
+		builder.LineD("public $field: $type;")
+		builder.UnmapVar(
+			"field",
+			"type",
+		)
 	}
 	builder.NewLine()
 
@@ -167,8 +186,12 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		// If it's a custom type and not an array, we might want to allow null or initialize it.
 		// For now, let's strictly follow the type. If it's a class, it can be null or undefined in TS if not strict.
 		// But let's initialize primitives.
+		builder.MapVarPairs(
+			"defaultValue", defaultValue,
+			"field", fieldName,
+		)
 		if defaultValue != "null" {
-			builder.WriteLine("this." + fieldName + " = " + defaultValue + ";")
+			builder.LineD("this.$field = $defaultValue;")
 		} else {
 			// For custom types, we might want to leave it undefined or null.
 			// If strictNullChecks is on, we need to handle this.
@@ -176,8 +199,12 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 			// Actually, better to just not initialize if it's optional, or initialize to null.
 			// Let's initialize to null and cast if needed, or just leave it.
 			// Let's set it to null for now.
-			builder.WriteLine("this." + fieldName + " = null as any;")
+			builder.LineD("this.$field = null as any;")
 		}
+		builder.UnmapVar(
+			"defaultValue",
+			"field",
+		)
 	}
 	builder.Unindent().
 		WriteLine("}").
@@ -186,15 +213,15 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 	// Get Model ID
 	builder.WriteLine("public getModelId(): number {").
 		Indent().
-		WriteLine("return " + model.Name + "." + modelIdConstName + ";").
+		LineD("return $model.$modelIdConst;").
 		Unindent().
 		WriteLine("}").
 		NewLine()
 
 	// Clone Empty
-	builder.WriteLine("public cloneEmpty(): " + model.Name + " {").
+	builder.LineD("public cloneEmpty(): $model {").
 		Indent().
-		WriteLine("return new " + model.Name + "();").
+		LineD("return new $model();").
 		Unindent().
 		WriteLine("}").
 		NewLine()

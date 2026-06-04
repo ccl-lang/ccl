@@ -11,7 +11,19 @@ func (c *GoGenerationContext) ensureJsonHelpers() {
 	}
 	c.JsonHelpersGenerated = true
 
-	c.MethodsCode.WriteLine("func cclReadJSONMap(data string) (map[string]json.RawMessage, error) {").
+	c.HelpersCode.BeginSection("helpers")
+	defer c.HelpersCode.EndSection()
+
+	c.HelpersCode.WriteLine("import (").
+		Indent().
+		WriteLine("\"encoding/base64\"").
+		WriteLine("\"encoding/json\"").
+		WriteLine("\"strconv\"").
+		WriteLine("\"strings\"").
+		Unindent().
+		WriteLine(")").
+		NewLine().
+		WriteLine("func cclReadJSONMap(data string) (map[string]json.RawMessage, error) {").
 		Indent().
 		WriteLine("data = strings.TrimSpace(data)").
 		WriteLine("if data == \"\" || data == \"null\" {").
@@ -122,6 +134,7 @@ func (c *GoGenerationContext) ensureJsonHelpers() {
 		WriteLine("default:").
 		Indent().
 		WriteLine("return false, strconv.ErrSyntax").
+		Unindent().
 		Unindent().
 		WriteLine("}").
 		Unindent().
