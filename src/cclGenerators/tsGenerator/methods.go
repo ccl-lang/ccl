@@ -187,7 +187,7 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 	builder.WriteLine("public getModelId(): number {").
 		Indent().
 		WriteLine("return " + model.Name + "." + modelIdConstName + ";").
-		UnindentLine().
+		Unindent().
 		WriteLine("}").
 		NewLine()
 
@@ -195,7 +195,7 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 	builder.WriteLine("public cloneEmpty(): " + model.Name + " {").
 		Indent().
 		WriteLine("return new " + model.Name + "();").
-		UnindentLine().
+		Unindent().
 		WriteLine("}").
 		NewLine()
 

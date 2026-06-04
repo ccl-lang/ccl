@@ -2,7 +2,6 @@ package sanitizer_test
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -61,7 +60,7 @@ func TestSanitizeFieldNameConflictWithBuiltin(t *testing.T) {
 	}
 
 	_, err = cclSanitizer.SanitizeCCLAst(nil, astFile)
-	fmt.Println(err)
+	//fmt.Println(err)
 	if err == nil {
 		t.Fatalf("Expected field name conflict error, got nil")
 	}

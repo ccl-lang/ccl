@@ -7,6 +7,8 @@ import (
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
 )
 
+const doPrint = false
+
 //---------------------------------------------------------
 
 // expectedToken is a struct that holds the expected token type and value.
@@ -54,7 +56,9 @@ func TestLexer1(t *testing.T) {
 		t.Fatalf("No tokens found")
 	}
 
-	fmt.Println("Tokens:", lexResults)
+	if doPrint {
+		fmt.Println("Tokens:", lexResults)
+	}
 }
 
 const input2 = `#[System.Text.SerializationType("C#", "binary")]`
@@ -69,7 +73,9 @@ func TestLexer2(t *testing.T) {
 		t.Fatalf("No tokens found")
 	}
 
-	fmt.Println("Tokens:", lexResults)
+	if doPrint {
+		fmt.Println("Tokens:", lexResults)
+	}
 }
 
 const input3 = `model MyModelName { field1: string = "default value"; field2: int32; }`
@@ -101,7 +107,9 @@ func TestLexer3(t *testing.T) {
 		t.Fatalf("No tokens found")
 	}
 
-	fmt.Println("Tokens:", lexResults)
+	if doPrint {
+		fmt.Println("Tokens:", lexResults)
+	}
 	for i, token := range lexResults {
 		if i >= len(input3Tokens) {
 			t.Fatalf("Unexpected token: %v", token)
@@ -169,7 +177,9 @@ func TestLexer4(t *testing.T) {
 		t.Fatalf("No tokens found")
 	}
 
-	fmt.Println("Tokens:", lexResults)
+	if doPrint {
+		fmt.Println("Tokens:", lexResults)
+	}
 	for i, token := range lexResults {
 		if i >= len(input4Tokens) {
 			t.Fatalf("Unexpected token: %v", token)
@@ -214,7 +224,9 @@ func TestAttributeWithInteger(t *testing.T) {
 		t.Fatalf("Expected string literal 'binary', got '%s'", stringLiteral)
 	}
 
-	fmt.Println("Tokens:", lexResults)
+	if doPrint {
+		fmt.Println("Tokens:", lexResults)
+	}
 }
 
 //---------------------------------------------------------
