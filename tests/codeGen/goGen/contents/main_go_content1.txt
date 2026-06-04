@@ -5,6 +5,7 @@ package main
 import (
 	"ccl_test_generated/models"
 	"fmt"
+	"strings"
 )
 
 func main() {
@@ -46,6 +47,22 @@ func main() {
 
 	check(user.Username == "test_user", "Username mismatch")
 	check(deserializedUser.Username == "test_user", "Deserialized username mismatch")
+
+	userJSON, err := user.SerializeJSON()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to serialize user JSON: %v", err))
+	}
+	check(strings.Contains(userJSON, "\"user_id\""), "JsonPropertyName did not apply for user_id")
+
+	deserializedJSONUser := &models.UserInfo{}
+	err = deserializedJSONUser.DeserializeJSON(userJSON)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to deserialize user JSON: %v", err))
+	}
+	check(deserializedJSONUser.Id == user.Id, "JSON user id mismatch")
+	check(deserializedJSONUser.Skin != nil, "JSON user skin is nil")
+	check(deserializedJSONUser.Skin.Basic != nil, "JSON user basic skin is nil")
+	check(deserializedJSONUser.Skin.Basic.R == 255, "JSON nested skin mismatch")
 
 	// Test creating a PositionInfo
 	pos := models.PositionInfo{
@@ -153,6 +170,18 @@ func main() {
 
 	check(len(deserializedUsersList.Users) == len(usersList.Users), "UsersList.Users length mismatch")
 	check(len(deserializedUsersList.MoreUsers) == len(usersList.MoreUsers), "UsersList.MoreUsers length mismatch")
+
+	usersListJSON, err := usersList.SerializeJSON()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to serialize users list JSON: %v", err))
+	}
+	deserializedJSONUsersList := &models.UsersList{}
+	err = deserializedJSONUsersList.DeserializeJSON(usersListJSON)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to deserialize users list JSON: %v", err))
+	}
+	check(len(deserializedJSONUsersList.Users) == len(usersList.Users), "JSON UsersList.Users length mismatch")
+	check(deserializedJSONUsersList.Users[1].Skin.Texture.Texture[0] == "t1.png", "JSON UsersList nested array mismatch")
 
 	check(deserializedUsersList.Users[0].Id == usersList.Users[0].Id, "UsersList.Users[0].Id mismatch")
 	check(deserializedUsersList.Users[0].Username == usersList.Users[0].Username, "UsersList.Users[0].Username mismatch")

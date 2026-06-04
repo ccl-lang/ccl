@@ -21,4 +21,6 @@ type GoGenerationContext struct {
 	HelpersCode   *codeBuilder.CodeBuilder
 	VarsCode      *codeBuilder.CodeBuilder
 	ConstantsCode *codeBuilder.CodeBuilder
+
+	JsonHelpersGenerated bool
 }

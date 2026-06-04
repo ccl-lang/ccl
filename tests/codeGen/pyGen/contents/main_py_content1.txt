@@ -3,6 +3,7 @@
 import sys
 import os
 import struct
+import json
 
 # Add the current directory to sys.path to ensure we can import the generated models
 sys.path.append(os.getcwd())
@@ -50,6 +51,20 @@ def test_user():
 	
 	if deserialized_user.skin.basic.r != 255:
 		raise Exception("Deserialized skin color mismatch")
+
+	user_json = user.serialize_json()
+	user_json_data = json.loads(user_json)
+	if "user_id" not in user_json_data:
+		raise Exception("JsonPropertyName did not apply for user_id")
+
+	deserialized_json_user = UserInfo.deserialize_json(user_json)
+	if not deserialized_json_user:
+		raise Exception("Failed to deserialize user JSON")
+
+	if deserialized_json_user.id != "user123":
+		raise Exception("JSON user id mismatch")
+	if deserialized_json_user.skin.basic.r != 255:
+		raise Exception("JSON nested skin color mismatch")
 
 	print("UserInfo test passed!")
 

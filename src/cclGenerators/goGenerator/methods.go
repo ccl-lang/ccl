@@ -299,7 +299,11 @@ func (c *GoGenerationContext) GenerateMethods() error {
 		WriteLine("import (").
 		Indent().
 		WriteLine("\"bytes\"").
+		WriteLine("\"encoding/base64\"").
 		WriteLine("\"encoding/binary\"").
+		WriteLine("\"encoding/json\"").
+		WriteLine("\"strconv\"").
+		WriteLine("\"strings\"").
 		WriteLine("\"time\"").
 		Unindent().
 		WriteLine(")").
@@ -309,6 +313,15 @@ func (c *GoGenerationContext) GenerateMethods() error {
 		WriteLine("_ = time.April").
 		WriteLine("_ = bytes.MinRead").
 		WriteLine("_ = binary.MaxVarintLen16").
+		WriteLine("_ = strconv.IntSize").
+		Unindent().
+		WriteLine(")").
+		NewLine().
+		WriteLine("var (").
+		Indent().
+		WriteLine("_ = base64.StdEncoding").
+		WriteLine("_ = json.Valid").
+		WriteLine("_ = strings.Builder{}").
 		Unindent().
 		WriteLine(")").
 		NewLine()
@@ -361,6 +374,11 @@ func (c *GoGenerationContext) generateMethodsForModel(currentModel *CCLModel) er
 	if c.NeedsBinarySerialization(gValues.LanguageGo, currentModel) {
 		c.generateSerializeBinaryMethod(currentModel)
 		c.generateDeserializeBinaryMethod(currentModel)
+	}
+	if c.NeedsJsonSerialization(gValues.LanguageGo, currentModel) {
+		if err := c.generateSerializeJsonMethods(currentModel); err != nil {
+			return err
+		}
 	}
 	return nil
 }

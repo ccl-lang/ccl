@@ -45,6 +45,23 @@ function testUser() {
 		throw new Error("Deserialized skin color mismatch");
 	}
 
+	const userJson = user.serializeJson();
+	const userJsonData = JSON.parse(userJson);
+	if (!Object.prototype.hasOwnProperty.call(userJsonData, "user_id")) {
+		throw new Error("JsonPropertyName did not apply for user_id");
+	}
+
+	const deserializedJsonUser = UserInfo.deserializeJson(userJson);
+	if (!deserializedJsonUser) {
+		throw new Error("Failed to deserialize user JSON");
+	}
+	if (deserializedJsonUser.id !== "user123") {
+		throw new Error("JSON user id mismatch");
+	}
+	if (deserializedJsonUser?.skin?.basic?.r !== 255) {
+		throw new Error("JSON nested skin color mismatch");
+	}
+
 	console.log("UserInfo test passed!");
 }
 

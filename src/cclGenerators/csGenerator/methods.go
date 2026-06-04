@@ -36,6 +36,7 @@ func (c *CSharpGenerationContext) generateCode() (*gen.CodeGenerationResult, err
 		c.SingleFileBuilder.WriteLine("using System.Collections.Generic;")
 		c.SingleFileBuilder.WriteLine("using System.IO;")
 		c.SingleFileBuilder.WriteLine("using System.Text;")
+		c.SingleFileBuilder.WriteLine("using System.Text.Json.Nodes;")
 		c.SingleFileBuilder.NewLine()
 		c.SingleFileBuilder.WriteLine("namespace " + c.CSharpNamespace)
 		c.SingleFileBuilder.WriteLine("{")
@@ -108,6 +109,7 @@ func (c *CSharpGenerationContext) generateCodeForModel(model *CCLModel) error {
 			DoImport("System.Collections.Generic", "using System.Collections.Generic;").
 			DoImport("System.IO", "using System.IO;").
 			DoImport("System.Text", "using System.Text;").
+			DoImport("System.Text.Json.Nodes", "using System.Text.Json.Nodes;").
 			AddNamespaceDeclaration("namespace " + c.CSharpNamespace).
 			AppendNamespaceDeclaration("{")
 
@@ -201,6 +203,11 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 			return err
 		}
 		if err := c.generateDeserializeBinaryMethod(model, builder); err != nil {
+			return err
+		}
+	}
+	if c.NeedsJsonSerialization(CurrentLanguage, model) {
+		if err := c.generateSerializeJsonMethods(model, builder); err != nil {
 			return err
 		}
 	}

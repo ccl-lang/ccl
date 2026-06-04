@@ -1,1 +1,373 @@
 package goGenerator
+
+import "github.com/ccl-lang/ccl/src/core/cclValues"
+
+func (c *GoGenerationContext) generateSerializeJsonMethods(model *CCLModel) error {
+	c.ensureJsonHelpers()
+	if err := c.generateSerializeJsonMethod(model); err != nil {
+		return err
+	}
+	if err := c.generateDeserializeJsonMethod(model); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *GoGenerationContext) generateSerializeJsonMethod(model *CCLModel) error {
+	c.MethodsCode.ExpectMappedVars("model", "modelName")
+	c.MethodsCode.LineD("func (m $model) SerializeJSON() (string, error) {").
+		Indent().
+		WriteLine("if m == nil {").
+		Indent().
+		WriteLine("return \"null\", nil").
+		Unindent().
+		WriteLine("}").
+		WriteLine("var buf bytes.Buffer").
+		WriteLine("buf.WriteByte('{')").
+		WriteLine("first := true").
+		NewLine()
+
+	for _, field := range model.Fields {
+		jsonName, err := c.GetJsonFieldName(CurrentLanguage, model, field)
+		if err != nil {
+			return err
+		}
+		c.MethodsCode.WriteLine("if !first {").
+			Indent().
+			WriteLine("buf.WriteByte(',')").
+			Unindent().
+			WriteLine("}").
+			WriteLine("first = false").
+			WriteLine("buf.WriteString(strconv.Quote(\"" + jsonName + "\"))").
+			WriteLine("buf.WriteByte(':')")
+
+		if field.IsArray() {
+			if err = c.generateArraySerializeJson(field); err != nil {
+				return err
+			}
+		} else if err = c.generateFieldSerializeJson(field); err != nil {
+			return err
+		}
+		c.MethodsCode.NewLine()
+	}
+
+	c.MethodsCode.WriteLine("buf.WriteByte('}')").
+		WriteLine("return buf.String(), nil").
+		Unindent().
+		WriteLine("}").
+		NewLine()
+
+	return nil
+}
+
+func (c *GoGenerationContext) generateDeserializeJsonMethod(model *CCLModel) error {
+	c.MethodsCode.ExpectMappedVars("model")
+	c.MethodsCode.LineD("func (m $model) DeserializeJSON(data string) error {").
+		Indent().
+		WriteLine("if m == nil {").
+		Indent().
+		WriteLine("return nil").
+		Unindent().
+		WriteLine("}").
+		WriteLine("fields, err := cclReadJSONMap(data)").
+		WriteLine("if err != nil || fields == nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}").
+		NewLine()
+
+	for _, field := range model.Fields {
+		jsonName, err := c.GetJsonFieldName(CurrentLanguage, model, field)
+		if err != nil {
+			return err
+		}
+		rawName := lowerGoVarName(field.Name) + "Raw"
+		c.MethodsCode.WriteLine(rawName + ", ok := fields[\"" + jsonName + "\"]").
+			WriteLine("if ok && strings.TrimSpace(string(" + rawName + ")) != \"null\" {").
+			Indent()
+		if field.IsArray() {
+			if err = c.generateArrayDeserializeJson(field, rawName); err != nil {
+				return err
+			}
+		} else if err = c.generateFieldDeserializeJson(field, rawName); err != nil {
+			return err
+		}
+		c.MethodsCode.Unindent().
+			WriteLine("}").
+			NewLine()
+	}
+
+	c.MethodsCode.WriteLine("return nil").
+		Unindent().
+		WriteLine("}").
+		NewLine()
+	return nil
+}
+
+func (c *GoGenerationContext) generateFieldSerializeJson(field *CCLField) error {
+	fieldName := "m." + field.Name
+	switch field.Type.GetName() {
+	case cclValues.TypeNameString:
+		c.MethodsCode.WriteLine("buf.WriteString(strconv.Quote(" + fieldName + "))")
+	case cclValues.TypeNameBool:
+		c.MethodsCode.WriteLine("if " + fieldName + " {").
+			Indent().
+			WriteLine("buf.WriteString(\"true\")").
+			Unindent().
+			WriteLine("} else {").
+			Indent().
+			WriteLine("buf.WriteString(\"false\")").
+			Unindent().
+			WriteLine("}")
+	case cclValues.TypeNameBytes:
+		c.MethodsCode.WriteLine("buf.WriteString(strconv.Quote(base64.StdEncoding.EncodeToString(" + fieldName + ")))")
+	case cclValues.TypeNameDateTime:
+		c.MethodsCode.WriteLine("buf.WriteString(strconv.FormatInt(" + fieldName + ".UnixNano(), 10))")
+	default:
+		if c.isGoJsonSignedInteger(field.Type) {
+			c.MethodsCode.WriteLine("buf.WriteString(strconv.FormatInt(int64(" + fieldName + "), 10))")
+		} else if c.isGoJsonUnsignedInteger(field.Type) {
+			c.MethodsCode.WriteLine("buf.WriteString(strconv.FormatUint(uint64(" + fieldName + "), 10))")
+		} else if c.isGoJsonFloat(field.Type) {
+			bitSize := "64"
+			if field.Type.GetName() == cclValues.TypeNameFloat32 {
+				bitSize = "32"
+			}
+			c.MethodsCode.WriteLine("buf.WriteString(strconv.FormatFloat(float64(" + fieldName + "), 'g', -1, " + bitSize + "))")
+		} else if field.IsCustomTypeModel() {
+			c.MethodsCode.WriteLine("if " + fieldName + " == nil {").
+				Indent().
+				WriteLine("buf.WriteString(\"null\")").
+				Unindent().
+				WriteLine("} else {").
+				Indent().
+				WriteLine("jsonValue, err := " + fieldName + ".SerializeJSON()").
+				WriteLine("if err != nil {").
+				Indent().
+				WriteLine("return \"\", err").
+				Unindent().
+				WriteLine("}").
+				WriteLine("buf.WriteString(jsonValue)").
+				Unindent().
+				WriteLine("}")
+		} else {
+			return c.unsupportedGoJsonField(field)
+		}
+	}
+	return nil
+}
+
+func (c *GoGenerationContext) generateArraySerializeJson(field *CCLField) error {
+	targetType := field.Type.GetUnderlyingType()
+	fieldName := "m." + field.Name
+	c.MethodsCode.WriteLine("if " + fieldName + " == nil {").
+		Indent().
+		WriteLine("buf.WriteString(\"null\")").
+		Unindent().
+		WriteLine("} else {").
+		Indent().
+		WriteLine("buf.WriteByte('[')").
+		WriteLine("for i, item := range " + fieldName + " {").
+		Indent().
+		WriteLine("if i > 0 {").
+		Indent().
+		WriteLine("buf.WriteByte(',')").
+		Unindent().
+		WriteLine("}")
+
+	switch targetType.GetName() {
+	case cclValues.TypeNameString:
+		c.MethodsCode.WriteLine("buf.WriteString(strconv.Quote(item))")
+	case cclValues.TypeNameBool:
+		c.MethodsCode.WriteLine("if item {").
+			Indent().
+			WriteLine("buf.WriteString(\"true\")").
+			Unindent().
+			WriteLine("} else {").
+			Indent().
+			WriteLine("buf.WriteString(\"false\")").
+			Unindent().
+			WriteLine("}")
+	case cclValues.TypeNameBytes:
+		c.MethodsCode.WriteLine("buf.WriteString(strconv.Quote(base64.StdEncoding.EncodeToString(item)))")
+	case cclValues.TypeNameDateTime:
+		c.MethodsCode.WriteLine("buf.WriteString(strconv.FormatInt(item.UnixNano(), 10))")
+	default:
+		if c.isGoJsonSignedInteger(targetType) {
+			c.MethodsCode.WriteLine("buf.WriteString(strconv.FormatInt(int64(item), 10))")
+		} else if c.isGoJsonUnsignedInteger(targetType) {
+			c.MethodsCode.WriteLine("buf.WriteString(strconv.FormatUint(uint64(item), 10))")
+		} else if c.isGoJsonFloat(targetType) {
+			bitSize := "64"
+			if targetType.GetName() == cclValues.TypeNameFloat32 {
+				bitSize = "32"
+			}
+			c.MethodsCode.WriteLine("buf.WriteString(strconv.FormatFloat(float64(item), 'g', -1, " + bitSize + "))")
+		} else if targetType.IsCustomTypeModel() {
+			c.MethodsCode.WriteLine("if item == nil {").
+				Indent().
+				WriteLine("buf.WriteString(\"null\")").
+				Unindent().
+				WriteLine("} else {").
+				Indent().
+				WriteLine("jsonValue, err := item.SerializeJSON()").
+				WriteLine("if err != nil {").
+				Indent().
+				WriteLine("return \"\", err").
+				Unindent().
+				WriteLine("}").
+				WriteLine("buf.WriteString(jsonValue)").
+				Unindent().
+				WriteLine("}")
+		} else {
+			return c.unsupportedGoJsonField(field)
+		}
+	}
+
+	c.MethodsCode.Unindent().
+		WriteLine("}").
+		WriteLine("buf.WriteByte(']')").
+		Unindent().
+		WriteLine("}")
+	return nil
+}
+
+func (c *GoGenerationContext) generateFieldDeserializeJson(field *CCLField, rawName string) error {
+	fieldName := "m." + field.Name
+	valueName := lowerGoVarName(field.Name) + "Value"
+	switch field.Type.GetName() {
+	case cclValues.TypeNameString:
+		c.MethodsCode.WriteLine(valueName + ", err := cclReadJSONString(" + rawName + ")").
+			WriteLine("if err != nil {").
+			Indent().
+			WriteLine("return err").
+			Unindent().
+			WriteLine("}").
+			WriteLine(fieldName + " = " + valueName)
+	case cclValues.TypeNameBool:
+		c.MethodsCode.WriteLine(valueName + ", err := cclReadJSONBool(" + rawName + ")").
+			WriteLine("if err != nil {").
+			Indent().
+			WriteLine("return err").
+			Unindent().
+			WriteLine("}").
+			WriteLine(fieldName + " = " + valueName)
+	case cclValues.TypeNameBytes:
+		c.MethodsCode.WriteLine(valueName + ", err := cclReadJSONBytes(" + rawName + ")").
+			WriteLine("if err != nil {").
+			Indent().
+			WriteLine("return err").
+			Unindent().
+			WriteLine("}").
+			WriteLine(fieldName + " = " + valueName)
+	default:
+		if c.isGoJsonSignedInteger(field.Type) {
+			c.MethodsCode.WriteLine(valueName + ", err := cclReadJSONInt(" + rawName + ")").
+				WriteLine("if err != nil {").
+				Indent().
+				WriteLine("return err").
+				Unindent().
+				WriteLine("}")
+			if field.Type.GetName() == cclValues.TypeNameDateTime {
+				c.MethodsCode.WriteLine(fieldName + " = time.Unix(0, " + valueName + ")")
+			} else {
+				c.MethodsCode.WriteLine(fieldName + " = " + c.goJsonIntegerCast(field.Type) + "(" + valueName + ")")
+			}
+		} else if c.isGoJsonUnsignedInteger(field.Type) {
+			c.MethodsCode.WriteLine(valueName + ", err := cclReadJSONUint(" + rawName + ")").
+				WriteLine("if err != nil {").
+				Indent().
+				WriteLine("return err").
+				Unindent().
+				WriteLine("}").
+				WriteLine(fieldName + " = " + c.goJsonIntegerCast(field.Type) + "(" + valueName + ")")
+		} else if c.isGoJsonFloat(field.Type) {
+			c.MethodsCode.WriteLine(valueName + ", err := cclReadJSONFloat(" + rawName + ")").
+				WriteLine("if err != nil {").
+				Indent().
+				WriteLine("return err").
+				Unindent().
+				WriteLine("}").
+				WriteLine(fieldName + " = " + c.goJsonFloatCast(field.Type) + "(" + valueName + ")")
+		} else if field.IsCustomTypeModel() {
+			c.MethodsCode.WriteLine(fieldName + " = new(" + field.Type.GetName() + ")").
+				WriteLine("if err := " + fieldName + ".DeserializeJSON(string(" + rawName + ")); err != nil {").
+				Indent().
+				WriteLine("return err").
+				Unindent().
+				WriteLine("}")
+		} else {
+			return c.unsupportedGoJsonField(field)
+		}
+	}
+	return nil
+}
+
+func (c *GoGenerationContext) generateArrayDeserializeJson(field *CCLField, rawName string) error {
+	targetType := field.Type.GetUnderlyingType()
+	fieldName := "m." + field.Name
+	valueName := lowerGoVarName(field.Name) + "Items"
+	itemValueName := lowerGoVarName(field.Name) + "ItemValue"
+	itemType := c.getGoJsonArrayItemType(targetType)
+	if itemType == "" {
+		return c.unsupportedGoJsonField(field)
+	}
+
+	c.MethodsCode.WriteLine(valueName + ", err := cclReadJSONArray(" + rawName + ")").
+		WriteLine("if err != nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}").
+		WriteLine(fieldName + " = make([]" + itemType + ", 0, len(" + valueName + "))").
+		WriteLine("for _, item := range " + valueName + " {").
+		Indent()
+
+	switch targetType.GetName() {
+	case cclValues.TypeNameString:
+		c.MethodsCode.WriteLine(itemValueName + ", err := cclReadJSONString(item)")
+	case cclValues.TypeNameBool:
+		c.MethodsCode.WriteLine(itemValueName + ", err := cclReadJSONBool(item)")
+	case cclValues.TypeNameBytes:
+		c.MethodsCode.WriteLine(itemValueName + ", err := cclReadJSONBytes(item)")
+	default:
+		if c.isGoJsonSignedInteger(targetType) {
+			c.MethodsCode.WriteLine(itemValueName + ", err := cclReadJSONInt(item)")
+		} else if c.isGoJsonUnsignedInteger(targetType) {
+			c.MethodsCode.WriteLine(itemValueName + ", err := cclReadJSONUint(item)")
+		} else if c.isGoJsonFloat(targetType) {
+			c.MethodsCode.WriteLine(itemValueName + ", err := cclReadJSONFloat(item)")
+		} else if targetType.IsCustomTypeModel() {
+			c.MethodsCode.WriteLine("if strings.TrimSpace(string(item)) == \"null\" {").
+				Indent().
+				WriteLine(fieldName + " = append(" + fieldName + ", nil)").
+				WriteLine("continue").
+				Unindent().
+				WriteLine("}").
+				WriteLine(itemValueName + " := new(" + targetType.GetName() + ")").
+				WriteLine("err := " + itemValueName + ".DeserializeJSON(string(item))")
+		}
+	}
+
+	c.MethodsCode.WriteLine("if err != nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}")
+
+	if targetType.IsCustomTypeModel() || targetType.GetName() == cclValues.TypeNameString ||
+		targetType.GetName() == cclValues.TypeNameBool || targetType.GetName() == cclValues.TypeNameBytes {
+		c.MethodsCode.WriteLine(fieldName + " = append(" + fieldName + ", " + itemValueName + ")")
+	} else if targetType.GetName() == cclValues.TypeNameDateTime {
+		c.MethodsCode.WriteLine(fieldName + " = append(" + fieldName + ", time.Unix(0, " + itemValueName + "))")
+	} else if c.isGoJsonSignedInteger(targetType) || c.isGoJsonUnsignedInteger(targetType) {
+		c.MethodsCode.WriteLine(fieldName + " = append(" + fieldName + ", " + c.goJsonIntegerCast(targetType) + "(" + itemValueName + "))")
+	} else if c.isGoJsonFloat(targetType) {
+		c.MethodsCode.WriteLine(fieldName + " = append(" + fieldName + ", " + c.goJsonFloatCast(targetType) + "(" + itemValueName + "))")
+	}
+
+	c.MethodsCode.Unindent().
+		WriteLine("}")
+	return nil
+}

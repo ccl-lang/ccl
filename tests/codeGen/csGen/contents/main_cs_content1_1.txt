@@ -67,6 +67,26 @@ class Program
             throw new Exception("Deserialized skin color mismatch");
         }
 
+        var userJson = user.SerializeJson();
+        if (!userJson.Contains("\"user_id\""))
+        {
+            throw new Exception("JsonPropertyName did not apply for user_id");
+        }
+
+        var deserializedJsonUser = UserInfo.DeserializeJson(userJson);
+        if (deserializedJsonUser == null)
+        {
+            throw new Exception("Failed to deserialize user JSON");
+        }
+        if (deserializedJsonUser.Id != "user123")
+        {
+            throw new Exception("JSON user id mismatch");
+        }
+        if (deserializedJsonUser?.Skin?.Basic?.R != 255)
+        {
+            throw new Exception("JSON nested skin color mismatch");
+        }
+
         Console.WriteLine("UserInfo test passed!");
     }
 

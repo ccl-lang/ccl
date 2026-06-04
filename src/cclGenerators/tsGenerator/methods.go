@@ -208,6 +208,11 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 			return err
 		}
 	}
+	if c.NeedsJsonSerialization(CurrentLanguage, model) {
+		if err := c.generateSerializeJsonMethods(model, builder); err != nil {
+			return err
+		}
+	}
 
 	builder.UnindentLine().
 		WriteLine("}")

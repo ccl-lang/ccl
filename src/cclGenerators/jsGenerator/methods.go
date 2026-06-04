@@ -186,6 +186,12 @@ func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		WriteLine("}").
 		NewLine()
 
+	if c.NeedsJsonSerialization(LanguageName, model) {
+		if err := c.generateSerializeJsonMethods(model, builder); err != nil {
+			return err
+		}
+	}
+
 	builder.Unindent().
 		WriteLine("}")
 

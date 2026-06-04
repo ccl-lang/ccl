@@ -69,6 +69,11 @@ func (c *PythonGenerationContext) generateCodeForModel(model *CCLModel) error {
 			return err
 		}
 	}
+	if c.NeedsJsonSerialization(gValues.LanguagePy, model) {
+		if err = c.generateSerializeJsonMethods(model, builder); err != nil {
+			return err
+		}
+	}
 
 	path := c.Options.OutputPath + string(os.PathSeparator)
 	fileName, err := c.GetFileNameForModel(
