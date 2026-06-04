@@ -54,7 +54,7 @@ func TestJSGenerator1_1(t *testing.T) {
 	// Generate Code
 	cclLoader.LoadGenerators()
 	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
-		CCLDefinition:     parsedDefinitions,
+		CodeContext:       parsedDefinitions.CodeContext,
 		OutputPath:        filepath.Join(tmpDir, "models"),
 		TargetLanguage:    "js",
 		GenerateDebugInfo: true,
@@ -110,7 +110,7 @@ func TestJSGenerator1_2(t *testing.T) {
 	// Generate Code
 	cclLoader.LoadGenerators()
 	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
-		CCLDefinition:     parsedDefinitions,
+		CodeContext:       parsedDefinitions.CodeContext,
 		OutputPath:        filepath.Join(tmpDir, "models"),
 		TargetLanguage:    "js",
 		GenerateDebugInfo: true,
@@ -151,4 +151,5 @@ func addSingleFileGenerationAttribute(
 			fileNameParam,
 		},
 	})
+	definition.CodeContext.RegisterGlobalAttribute(definition.GlobalAttributes[len(definition.GlobalAttributes)-1])
 }

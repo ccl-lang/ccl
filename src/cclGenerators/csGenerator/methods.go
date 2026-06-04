@@ -48,7 +48,7 @@ func (c *CSharpGenerationContext) generateCode() (*gen.CodeGenerationResult, err
 	}
 
 	// Generate each model class
-	for _, typeDef := range c.Options.CCLDefinition.TypeDefinitions {
+	for _, typeDef := range c.GetGenerationTypeDefinitions() {
 		if typeDef.IsCustomModel() {
 			err := c.generateCodeForModel(typeDef.GetModelDefinition())
 			if err != nil {
@@ -258,8 +258,9 @@ func (c *CSharpGenerationContext) getNamespace() string {
 	// Actually, the user might have meant an attribute on the model definition.
 	// Let's check the first model's attributes.
 
-	if len(c.Options.CCLDefinition.TypeDefinitions) > 0 {
-		firstModel := c.Options.CCLDefinition.TypeDefinitions[0]
+	typeDefinitions := c.GetGenerationTypeDefinitions()
+	if len(typeDefinitions) > 0 {
+		firstModel := typeDefinitions[0]
 		if firstModel.IsCustomModel() {
 			model := firstModel.GetModelDefinition()
 			attr := c.GetGlobalOrModelAttributes(gValues.LanguageCS, AttributeNamespace, model)

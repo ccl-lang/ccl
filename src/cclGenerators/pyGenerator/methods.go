@@ -17,8 +17,7 @@ func (c *PythonGenerationContext) GenerateCode() error {
 	c.OutputFiles = []string{}
 
 	// Generate each model class
-	for i := range c.Options.CCLDefinition.TypeDefinitions {
-		typeDef := c.Options.CCLDefinition.TypeDefinitions[i]
+	for _, typeDef := range c.GetGenerationTypeDefinitions() {
 		if typeDef.IsCustomModel() {
 			err := c.generateCodeForModel(typeDef.GetModelDefinition())
 			if err != nil {

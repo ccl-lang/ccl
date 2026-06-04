@@ -18,7 +18,7 @@ func (c *GDScriptGenerationContext) GenerateCode() error {
 	c.OutputFiles = []string{}
 
 	// Generate each model class
-	for _, typeDef := range c.Options.CCLDefinition.TypeDefinitions {
+	for _, typeDef := range c.GetGenerationTypeDefinitions() {
 		if typeDef.IsCustomModel() {
 			fullName := typeDef.GetFullName()
 			sections := c.ModelSections[fullName]

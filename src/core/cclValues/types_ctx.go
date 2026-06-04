@@ -10,6 +10,10 @@ type CCLCodeContext struct {
 	typeDefinitionsCache map[string]*CCLTypeDefinition
 	typeDefinitionsLock  *sync.RWMutex
 
+	// typeDefinitionsOrder stores completed custom type definitions in
+	// deterministic registration order for code generation.
+	typeDefinitionsOrder []*CCLTypeDefinition
+
 	// incompleteTypeDefinitionsCache is a cache for incomplete type definitions.
 	// This is used to avoid creating multiple instances of the same incomplete
 	// type definition each time it is referenced.

@@ -8,6 +8,7 @@ import (
 
 func (c *CCLCodeContext) initialize() {
 	c.typeDefinitionsCache = map[string]*CCLTypeDefinition{}
+	c.typeDefinitionsOrder = []*CCLTypeDefinition{}
 	c.typeDefinitionsLock = &sync.RWMutex{}
 	c.incompleteTypeDefinitionsCache = map[string]*CCLTypeDefinition{}
 	c.globalVarsLock = &sync.RWMutex{}

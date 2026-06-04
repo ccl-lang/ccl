@@ -53,7 +53,7 @@ func TestCSGenerator1_1(t *testing.T) {
 	// Generate Code
 	cclLoader.LoadGenerators()
 	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
-		CCLDefinition:     parsedDefinitions,
+		CodeContext:       parsedDefinitions.CodeContext,
 		OutputPath:        tmpDir,
 		TargetLanguage:    "cs",
 		GenerateDebugInfo: true,

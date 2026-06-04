@@ -7,7 +7,7 @@ import (
 func (c *GoGenerationContext) registerGoMethodImports() {
 	imports := map[string]bool{}
 
-	for _, currentTypeDef := range c.Options.CCLDefinition.TypeDefinitions {
+	for _, currentTypeDef := range c.GetGenerationTypeDefinitions() {
 		if !currentTypeDef.IsCustomModel() {
 			continue
 		}

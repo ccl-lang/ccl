@@ -10,6 +10,23 @@ func (c *CCLCodeContext) GetTypeDefinition(name *SimpleTypeName) *CCLTypeDefinit
 	return c.getTypeDefinition(name)
 }
 
+// GetGenerationTypeDefinitions returns custom type definitions in registration order.
+func (c *CCLCodeContext) GetGenerationTypeDefinitions() []*CCLTypeDefinition {
+	c.typeDefinitionsLock.RLock()
+	defer c.typeDefinitionsLock.RUnlock()
+
+	typeDefinitions := make([]*CCLTypeDefinition, 0, len(c.typeDefinitionsOrder))
+	for _, typeDef := range c.typeDefinitionsOrder {
+		if typeDef == nil || typeDef.IsBuiltIn() || typeDef.IsIncomplete() {
+			continue
+		}
+
+		typeDefinitions = append(typeDefinitions, typeDef)
+	}
+
+	return typeDefinitions
+}
+
 // getTypeDefinition is the internal version of GetTypeDefinition.
 // This function checks both complete and incomplete type definitions caches and
 // it does NOT lock the mutex.
@@ -70,7 +87,15 @@ func (c *CCLCodeContext) CacheTypeDefinition(typeDef *CCLTypeDefinition) {
 // cacheTypeDefinition is the internal version of CacheTypeDefinition
 // that does NOT lock the mutex.
 func (c *CCLCodeContext) cacheTypeDefinition(typeDef *CCLTypeDefinition) {
+	if typeDef == nil {
+		return
+	}
+
+	_, exists := c.typeDefinitionsCache[typeDef.GetFullName()]
 	c.typeDefinitionsCache[typeDef.GetFullName()] = typeDef
+	if !exists && !typeDef.IsBuiltIn() && !typeDef.IsIncomplete() {
+		c.typeDefinitionsOrder = append(c.typeDefinitionsOrder, typeDef)
+	}
 }
 
 // NewTypeDefinition creates a new type info.

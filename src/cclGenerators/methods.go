@@ -25,6 +25,16 @@ func (c *CodeGenerationBase) WriteCodeFile(path string, result *codeBuilder.Code
 
 //---------------------------------------------------------
 
+func (c *CodeGenerationBase) GetGenerationTypeDefinitions() []*cclValues.CCLTypeDefinition {
+	if c == nil || c.Options == nil || c.Options.CodeContext == nil {
+		return nil
+	}
+
+	return c.Options.CodeContext.GetGenerationTypeDefinitions()
+}
+
+//---------------------------------------------------------
+
 func (c *CodeGenerationBase) GetFileNamingStyle(
 	targetLang gValues.LanguageType,
 	currentModel *cclValues.ModelDefinition,

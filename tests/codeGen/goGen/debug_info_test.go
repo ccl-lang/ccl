@@ -44,7 +44,7 @@ func TestGoGeneratorDebugInfo(t *testing.T) {
 	// Generate Code
 	cclLoader.LoadGenerators()
 	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
-		CCLDefinition:     parsedDefinitions,
+		CodeContext:       parsedDefinitions.CodeContext,
 		OutputPath:        filepath.Join(tmpDir, "models"),
 		TargetLanguage:    "go",
 		GenerateDebugInfo: true,

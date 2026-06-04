@@ -90,6 +90,18 @@ func (c *CCLCodeContext) RegisterScopedAttributes(def *SourceCodeDefinition) {
 	}
 }
 
+// RegisterGlobalAttribute registers one compilation-wide global attribute.
+func (c *CCLCodeContext) RegisterGlobalAttribute(attr *AttributeUsageInfo) {
+	if attr == nil {
+		return
+	}
+
+	c.scopedAttributesLock.Lock()
+	defer c.scopedAttributesLock.Unlock()
+
+	c.contextGlobalAttributes = append(c.contextGlobalAttributes, attr)
+}
+
 // FindContextGlobalAttributes returns context-wide global attributes.
 func (c *CCLCodeContext) FindContextGlobalAttributes(
 	targetLang gValues.LanguageType,

@@ -13,13 +13,10 @@ func (c *CodeGenerationBase) GetGlobalAttribute(
 	name string,
 ) *cclValues.AttributeUsageInfo {
 	if ctx := c.getCodeContext(); ctx != nil {
-		attr := ctx.FindContextGlobalAttribute(targetLang, name)
-		if attr != nil {
-			return attr
-		}
+		return ctx.FindContextGlobalAttribute(targetLang, name)
 	}
 
-	return c.Options.CCLDefinition.FindGlobalAttribute(targetLang, name)
+	return nil
 }
 
 // GetGlobalAttributes retrieves all global attributes with the specified name.
@@ -28,13 +25,10 @@ func (c *CodeGenerationBase) GetGlobalAttributes(
 	name string,
 ) []*cclValues.AttributeUsageInfo {
 	if ctx := c.getCodeContext(); ctx != nil {
-		attrs := ctx.FindContextGlobalAttributes(targetLang, name)
-		if len(attrs) > 0 {
-			return attrs
-		}
+		return ctx.FindContextGlobalAttributes(targetLang, name)
 	}
 
-	return c.Options.CCLDefinition.FindGlobalAttributes(targetLang, name)
+	return nil
 }
 
 // GetGlobalOrModelAttribute retrieves an attribute with the specified name
@@ -218,10 +212,6 @@ func (c *CodeGenerationBase) getCodeContext() *cclValues.CCLCodeContext {
 
 	if c.Options.CodeContext != nil {
 		return c.Options.CodeContext
-	}
-
-	if c.Options.CCLDefinition != nil {
-		return c.Options.CCLDefinition.CodeContext
 	}
 
 	return nil

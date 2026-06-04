@@ -55,7 +55,7 @@ func HandleGenerateCommand() {
 
 	cclLoader.LoadGenerators()
 	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
-		CCLDefinition:     parsedDefinitions,
+		CodeContext:       parsedDefinitions.CodeContext,
 		OutputPath:        *output,
 		TargetLanguage:    *language,
 		GenerateDebugInfo: *generateDebugInfo,

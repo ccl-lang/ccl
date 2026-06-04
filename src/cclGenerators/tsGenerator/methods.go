@@ -32,7 +32,7 @@ func (c *TypeScriptGenerationContext) generateCode() (*gen.CodeGenerationResult,
 	}
 
 	// Generate each model class
-	for _, typeDef := range c.Options.CCLDefinition.TypeDefinitions {
+	for _, typeDef := range c.GetGenerationTypeDefinitions() {
 		if typeDef.IsCustomModel() {
 			err := c.generateCodeForModel(typeDef.GetModelDefinition())
 			if err != nil {

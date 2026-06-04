@@ -13,7 +13,6 @@ type (
 type GenerateCode func(options *CodeGenerationOptions) (*CodeGenerationResult, error)
 
 type CodeGenerationOptions struct {
-	CCLDefinition     *cclValues.SourceCodeDefinition
 	CodeContext       *cclValues.CCLCodeContext
 	OutputPath        string
 	TargetLanguage    string

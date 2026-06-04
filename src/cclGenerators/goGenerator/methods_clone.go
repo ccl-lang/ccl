@@ -20,7 +20,7 @@ func (c *GoGenerationContext) generateCloneMethods() error {
 		Unindent().
 		WriteLine("}")
 
-	if c.Options.CCLDefinition.HasGlobalAttribute("AddSerializableInterface") {
+	if c.GetGlobalAttribute(CurrentLanguage, "AddSerializableInterface") != nil {
 		c.MethodsCode.NewLine().
 			LineD("func (m $model) CloneEmptySerializable() Serializable {").
 			Indent().

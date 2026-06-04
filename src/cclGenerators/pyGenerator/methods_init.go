@@ -20,7 +20,7 @@ func (c *PythonGenerationContext) generateInitFile() error {
 		Indent()
 
 	// Import all classes
-	for _, typeDef := range c.Options.CCLDefinition.TypeDefinitions {
+	for _, typeDef := range c.GetGenerationTypeDefinitions() {
 		if !typeDef.IsCustomModel() {
 			continue
 		}
