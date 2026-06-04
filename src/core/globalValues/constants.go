@@ -17,10 +17,10 @@ const (
 
 // naming styles
 const (
-	StylePascalCase = "PascalCase"
-	StyleCamelCase  = "camelCase"
-	StyleSnakeCase  = "snake_case"
-	StyleKebabCase  = "kebab-case"
+	StylePascalCase NamingStyle = "PascalCase"
+	StyleCamelCase  NamingStyle = "camelCase"
+	StyleSnakeCase  NamingStyle = "snake_case"
+	StyleKebabCase  NamingStyle = "kebab-case"
 )
 
 // binary serialization endian values

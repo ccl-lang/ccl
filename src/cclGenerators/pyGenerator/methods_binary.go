@@ -1,7 +1,7 @@
 package pyGenerator
 
 import (
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
+	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
@@ -30,7 +30,7 @@ func (c *PythonGenerationContext) generateSerializeBinaryMethod(model *CCLModel,
 }
 
 func (c *PythonGenerationContext) generateFieldSerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldRawName := cclUtils.ToSnakeCase(field.Name)
+	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	fieldName := "self." + fieldRawName
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
@@ -84,7 +84,7 @@ func (c *PythonGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 
 func (c *PythonGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
 	targetFieldType := field.Type.GetUnderlyingType()
-	fieldName := "self." + cclUtils.ToSnakeCase(field.Name)
+	fieldName := "self." + caseUtils.ToSnakeCase(field.Name)
 	builder.WriteLine("buffer.extend(struct.pack('<I', len(" + fieldName + ")))").
 		WriteLine("for item in " + fieldName + ":").
 		Indent()
@@ -173,7 +173,7 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 	field *CCLField,
 	builder *codeBuilder.CodeBuilder,
 ) {
-	fieldName := cclUtils.ToSnakeCase(field.Name)
+	fieldName := caseUtils.ToSnakeCase(field.Name)
 	resultField := resultName + "." + fieldName
 
 	switch field.Type.GetName() {
@@ -246,7 +246,7 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 	builder *codeBuilder.CodeBuilder,
 ) {
 	targetFieldType := field.Type.GetUnderlyingType()
-	fieldName := cclUtils.ToSnakeCase(field.Name)
+	fieldName := caseUtils.ToSnakeCase(field.Name)
 	resultField := resultName + "." + fieldName
 
 	builder.WriteLine(fieldName + "_len = struct.unpack_from('<I', buffer, offset)[0]").

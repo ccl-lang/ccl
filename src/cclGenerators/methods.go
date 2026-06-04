@@ -3,7 +3,6 @@ package cclGenerators
 import (
 	"github.com/ALiwoto/ssg/ssg"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
@@ -29,8 +28,8 @@ func (c *CodeGenerationBase) WriteCodeFile(path string, result *codeBuilder.Code
 func (c *CodeGenerationBase) GetFileNamingStyle(
 	targetLang gValues.LanguageType,
 	currentModel *cclValues.ModelDefinition,
-	defaultStyle string,
-) string {
+	defaultStyle gValues.NamingStyle,
+) gValues.NamingStyle {
 	collection := c.GetGlobalOrModelAttributes(
 		targetLang,
 		"FileNamingStyle",
@@ -39,7 +38,8 @@ func (c *CodeGenerationBase) GetFileNamingStyle(
 	if collection.IsEmpty() {
 		return defaultStyle
 	}
-	return collection.GetParamsAtAsStrings(0)[0]
+
+	return gValues.NamingStyle(collection.GetParamsAtAsStrings(0)[0])
 }
 
 // GetFileNameForModel returns the file name for the given model based on the naming style.
@@ -47,27 +47,21 @@ func (c *CodeGenerationBase) GetFileNamingStyle(
 func (c *CodeGenerationBase) GetFileNameForModel(
 	targetLang gValues.LanguageType,
 	currentModel *cclValues.ModelDefinition,
-	defaultStyle string,
-	supportedStyles []string,
+	defaultStyle gValues.NamingStyle,
+	supportedStyles []gValues.NamingStyle,
 ) (string, error) {
 	namingStyle := c.GetFileNamingStyle(targetLang, currentModel, defaultStyle)
 	fileName := ""
-	switch namingStyle {
-	case gValues.StylePascalCase:
-		fileName = cclUtils.ToPascalCase(currentModel.Name)
-	case gValues.StyleSnakeCase:
-		fileName = cclUtils.ToSnakeCase(currentModel.Name)
-	case gValues.StyleCamelCase:
-		fileName = cclUtils.ToCamelCase(currentModel.Name)
-	default:
+	if !namingStyle.IsValid() {
 		return "", &cclErrors.UnsupportedFileNamingStyleError{
 			ModelName:       currentModel.GetFullName(),
-			StyleName:       namingStyle,
-			SupportedStyles: supportedStyles,
+			StyleName:       string(namingStyle),
+			SupportedStyles: ssg.JoinStr(supportedStyles, ","),
 			TargetLanguage:  targetLang.String(),
 		}
 	}
-	return fileName, nil
+
+	return namingStyle.ApplyStyle(fileName), nil
 }
 
 //---------------------------------------------------------

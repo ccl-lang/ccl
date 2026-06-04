@@ -1,8 +1,8 @@
 package gdGenerator
 
 import (
+	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
@@ -37,7 +37,7 @@ func (c *GDScriptGenerationContext) generateSerializeJsonDictMethod(
 		NewLine()
 
 	for _, field := range model.Fields {
-		jsonName, err := c.getJsonFieldName(model, field)
+		jsonName, err := c.GetJsonFieldName(CurrentLanguage, model, field)
 		if err != nil {
 			return err
 		}
@@ -93,7 +93,7 @@ func (c *GDScriptGenerationContext) generateDeserializeJsonDictMethod(
 		NewLine()
 
 	for _, field := range model.Fields {
-		jsonName, err := c.getJsonFieldName(model, field)
+		jsonName, err := c.GetJsonFieldName(CurrentLanguage, model, field)
 		if err != nil {
 			return err
 		}
@@ -156,7 +156,7 @@ func (c *GDScriptGenerationContext) generateFieldSerializeJson(
 	jsonName string,
 	builder *codeBuilder.CodeBuilder,
 ) {
-	fieldRawName := cclUtils.ToSnakeCase(field.Name)
+	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	resultField := "self." + fieldRawName
 
 	builder.MapVarPairs(
@@ -189,7 +189,7 @@ func (c *GDScriptGenerationContext) generateArraySerializeJson(
 	builder *codeBuilder.CodeBuilder,
 ) error {
 	targetFieldType := field.Type.GetUnderlyingType()
-	fieldRawName := cclUtils.ToSnakeCase(field.Name)
+	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	resultField := "self." + fieldRawName
 	listName := fieldRawName + "_list"
 
@@ -245,7 +245,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 	jsonName string,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	fieldRawName := cclUtils.ToSnakeCase(field.Name)
+	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	targetFieldTypeName := field.Type.GetName()
 	resultField := modelResultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
@@ -405,7 +405,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 	targetFieldType := field.Type.GetUnderlyingType()
 	targetFieldTypeName := targetFieldType.GetName()
 	fieldTargetLangType := c.getGDScriptType(field)
-	fieldRawName := cclUtils.ToSnakeCase(field.Name)
+	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	resultField := modelResultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
 	listName := fieldRawName + "_list"

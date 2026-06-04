@@ -5,6 +5,11 @@ import (
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
+type (
+	CCLModel = cclValues.ModelDefinition
+	CCLField = cclValues.ModelFieldDefinition
+)
+
 type GenerateCode func(options *CodeGenerationOptions) (*CodeGenerationResult, error)
 
 type CodeGenerationOptions struct {

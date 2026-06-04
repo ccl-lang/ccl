@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/ALiwoto/ssg/ssg"
+	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
@@ -90,7 +90,7 @@ func (c *GDScriptGenerationContext) generateCodeForModel(model *CCLModel) error 
 		gValues.LanguageGd,
 		model,
 		DefaultFileNamingStyle,
-		supportedStyles,
+		supportedFileNameStyles,
 	)
 	if err != nil {
 		return err
@@ -124,7 +124,7 @@ func (c *GDScriptGenerationContext) generateModelClass(builder *codeBuilder.Code
 	builder.NewLine()
 
 	// Write model ID constant
-	modelIdConstName := "MODEL_ID_" + strings.ToUpper(cclUtils.ToSnakeCase(model.Name))
+	modelIdConstName := "MODEL_ID_" + strings.ToUpper(caseUtils.ToSnakeCase(model.Name))
 	builder.WriteLine("const " + modelIdConstName +
 		" = " + ssg.ToBase10(model.ModelId)).
 		NewLine()
@@ -140,7 +140,7 @@ func (c *GDScriptGenerationContext) generateModelClass(builder *codeBuilder.Code
 				TargetLanguage: CurrentLanguage.String(),
 			}
 		}
-		builder.WriteLine("var " + cclUtils.ToSnakeCase(field.Name) + ": " + varType)
+		builder.WriteLine("var " + caseUtils.ToSnakeCase(field.Name) + ": " + varType)
 	}
 	builder.NewLine()
 

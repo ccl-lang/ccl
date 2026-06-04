@@ -1,8 +1,8 @@
 package gdGenerator
 
 import (
+	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
@@ -50,7 +50,7 @@ func (c *GDScriptGenerationContext) generateFieldSerializeBinary(
 	field *CCLField,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	fieldRawName := cclUtils.ToSnakeCase(field.GetName())
+	fieldRawName := caseUtils.ToSnakeCase(field.GetName())
 	resultField := "self." + fieldRawName
 	modelName := field.OwnedBy.GetName()
 	targetFieldTypeName := field.Type.GetName()
@@ -125,7 +125,7 @@ func (c *GDScriptGenerationContext) generateArraySerializeBinary(
 	targetFieldType := field.Type.GetUnderlyingType()
 	targetFieldTypeName := targetFieldType.GetName()
 	modelName := field.OwnedBy.GetName()
-	fieldRawName := cclUtils.ToSnakeCase(field.GetName())
+	fieldRawName := caseUtils.ToSnakeCase(field.GetName())
 	resultField := "self." + fieldRawName
 
 	builder.ExpectMappedVars(
@@ -251,7 +251,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
 	field *CCLField,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	fieldRawName := cclUtils.ToSnakeCase(field.GetName())
+	fieldRawName := caseUtils.ToSnakeCase(field.GetName())
 	resultField := modelResultName + "." + fieldRawName
 	targetFieldTypeName := field.Type.GetName()
 
@@ -328,7 +328,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	builder *codeBuilder.CodeBuilder,
 ) error {
 	targetFieldType := field.Type.GetUnderlyingType()
-	fieldRawName := cclUtils.ToSnakeCase(field.GetName())
+	fieldRawName := caseUtils.ToSnakeCase(field.GetName())
 	resultField := modelResultName + "." + fieldRawName
 	targetFieldTypeName := targetFieldType.GetName()
 	fieldTargetLangType := c.getGDScriptType(field)

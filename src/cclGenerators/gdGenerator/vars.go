@@ -3,7 +3,7 @@ package gdGenerator
 import gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 
 var (
-	supportedStyles = []string{
+	supportedFileNameStyles = []gValues.NamingStyle{
 		gValues.StylePascalCase,
 		gValues.StyleSnakeCase,
 		gValues.StyleCamelCase,

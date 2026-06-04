@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/ALiwoto/ssg/ssg"
+	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	gen "github.com/ccl-lang/ccl/src/cclGenerators"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
@@ -122,13 +122,13 @@ func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		Indent()
 
 	// Write model ID constant
-	modelIdConstName := "MODEL_ID_" + strings.ToUpper(cclUtils.ToSnakeCase(model.Name))
+	modelIdConstName := "MODEL_ID_" + strings.ToUpper(caseUtils.ToSnakeCase(model.Name))
 	builder.WriteLine("static " + modelIdConstName + " = " + ssg.ToBase10(model.ModelId) + ";").
 		NewLine()
 
 	// Fields
 	for _, field := range model.Fields {
-		fieldName := cclUtils.ToCamelCase(field.Name)
+		fieldName := caseUtils.ToCamelCase(field.Name)
 		builder.WriteLine(fieldName + ";")
 	}
 	builder.NewLine()
@@ -137,7 +137,7 @@ func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 	builder.WriteLine("constructor() {").
 		Indent()
 	for _, field := range model.Fields {
-		fieldName := cclUtils.ToCamelCase(field.Name)
+		fieldName := caseUtils.ToCamelCase(field.Name)
 		defaultValue := "null"
 		if field.IsArray() {
 			defaultValue = "[]"

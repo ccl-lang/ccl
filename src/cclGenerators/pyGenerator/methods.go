@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/ALiwoto/ssg/ssg"
+	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
@@ -71,7 +71,7 @@ func (c *PythonGenerationContext) generateCodeForModel(model *CCLModel) error {
 		gValues.LanguagePy,
 		model,
 		DefaultFileNamingStyle,
-		supportedStyles,
+		supportedFileNameStyles,
 	)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func (c *PythonGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		Indent()
 
 	// Write model ID constant
-	modelIdConstName := "MODEL_ID_" + strings.ToUpper(cclUtils.ToSnakeCase(model.Name))
+	modelIdConstName := "MODEL_ID_" + strings.ToUpper(caseUtils.ToSnakeCase(model.Name))
 	builder.WriteLine(modelIdConstName + " = " + ssg.ToBase10(model.ModelId)).
 		NewLine()
 
@@ -143,7 +143,7 @@ func (c *PythonGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 				}
 				builder.DoImport(importType.GetDefinition().GetFullName(), importLine)
 			}
-			fieldName := cclUtils.ToSnakeCase(field.Name)
+			fieldName := caseUtils.ToSnakeCase(field.Name)
 			builder.WriteLine("self." + fieldName + ": " + varType + " = " + defaultValue)
 		}
 	}
@@ -174,7 +174,7 @@ func (c *PythonGenerationContext) getImportLineForType(targetType *cclValues.CCL
 		gValues.LanguagePy,
 		targetType.GetModelDefinition(),
 		DefaultFileNamingStyle,
-		supportedStyles,
+		supportedFileNameStyles,
 	)
 	if err != nil {
 		return "", err

@@ -7,3 +7,6 @@ type LanguageType int
 // NormalizedLangName represents a normalized language name that's
 // supported by CCL tool.
 type NormalizedLangName = string
+
+// NamingStyle represents a specific naming style when naming things.
+type NamingStyle string

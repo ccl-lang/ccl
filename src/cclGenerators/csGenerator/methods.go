@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/ALiwoto/ssg/ssg"
+	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	gen "github.com/ccl-lang/ccl/src/cclGenerators"
 	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
@@ -140,14 +140,14 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 	builder.Indent()
 
 	// Write model ID constant
-	modelIdConstName := "ModelId" + cclUtils.ToPascalCase(model.Name)
+	modelIdConstName := "ModelId" + caseUtils.ToPascalCase(model.Name)
 	builder.WriteLine("public const int " + modelIdConstName + " = " + ssg.ToBase10(model.ModelId) + ";")
 	builder.NewLine()
 
 	// Fields
 	for _, field := range model.Fields {
 		csType := c.getCSharpType(field)
-		fieldName := cclUtils.ToPascalCase(field.Name)
+		fieldName := caseUtils.ToPascalCase(field.Name)
 		// C# properties
 		builder.WriteLine("public " + csType + " " + fieldName + " { get; set; }")
 	}
@@ -158,7 +158,7 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 	builder.WriteLine("{")
 	builder.Indent()
 	for _, field := range model.Fields {
-		fieldName := cclUtils.ToPascalCase(field.Name)
+		fieldName := caseUtils.ToPascalCase(field.Name)
 		if field.IsArray() {
 			csType := c.getCSharpType(field)
 			// Initialize list

@@ -1,6 +1,8 @@
 package cclErrors
 
-import "github.com/ccl-lang/ccl/src/core/cclUtils"
+import (
+	"github.com/ccl-lang/ccl/src/core/cclUtils"
+)
 
 // ConflictKind represents the kind of conflict that occurred, such as "model", "builtin type", "reserved name", etc.
 type ConflictKind string
@@ -48,10 +50,20 @@ type UnsupportedTypeDefinitionError struct {
 // unsupported file naming style is encountered for a certain model
 // when compiling to a certain target language.
 type UnsupportedFileNamingStyleError struct {
-	ModelName       string
-	StyleName       string
-	SupportedStyles []string
-	TargetLanguage  string
+	// ModelName is the model name that the style was used in.
+	ModelName string
+
+	// StyleName is the specific style name that the user has provided but is not
+	// supported by us.
+	StyleName string
+
+	// SupportedStyles is a representation of a list of supported styles.
+	// You can use JoinStr to append them together.
+	SupportedStyles string
+
+	// TargetLanguage is the target language in which we where trying to generate
+	// code.
+	TargetLanguage string
 }
 
 // FieldNameConflictError is an error that is returned when a field name

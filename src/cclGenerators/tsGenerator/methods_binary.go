@@ -1,7 +1,7 @@
 package tsGenerator
 
 import (
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
+	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
@@ -30,7 +30,7 @@ func (c *TypeScriptGenerationContext) generateSerializeBinaryMethod(model *CCLMo
 }
 
 func (c *TypeScriptGenerationContext) generateFieldSerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldName := "this." + cclUtils.ToCamelCase(field.Name)
+	fieldName := "this." + caseUtils.ToCamelCase(field.Name)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
@@ -53,9 +53,6 @@ func (c *TypeScriptGenerationContext) generateFieldSerializeBinary(field *CCLFie
 			WriteLine("for (let i = 0; i < 2; i++) buffer.push(dataView.getUint8(i));")
 	case cclValues.TypeNameInt64:
 		// JS doesn't support 64-bit integers well without BigInt.
-		// For now, let's assume BigInt or just write as 64-bit float if precision allows,
-		// BUT standard binary formats usually expect 8 bytes.
-		// Let's use BigInt64 if environment supports it, or just write 2 32-bit ints.
 		// Assuming modern JS environment (Node, modern browsers) supports BigInt.
 		builder.WriteLine("dataView.setBigInt64(0, BigInt(" + fieldName + "), true);").
 			WriteLine("for (let i = 0; i < 8; i++) buffer.push(dataView.getUint8(i));")
@@ -108,7 +105,7 @@ func (c *TypeScriptGenerationContext) generateFieldSerializeBinary(field *CCLFie
 }
 
 func (c *TypeScriptGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldName := "this." + cclUtils.ToCamelCase(field.Name)
+	fieldName := "this." + caseUtils.ToCamelCase(field.Name)
 	targetFieldType := field.Type.GetUnderlyingType()
 
 	builder.WriteLine("dataView.setUint32(0, " + fieldName + ".length, true);").
@@ -201,7 +198,7 @@ func (c *TypeScriptGenerationContext) generateDeserializeBinaryMethod(model *CCL
 }
 
 func (c *TypeScriptGenerationContext) generateFieldDeserializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldName := cclUtils.ToCamelCase(field.Name)
+	fieldName := caseUtils.ToCamelCase(field.Name)
 	resultField := "result." + fieldName
 
 	switch field.Type.GetName() {
@@ -279,7 +276,7 @@ func (c *TypeScriptGenerationContext) generateFieldDeserializeBinary(field *CCLF
 }
 
 func (c *TypeScriptGenerationContext) generateArrayDeserializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldName := cclUtils.ToCamelCase(field.Name)
+	fieldName := caseUtils.ToCamelCase(field.Name)
 	resultField := "result." + fieldName
 	targetFieldType := field.Type.GetUnderlyingType()
 

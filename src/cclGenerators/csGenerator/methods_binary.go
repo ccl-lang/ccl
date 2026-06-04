@@ -1,7 +1,7 @@
 package csGenerator
 
 import (
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
+	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
@@ -39,7 +39,7 @@ func (c *CSharpGenerationContext) generateSerializeBinaryMethod(model *CCLModel,
 }
 
 func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldName := "this." + cclUtils.ToPascalCase(field.Name)
+	fieldName := "this." + caseUtils.ToPascalCase(field.Name)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
@@ -98,7 +98,7 @@ func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 }
 
 func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldName := "this." + cclUtils.ToPascalCase(field.Name)
+	fieldName := "this." + caseUtils.ToPascalCase(field.Name)
 	targetFieldType := field.Type.GetUnderlyingType()
 
 	builder.WriteLine("writer.Write((uint)(" + fieldName + "?.Count ?? 0));")
@@ -195,7 +195,7 @@ func (c *CSharpGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 }
 
 func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldName := cclUtils.ToPascalCase(field.Name)
+	fieldName := caseUtils.ToPascalCase(field.Name)
 	resultField := "result." + fieldName
 
 	switch field.Type.GetName() {
@@ -257,7 +257,7 @@ func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField
 }
 
 func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
-	fieldName := cclUtils.ToPascalCase(field.Name)
+	fieldName := caseUtils.ToPascalCase(field.Name)
 	resultField := "result." + fieldName
 	targetFieldType := field.Type.GetUnderlyingType()
 
