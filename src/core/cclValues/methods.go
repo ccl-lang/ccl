@@ -46,6 +46,36 @@ func (d *SourceCodeDefinition) FindGlobalAttribute(
 	return nil
 }
 
+// FindFileAttributes returns all file-scoped attributes with the given name.
+func (d *SourceCodeDefinition) FindFileAttributes(
+	targetLang gValues.LanguageType,
+	name string,
+) []*AttributeUsageInfo {
+	attributes := []*AttributeUsageInfo{}
+
+	for _, attr := range d.FileAttributes {
+		if attr.Name == name && attr.IsForLanguage(targetLang) {
+			attributes = append(attributes, attr)
+		}
+	}
+
+	return attributes
+}
+
+// FindFileAttribute returns the first file-scoped attribute with the given name.
+func (d *SourceCodeDefinition) FindFileAttribute(
+	targetLang gValues.LanguageType,
+	name string,
+) *AttributeUsageInfo {
+	for _, attr := range d.FileAttributes {
+		if attr.Name == name && attr.IsForLanguage(targetLang) {
+			return attr
+		}
+	}
+
+	return nil
+}
+
 // GetModelByName returns the model definition by the given name.
 func (d *SourceCodeDefinition) GetModelByName(name string) *ModelDefinition {
 	for _, typeDef := range d.TypeDefinitions {

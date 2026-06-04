@@ -1,13 +1,33 @@
 package cclParser
 
 import (
+	"strings"
+
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
 	"github.com/ccl-lang/ccl/src/core/cclAst"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 func (p *CCLAstParser) parseGlobalAttributeNode() (*cclAst.GlobalAttributeNode, error) {
 	if err := p.consume(cclLexer.TokenTypeHash); err != nil {
 		return nil, err
+	}
+
+	scope := cclAst.AttributeScopeGlobal
+	if p.isCurrentAttributeScopeToken() && p.isNextType(cclLexer.TokenTypeColon) {
+		scope = parseAttributeScope(p.currentAttributeScopeName())
+		if scope == cclAst.AttributeScopeUnknown {
+			return nil, &InvalidSyntaxError{
+				Language:       gValues.LanguageCCL,
+				HintMessage:    "Expected attribute scope to be file, global, or namespace.",
+				SourcePosition: p.getSourcePosition(),
+			}
+		}
+
+		p.advance()
+		if err := p.consume(cclLexer.TokenTypeColon); err != nil {
+			return nil, err
+		}
 	}
 
 	attrNode, err := p.parseSingleAttributeNode()
@@ -17,9 +37,24 @@ func (p *CCLAstParser) parseGlobalAttributeNode() (*cclAst.GlobalAttributeNode, 
 
 	return &cclAst.GlobalAttributeNode{
 		Name:           attrNode.Name,
+		Scope:          scope,
+		Languages:      attrNode.Languages,
 		Params:         attrNode.Params,
 		SourcePosition: attrNode.SourcePosition,
 	}, nil
+}
+
+func (p *CCLAstParser) isCurrentAttributeScopeToken() bool {
+	return p.current.Type == cclLexer.TokenTypeIdentifier ||
+		p.current.Type == cclLexer.TokenTypeKeywordNamespace
+}
+
+func (p *CCLAstParser) currentAttributeScopeName() string {
+	if p.current.Type == cclLexer.TokenTypeKeywordNamespace {
+		return "namespace"
+	}
+
+	return p.current.GetIdentifier()
 }
 
 func (p *CCLAstParser) parseAttributeNodes() ([]*cclAst.AttributeNode, error) {
@@ -50,6 +85,11 @@ func (p *CCLAstParser) parseSingleAttributeNode() (*cclAst.AttributeNode, error)
 	// cache the starting token, since we are going to need some info from it
 	startingToken := p.current
 	if err := p.consume(cclLexer.TokenTypeLeftBracket); err != nil {
+		return nil, err
+	}
+
+	languages, err := p.parseAttributeLanguageSelector()
+	if err != nil {
 		return nil, err
 	}
 
@@ -227,9 +267,47 @@ func (p *CCLAstParser) parseSingleAttributeNode() (*cclAst.AttributeNode, error)
 
 	return &cclAst.AttributeNode{
 		Name:           name,
+		Languages:      languages,
 		Params:         attrParams,
 		SourcePosition: p.getSourcePositionForToken(startingToken),
 	}, nil
+}
+
+func (p *CCLAstParser) parseAttributeLanguageSelector() ([]string, error) {
+	if !p.isCurrentType(cclLexer.TokenTypeDollar) {
+		return nil, nil
+	}
+
+	languages := []string{}
+	for {
+		if err := p.consume(cclLexer.TokenTypeDollar); err != nil {
+			return nil, err
+		}
+
+		if p.current.Type != cclLexer.TokenTypeIdentifier {
+			return nil, &UnexpectedTokenError{
+				Expected:       cclLexer.TokenTypeIdentifier,
+				Actual:         p.current.Type,
+				SourcePosition: p.getSourcePosition(),
+			}
+		}
+
+		languages = append(languages, strings.ToLower(p.current.GetIdentifier()))
+		p.advance()
+
+		if p.isCurrentType(cclLexer.TokenTypeComma) {
+			p.advance()
+			continue
+		}
+
+		break
+	}
+
+	if err := p.consume(cclLexer.TokenTypeColon); err != nil {
+		return nil, err
+	}
+
+	return languages, nil
 }
 
 func (p *CCLAstParser) parseAttributeValueExpression() cclAst.AttributeValueExpression {
@@ -285,7 +363,8 @@ func (p *CCLAstParser) isAttributeAt(targetPos int) bool {
 	}
 
 	return p.tokens[targetPos].Type == cclLexer.TokenTypeLeftBracket &&
-		p.tokens[targetPos+1].Type == cclLexer.TokenTypeIdentifier
+		(p.tokens[targetPos+1].Type == cclLexer.TokenTypeIdentifier ||
+			p.tokens[targetPos+1].Type == cclLexer.TokenTypeDollar)
 }
 
 func (p *CCLAstParser) peekAfterAttribute() cclLexer.CCLTokenType {

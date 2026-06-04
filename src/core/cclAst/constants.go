@@ -19,3 +19,10 @@ const (
 	AttributeLiteralKindFloat
 	AttributeLiteralKindReserved
 )
+
+const (
+	AttributeScopeUnknown AttributeScope = iota
+	AttributeScopeGlobal
+	AttributeScopeFile
+	AttributeScopeNamespace
+)

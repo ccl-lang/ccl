@@ -2,8 +2,9 @@ package cclValues
 
 var (
 	keywordNamesToNormalizedValues = map[string]string{
-		"import": KeywordNameImport,
-		"model":  KeywordNameModel,
+		"import":    KeywordNameImport,
+		"model":     KeywordNameModel,
+		"namespace": KeywordNameNamespace,
 	}
 )
 

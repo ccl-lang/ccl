@@ -12,6 +12,13 @@ func (c *CodeGenerationBase) GetGlobalAttribute(
 	targetLang gValues.LanguageType,
 	name string,
 ) *cclValues.AttributeUsageInfo {
+	if ctx := c.getCodeContext(); ctx != nil {
+		attr := ctx.FindContextGlobalAttribute(targetLang, name)
+		if attr != nil {
+			return attr
+		}
+	}
+
 	return c.Options.CCLDefinition.FindGlobalAttribute(targetLang, name)
 }
 
@@ -20,6 +27,13 @@ func (c *CodeGenerationBase) GetGlobalAttributes(
 	targetLang gValues.LanguageType,
 	name string,
 ) []*cclValues.AttributeUsageInfo {
+	if ctx := c.getCodeContext(); ctx != nil {
+		attrs := ctx.FindContextGlobalAttributes(targetLang, name)
+		if len(attrs) > 0 {
+			return attrs
+		}
+	}
+
 	return c.Options.CCLDefinition.FindGlobalAttributes(targetLang, name)
 }
 
@@ -30,12 +44,18 @@ func (c *CodeGenerationBase) GetGlobalOrModelAttribute(
 	name string,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributeUsageInfo {
-	attr := c.GetGlobalAttribute(targetLang, name)
-	if attr == nil {
-		attr = currentModel.FindAttribute(name)
+	if ctx := c.getCodeContext(); ctx != nil {
+		return ctx.ResolveAttribute(
+			targetLang,
+			name,
+			&cclValues.AttributeResolutionSubject{
+				Model: currentModel,
+			},
+			nil,
+		)
 	}
 
-	return attr
+	return c.GetModelOrGlobalAttribute(targetLang, name, currentModel)
 }
 
 // GetGlobalOrModelAttributes retrieves all attributes with the specified name
@@ -45,9 +65,20 @@ func (c *CodeGenerationBase) GetGlobalOrModelAttributes(
 	name string,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
-	attrs := c.GetGlobalAttributes(targetLang, name)
+	if ctx := c.getCodeContext(); ctx != nil {
+		return cclValues.NewAttrsCollection(ctx.ResolveAttributes(
+			targetLang,
+			name,
+			&cclValues.AttributeResolutionSubject{
+				Model: currentModel,
+			},
+			nil,
+		))
+	}
+
+	attrs := currentModel.FindAttributes(targetLang, name)
 	if len(attrs) == 0 {
-		attrs = currentModel.FindAttributes(targetLang, name)
+		attrs = c.GetGlobalAttributes(targetLang, name)
 	}
 	return cclValues.NewAttrsCollection(attrs)
 }
@@ -71,6 +102,17 @@ func (c *CodeGenerationBase) GetModelOrGlobalAttribute(
 	name string,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributeUsageInfo {
+	if ctx := c.getCodeContext(); ctx != nil {
+		return ctx.ResolveAttribute(
+			targetLang,
+			name,
+			&cclValues.AttributeResolutionSubject{
+				Model: currentModel,
+			},
+			nil,
+		)
+	}
+
 	attr := currentModel.FindAttribute(name)
 	if attr == nil {
 		attr = c.GetGlobalAttribute(targetLang, name)
@@ -98,6 +140,17 @@ func (c *CodeGenerationBase) GetModelOrGlobalAttributes(
 	name string,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
+	if ctx := c.getCodeContext(); ctx != nil {
+		return cclValues.NewAttrsCollection(ctx.ResolveAttributes(
+			targetLang,
+			name,
+			&cclValues.AttributeResolutionSubject{
+				Model: currentModel,
+			},
+			nil,
+		))
+	}
+
 	attrs := currentModel.FindAttributes(targetLang, name)
 	if len(attrs) == 0 {
 		attrs = c.GetGlobalAttributes(targetLang, name)
@@ -135,6 +188,17 @@ func (c *CodeGenerationBase) FindFieldAttribute(
 		return nil
 	}
 
+	if ctx := c.getCodeContext(); ctx != nil {
+		return ctx.ResolveAttribute(
+			targetLang,
+			name,
+			&cclValues.AttributeResolutionSubject{
+				Field: field,
+			},
+			nil,
+		)
+	}
+
 	for _, attr := range field.Attributes {
 		if attr.Name != name {
 			continue
@@ -142,6 +206,22 @@ func (c *CodeGenerationBase) FindFieldAttribute(
 		if attr.IsForLanguage(targetLang) {
 			return attr
 		}
+	}
+
+	return nil
+}
+
+func (c *CodeGenerationBase) getCodeContext() *cclValues.CCLCodeContext {
+	if c == nil || c.Options == nil {
+		return nil
+	}
+
+	if c.Options.CodeContext != nil {
+		return c.Options.CodeContext
+	}
+
+	if c.Options.CCLDefinition != nil {
+		return c.Options.CCLDefinition.CodeContext
 	}
 
 	return nil

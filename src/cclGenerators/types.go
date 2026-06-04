@@ -14,6 +14,7 @@ type GenerateCode func(options *CodeGenerationOptions) (*CodeGenerationResult, e
 
 type CodeGenerationOptions struct {
 	CCLDefinition     *cclValues.SourceCodeDefinition
+	CodeContext       *cclValues.CCLCodeContext
 	OutputPath        string
 	TargetLanguage    string
 	PackageName       string

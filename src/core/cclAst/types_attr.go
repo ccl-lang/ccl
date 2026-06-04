@@ -6,19 +6,25 @@ import "github.com/ccl-lang/ccl/src/core/cclUtils"
 type AttributeNodeBase interface {
 	GetAttributeName() string
 	GetAttributeParams() []*AttributeParamNode
+	GetAttributeLanguages() []string
 	GetSourcePosition() *cclUtils.SourceCodePosition
 }
 
 // AttributeNode represents a normal attribute usage, such as [MyAttribute(...)].
 type AttributeNode struct {
 	Name           string
+	Languages      []string
 	Params         []*AttributeParamNode
 	SourcePosition *cclUtils.SourceCodePosition
 }
 
-// GlobalAttributeNode represents a global attribute usage, such as #[MyAttribute(...)].
+// GlobalAttributeNode represents a hash-prefixed scoped attribute usage,
+// such as #[MyAttribute(...)] or #file:[$go:MyAttribute(...)].
 type GlobalAttributeNode struct {
 	Name           string
+	Scope          AttributeScope
+	Namespace      string
+	Languages      []string
 	Params         []*AttributeParamNode
 	SourcePosition *cclUtils.SourceCodePosition
 }

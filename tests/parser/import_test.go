@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ccl-lang/ccl/src/cclParser"
+	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
 func TestParseCCLSourceFileImportsRelativeToSourceFile(t *testing.T) {
@@ -39,8 +40,10 @@ model LocalThing {
 
 	t.Chdir(otherDir)
 
+	ctx := cclValues.NewCCLCodeContext()
 	definition, err := cclParser.ParseCCLSourceFile(&cclParser.CCLParseOptions{
 		SourceFilePath: mainPath,
+		CodeContext:    ctx,
 	})
 	if err != nil {
 		t.Fatalf("Failed to parse source file with import: %v", err)
@@ -73,5 +76,21 @@ model LocalThing {
 
 	if fieldType.GetModelDefinition() != sharedModel {
 		t.Fatalf("Expected LocalThing.Shared to reference imported SharedThing")
+	}
+
+	if fieldType.GetSourceFileId() == 0 || fieldType.GetSourceFileId() != sharedModel.SourceFileId {
+		t.Fatalf("Expected imported type definition to keep the imported source file id")
+	}
+
+	if sharedModel.SourceFileId == 0 || localModel.SourceFileId == 0 {
+		t.Fatalf("Expected models to have source file ids")
+	}
+
+	if sharedModel.SourceFileId == localModel.SourceFileId {
+		t.Fatalf("Expected imported and local models to have different source file ids")
+	}
+
+	if len(ctx.GetSourceDefinitions()) != 2 {
+		t.Fatalf("Expected 2 registered source definitions, got %d", len(ctx.GetSourceDefinitions()))
 	}
 }

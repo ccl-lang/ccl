@@ -18,6 +18,14 @@ func (a *AttributeNode) GetAttributeParams() []*AttributeParamNode {
 	return a.Params
 }
 
+// GetAttributeLanguages returns the target languages of the attribute.
+func (a *AttributeNode) GetAttributeLanguages() []string {
+	if a == nil {
+		return nil
+	}
+	return a.Languages
+}
+
 // GetSourcePosition returns the source position of the attribute.
 func (a *AttributeNode) GetSourcePosition() *cclUtils.SourceCodePosition {
 	if a == nil {
@@ -40,6 +48,14 @@ func (g *GlobalAttributeNode) GetAttributeParams() []*AttributeParamNode {
 		return nil
 	}
 	return g.Params
+}
+
+// GetAttributeLanguages returns the target languages of the global attribute.
+func (g *GlobalAttributeNode) GetAttributeLanguages() []string {
+	if g == nil {
+		return nil
+	}
+	return g.Languages
 }
 
 // GetSourcePosition returns the source position of the global attribute.

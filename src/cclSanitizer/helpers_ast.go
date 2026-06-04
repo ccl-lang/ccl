@@ -30,7 +30,12 @@ func SanitizeCCLAst(
 		fileNamespace = gValues.DefaultMainNamespace
 	}
 
-	definition := &cclValues.SourceCodeDefinition{}
+	definition := &cclValues.SourceCodeDefinition{
+		CodeContext: ctx,
+		FilePath:    ast.FilePath,
+		Namespace:   fileNamespace,
+	}
+	sourceFileId := ctx.RegisterSourceCodeDefinition(definition)
 	nameValidator := newFieldNameValidator(ast, fileNamespace)
 	fieldTypeUsages := []*fieldTypeUsageCheck{}
 
@@ -45,8 +50,44 @@ func SanitizeCCLAst(
 		if err != nil {
 			return nil, err
 		}
+		attrUsage.SourceFileId = sourceFileId
 		definition.GlobalAttributes = append(definition.GlobalAttributes, attrUsage)
 	}
+
+	for _, fileAttr := range ast.FileAttributes {
+		if fileAttr == nil {
+			return nil, &AstSanitizationError{
+				Message: "nil file attribute in AST",
+			}
+		}
+
+		attrUsage, err := ResolveAttributeUsage(ctx, fileAttr)
+		if err != nil {
+			return nil, err
+		}
+		attrUsage.SourceFileId = sourceFileId
+		definition.FileAttributes = append(definition.FileAttributes, attrUsage)
+	}
+
+	for _, namespaceAttr := range ast.NamespaceAttributes {
+		if namespaceAttr == nil {
+			return nil, &AstSanitizationError{
+				Message: "nil namespace attribute in AST",
+			}
+		}
+
+		attrUsage, err := ResolveAttributeUsage(ctx, namespaceAttr)
+		if err != nil {
+			return nil, err
+		}
+		attrUsage.SourceFileId = sourceFileId
+		attrUsage.Namespace = namespaceAttr.Namespace
+		if attrUsage.Namespace == "" {
+			attrUsage.Namespace = fileNamespace
+		}
+		definition.NamespaceAttributes = append(definition.NamespaceAttributes, attrUsage)
+	}
+	ctx.RegisterScopedAttributes(definition)
 
 	for _, modelAst := range ast.Models {
 		if modelAst == nil {
@@ -68,6 +109,7 @@ func SanitizeCCLAst(
 		}
 
 		modelDef := &cclValues.ModelDefinition{
+			SourceFileId:   sourceFileId,
 			ModelId:        definition.GetNextModelId(),
 			Name:           modelAst.Name,
 			Namespace:      modelNamespace,
@@ -86,6 +128,7 @@ func SanitizeCCLAst(
 			if err != nil {
 				return nil, err
 			}
+			attrUsage.SourceFileId = sourceFileId
 			modelDef.Attributes = append(modelDef.Attributes, attrUsage)
 		}
 
@@ -130,6 +173,7 @@ func SanitizeCCLAst(
 				if err != nil {
 					return nil, err
 				}
+				attrUsage.SourceFileId = sourceFileId
 				fieldDef.Attributes = append(fieldDef.Attributes, attrUsage)
 			}
 
@@ -188,6 +232,7 @@ func SanitizeCCLAst(
 		if err != nil {
 			return nil, err
 		}
+		modelTypeDef.ChangeSourceFileId(sourceFileId)
 
 		definition.TypeDefinitions = append(definition.TypeDefinitions, modelTypeDef)
 	}

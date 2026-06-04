@@ -11,6 +11,7 @@ func newImportGraphResolver() *importGraphResolver {
 	return &importGraphResolver{
 		visitedFiles: map[string]bool{},
 		activeFiles:  map[string]bool{},
+		fileAsts:     map[string]*cclAst.CCLFileAST{},
 	}
 }
 

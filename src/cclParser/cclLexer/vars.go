@@ -8,8 +8,10 @@ var (
 		TokenTypeError:              "ERROR",
 		TokenTypeComment:            "COMMENT",
 		TokenTypeHash:               "HASH",
+		TokenTypeDollar:             "DOLLAR",
 		TokenTypeKeywordImport:      "KEYWORD_IMPORT",
 		TokenTypeKeywordModel:       "KEYWORD_MODEL",
+		TokenTypeKeywordNamespace:   "KEYWORD_NAMESPACE",
 		TokenTypeIdentifier:         "IDENTIFIER",
 		TokenTypeColon:              "COLON",
 		TokenTypeSemicolon:          "SEMICOLON",
@@ -57,6 +59,7 @@ var (
 		',': TokenTypeComma,
 		'.': TokenTypeDot,
 		'#': TokenTypeHash,
+		'$': TokenTypeDollar,
 		'+': TokenTypePlus,
 		'-': TokenTypeMinus,
 		'*': TokenTypeMultiply,
@@ -99,8 +102,9 @@ var (
 	}
 
 	keywordTokenTypes = map[string]CCLTokenType{
-		cclValues.KeywordNameImport: TokenTypeKeywordImport,
-		cclValues.KeywordNameModel:  TokenTypeKeywordModel,
+		cclValues.KeywordNameImport:    TokenTypeKeywordImport,
+		cclValues.KeywordNameModel:     TokenTypeKeywordModel,
+		cclValues.KeywordNameNamespace: TokenTypeKeywordNamespace,
 	}
 )
 

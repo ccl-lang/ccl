@@ -3,6 +3,7 @@ package cclParser
 import (
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
 	"github.com/ccl-lang/ccl/src/cclSanitizer"
+	"github.com/ccl-lang/ccl/src/core/cclAst"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 )
 
@@ -21,12 +22,12 @@ func ParseCCLSourceFile(options *CCLParseOptions) (*cclValues.SourceCodeDefiniti
 		options.CodeContext = cclValues.NewCCLCodeContext()
 	}
 
-	astFile, err := ParseCCLSourceFileAsAST(options)
+	astFiles, rootAst, _, err := newImportGraphResolver().parseSourceFileGraphAsAST(options)
 	if err != nil {
 		return nil, err
 	}
 
-	return cclSanitizer.SanitizeCCLAst(options.CodeContext, astFile)
+	return sanitizeFileGraph(options.CodeContext, astFiles, rootAst)
 }
 
 // ParseCCLSourceContent takes a CCLParseOptions struct and parses standalone
@@ -64,4 +65,34 @@ func ParseCCL(
 	}
 
 	return cclSanitizer.SanitizeCCLAst(ctx, astFile)
+}
+
+func sanitizeFileGraph(
+	ctx *cclValues.CCLCodeContext,
+	astFiles []*cclAst.CCLFileAST,
+	rootAst *cclAst.CCLFileAST,
+) (*cclValues.SourceCodeDefinition, error) {
+	aggregate := &cclValues.SourceCodeDefinition{
+		CodeContext: ctx,
+	}
+
+	for _, astFile := range astFiles {
+		definition, err := cclSanitizer.SanitizeCCLAst(ctx, astFile)
+		if err != nil {
+			return nil, err
+		}
+
+		if rootAst != nil && astFile.FilePath == rootAst.FilePath {
+			aggregate.SourceFileId = definition.SourceFileId
+			aggregate.FilePath = definition.FilePath
+			aggregate.Namespace = definition.Namespace
+		}
+
+		aggregate.TypeDefinitions = append(aggregate.TypeDefinitions, definition.TypeDefinitions...)
+		aggregate.GlobalAttributes = append(aggregate.GlobalAttributes, definition.GlobalAttributes...)
+		aggregate.FileAttributes = append(aggregate.FileAttributes, definition.FileAttributes...)
+		aggregate.NamespaceAttributes = append(aggregate.NamespaceAttributes, definition.NamespaceAttributes...)
+	}
+
+	return aggregate, nil
 }

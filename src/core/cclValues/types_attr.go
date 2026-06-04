@@ -11,6 +11,13 @@ type AttributeUsageInfo struct {
 	// Name is the name of the attribute.
 	Name string
 
+	// SourceFileId is the source file where this attribute is defined.
+	SourceFileId SourceFileId
+
+	// Namespace is the namespace this attribute belongs to when it is
+	// namespace-scoped.
+	Namespace string
+
 	// Languages specifies which languages this attribute should
 	// get applied to.
 	// it can be an empty string to indicate all languages.
@@ -28,4 +35,20 @@ type AttributeUsageInfo struct {
 // manipulating them.
 type AttributesCollection struct {
 	Attrs []*AttributeUsageInfo
+}
+
+// AttributeResolutionSubject describes the declaration or file for scoped
+// attribute resolution.
+type AttributeResolutionSubject struct {
+	SourceFileId SourceFileId
+	Namespace    string
+	Model        *ModelDefinition
+	Field        *ModelFieldDefinition
+}
+
+// AttributeResolutionOptions controls which fallback levels are used.
+type AttributeResolutionOptions struct {
+	AllowModelFallback  bool
+	AllowScopedFallback bool
+	AllowGlobalFallback bool
 }

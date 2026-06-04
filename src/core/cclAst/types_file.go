@@ -4,12 +4,14 @@ import "github.com/ccl-lang/ccl/src/core/cclUtils"
 
 // CCLFileAST represents a parsed CCL source file (syntax only).
 type CCLFileAST struct {
-	FilePath         string
-	Namespace        string
-	Imports          []*ImportDecl
-	GlobalAttributes []*GlobalAttributeNode
-	Models           []*ModelDecl
-	SourcePosition   *cclUtils.SourceCodePosition
+	FilePath            string
+	Namespace           string
+	Imports             []*ImportDecl
+	GlobalAttributes    []*GlobalAttributeNode
+	FileAttributes      []*GlobalAttributeNode
+	NamespaceAttributes []*GlobalAttributeNode
+	Models              []*ModelDecl
+	SourcePosition      *cclUtils.SourceCodePosition
 }
 
 // ImportDecl represents a source-file import declaration in CCL.

@@ -20,13 +20,7 @@ func (c *CodeGenerationBase) GetJsonNamingStrategy(
 		return "", nil
 	}
 
-	attr := model.FindAttribute("JsonPropertyNamingStrategy")
-	if attr != nil && !attr.IsForLanguage(targetLang) {
-		attr = nil
-	}
-	if attr == nil {
-		attr = c.GetGlobalAttribute(targetLang, "JsonPropertyNamingStrategy")
-	}
+	attr := c.GetModelOrGlobalAttribute(targetLang, "JsonPropertyNamingStrategy", model)
 	if attr == nil {
 		return "", nil
 	}

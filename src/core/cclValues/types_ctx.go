@@ -33,4 +33,28 @@ type CCLCodeContext struct {
 
 	// globalVarsLock is the lock for global (and automatic) variables.
 	globalVarsLock *sync.RWMutex
+
+	// sourceFiles contains all sanitized source files registered in this context.
+	// Key: context-assigned source file id.
+	// Value: source code definition for that file.
+	sourceFiles map[SourceFileId]*SourceCodeDefinition
+
+	// sourceFileIdsByPath maps canonical absolute file paths to source file ids.
+	sourceFileIdsByPath map[string]SourceFileId
+
+	// nextSourceFileId is the next context source file id to assign.
+	nextSourceFileId SourceFileId
+
+	// sourceFilesLock is the lock for source file indexes.
+	sourceFilesLock *sync.RWMutex
+
+	// contextGlobalAttributes contains compilation-wide attributes.
+	contextGlobalAttributes []*AttributeUsageInfo
+
+	// contextNamespaceAttributes contains namespace-scoped attributes.
+	// Key: namespace.
+	contextNamespaceAttributes map[string][]*AttributeUsageInfo
+
+	// scopedAttributesLock is the lock for global and namespace attributes.
+	scopedAttributesLock *sync.RWMutex
 }

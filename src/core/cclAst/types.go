@@ -11,6 +11,9 @@ type AttributeValueKind int
 // TypeExpressionKind represents the kind of a type expression node.
 type TypeExpressionKind int
 
+// AttributeScope represents the scope of a hash-prefixed attribute.
+type AttributeScope int
+
 // SimpleTypeName represents a simple (unqualified) type name with an optional namespace.
 type SimpleTypeName struct {
 	Name      string

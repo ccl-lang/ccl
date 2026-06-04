@@ -9,8 +9,10 @@ const (
 	TokenTypeEOF                                  // end of file
 	TokenTypeComment                              // a comment
 	TokenTypeHash                                 // #
+	TokenTypeDollar                               // $
 	TokenTypeKeywordImport                        // import
 	TokenTypeKeywordModel                         // model
+	TokenTypeKeywordNamespace                     // namespace
 	TokenTypeKeywordRequired                      // required
 	TokenTypeKeywordPublic                        // public
 	TokenTypeKeywordPrivate                       // private

@@ -32,6 +32,24 @@ func (t *CCLTypeDefinition) GetName() string {
 	return t.name
 }
 
+// GetSourceFileId returns the source file where this type is defined.
+func (t *CCLTypeDefinition) GetSourceFileId() SourceFileId {
+	if t == nil {
+		return 0
+	}
+
+	return t.sourceFileId
+}
+
+// ChangeSourceFileId updates the source file where this type is defined.
+func (t *CCLTypeDefinition) ChangeSourceFileId(sourceFileId SourceFileId) {
+	if t == nil {
+		return
+	}
+
+	t.sourceFileId = sourceFileId
+}
+
 // GetShortModelName returns the short name of the model type.
 func (t *CCLTypeDefinition) GetShortModelName() string {
 	if t.model != nil {

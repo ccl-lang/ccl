@@ -223,9 +223,7 @@ type InvalidSyntaxError struct {
 
 func (e *InvalidSyntaxError) Error() string {
 	if e.SourcePosition == nil {
-		return fmt.Sprintf(
-			"cclParser: invalid " + e.Language.String() + " syntax",
-		)
+		return "cclParser: invalid " + e.Language.String() + " syntax"
 	}
 
 	if e.SourcePosition.SourceLine == "" {

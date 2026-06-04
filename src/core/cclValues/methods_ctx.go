@@ -11,6 +11,13 @@ func (c *CCLCodeContext) initialize() {
 	c.typeDefinitionsLock = &sync.RWMutex{}
 	c.incompleteTypeDefinitionsCache = map[string]*CCLTypeDefinition{}
 	c.globalVarsLock = &sync.RWMutex{}
+	c.sourceFiles = map[SourceFileId]*SourceCodeDefinition{}
+	c.sourceFileIdsByPath = map[string]SourceFileId{}
+	c.nextSourceFileId = 1
+	c.sourceFilesLock = &sync.RWMutex{}
+	c.contextGlobalAttributes = []*AttributeUsageInfo{}
+	c.contextNamespaceAttributes = map[string][]*AttributeUsageInfo{}
+	c.scopedAttributesLock = &sync.RWMutex{}
 
 	// initialize automatic variables
 

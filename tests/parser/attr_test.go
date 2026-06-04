@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ccl-lang/ccl/src/cclParser"
+	"github.com/ccl-lang/ccl/src/core/cclAst"
 )
 
 type attributeParamInfo struct {
@@ -155,5 +156,46 @@ func TestAttributeParse2(t *testing.T) {
 	if field.Name != "myField" {
 		t.Errorf("Expected field name myField, got %s", field.Name)
 		return
+	}
+}
+
+func TestScopedAttributeParse(t *testing.T) {
+	astFile, err := cclParser.ParseCCLSourceContentAsAST(&cclParser.CCLParseOptions{
+		SourceContent: `
+#file:[$go, $js:SomeAttribute("file")]
+#File:[$csharp:SomeAttribute("csharp")]
+namespace main.users;
+#namespace:[$Go:SomeAttribute("namespace")]
+#[SomeAttribute("global")]
+`,
+	})
+	if err != nil {
+		t.Fatalf("Failed to parse scoped attributes: %v", err)
+	}
+
+	if len(astFile.FileAttributes) != 2 {
+		t.Fatalf("Expected 2 file attributes, got %d", len(astFile.FileAttributes))
+	}
+
+	if astFile.FileAttributes[0].Scope != cclAst.AttributeScopeFile {
+		t.Fatalf("Expected file attribute scope, got %v", astFile.FileAttributes[0].Scope)
+	}
+
+	if len(astFile.FileAttributes[0].Languages) != 2 ||
+		astFile.FileAttributes[0].Languages[0] != "go" ||
+		astFile.FileAttributes[0].Languages[1] != "js" {
+		t.Fatalf("Unexpected file attribute languages: %v", astFile.FileAttributes[0].Languages)
+	}
+
+	if len(astFile.NamespaceAttributes) != 1 {
+		t.Fatalf("Expected 1 namespace attribute, got %d", len(astFile.NamespaceAttributes))
+	}
+
+	if astFile.NamespaceAttributes[0].Namespace != "main.users" {
+		t.Fatalf("Expected namespace attribute on main.users, got %s", astFile.NamespaceAttributes[0].Namespace)
+	}
+
+	if len(astFile.GlobalAttributes) != 1 {
+		t.Fatalf("Expected 1 global attribute, got %d", len(astFile.GlobalAttributes))
 	}
 }

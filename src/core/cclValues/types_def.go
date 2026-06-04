@@ -4,10 +4,25 @@ import (
 	"github.com/ccl-lang/ccl/src/core/cclUtils"
 )
 
+// SourceFileId is the internal identity of a parsed CCL source file.
+type SourceFileId uint32
+
 // SourceCodeDefinition is a struct that represents a source code definition
 // and all the information about a cll source file.
 // This struct is NOT thread-safe.
 type SourceCodeDefinition struct {
+	// CodeContext is the compilation context that owns this definition.
+	CodeContext *CCLCodeContext
+
+	// SourceFileId is the context-assigned identity of this source file.
+	SourceFileId SourceFileId
+
+	// FilePath is the absolute path of this source file when it came from disk.
+	FilePath string
+
+	// Namespace is the default namespace of this source file.
+	Namespace string
+
 	// TypeDefinitions is an array of all *custom* type definitions
 	// defined in the source code.
 	// NOTE: built-in types are NOT included in this array.
@@ -18,6 +33,14 @@ type SourceCodeDefinition struct {
 	// GlobalAttributes is an array of attribute definitions which are applied
 	// to the whole source code.
 	GlobalAttributes []*AttributeUsageInfo
+
+	// FileAttributes is an array of attribute definitions which are applied
+	// only to this source file.
+	FileAttributes []*AttributeUsageInfo
+
+	// NamespaceAttributes is an array of attribute definitions which are applied
+	// to namespaces declared in this source file.
+	NamespaceAttributes []*AttributeUsageInfo
 
 	// modelIdCounter is a counter that is used to generate unique model IDs.
 	modelIdCounter int64
@@ -31,6 +54,10 @@ type SourceCodeDefinition struct {
 // e.g. if you have two type definitions for "int", they MUST point to the same
 // CCLTypeDefinition instance.
 type CCLTypeDefinition struct {
+	// sourceFileId is the source file where this type is defined.
+	// It is zero for built-in and incomplete type definitions.
+	sourceFileId SourceFileId
+
 	// name is the name of the type.
 	name string
 
@@ -101,6 +128,9 @@ type VariableDefinition struct {
 
 // ModelDefinition is a struct that represents a model definition.
 type ModelDefinition struct {
+	// SourceFileId is the source file where this model is defined.
+	SourceFileId SourceFileId
+
 	// ModelId is the unique identifier of the model.
 	ModelId int64
 

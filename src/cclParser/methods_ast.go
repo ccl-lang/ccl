@@ -21,13 +21,43 @@ func (p *CCLAstParser) ParseAsAST() (*cclAst.CCLFileAST, error) {
 
 	for !p.IsAtEnd() {
 		if p.current.Type == cclLexer.TokenTypeHash {
-			if p.isAttributeAt(p.pos + 1) {
-				globalAttr, err := p.parseGlobalAttributeNode()
-				if err != nil {
-					return nil, err
-				}
-				fileAst.GlobalAttributes = append(fileAst.GlobalAttributes, globalAttr)
+			scopedAttr, err := p.parseGlobalAttributeNode()
+			if err != nil {
+				return nil, err
 			}
+
+			switch scopedAttr.Scope {
+			case cclAst.AttributeScopeGlobal:
+				fileAst.GlobalAttributes = append(fileAst.GlobalAttributes, scopedAttr)
+			case cclAst.AttributeScopeFile:
+				fileAst.FileAttributes = append(fileAst.FileAttributes, scopedAttr)
+			case cclAst.AttributeScopeNamespace:
+				scopedAttr.Namespace = currentNamespace
+				fileAst.NamespaceAttributes = append(fileAst.NamespaceAttributes, scopedAttr)
+			default:
+				return nil, &InvalidSyntaxError{
+					Language:       gValues.LanguageCCL,
+					HintMessage:    "Expected attribute scope to be file, global, or namespace.",
+					SourcePosition: scopedAttr.SourcePosition,
+				}
+			}
+			continue
+		}
+
+		if p.current.Type == cclLexer.TokenTypeKeywordNamespace {
+			if len(currentPendingAttributes) > 0 {
+				lastAttr := currentPendingAttributes[len(currentPendingAttributes)-1]
+				return nil, &InvalidAttributeUsageError{
+					SourcePosition: lastAttr.SourcePosition,
+				}
+			}
+
+			namespace, err := p.parseNamespaceDeclAst()
+			if err != nil {
+				return nil, err
+			}
+			currentNamespace = namespace
+			fileAst.Namespace = namespace
 			continue
 		}
 

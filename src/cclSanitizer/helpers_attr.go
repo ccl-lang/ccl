@@ -1,8 +1,12 @@
 package cclSanitizer
 
 import (
+	"strings"
+
 	"github.com/ccl-lang/ccl/src/core/cclAst"
+	"github.com/ccl-lang/ccl/src/core/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 // ResolveAttributeUsage resolves an attribute AST node into a usage info.
@@ -27,11 +31,41 @@ func ResolveAttributeUsage(
 		return nil, err
 	}
 
+	languages, err := resolveAttributeLanguages(node.GetAttributeLanguages(), node.GetSourcePosition())
+	if err != nil {
+		return nil, err
+	}
+
 	return &cclValues.AttributeUsageInfo{
 		Name:           node.GetAttributeName(),
+		Languages:      languages,
 		Parameters:     params,
 		SourcePosition: node.GetSourcePosition(),
 	}, nil
+}
+
+func resolveAttributeLanguages(
+	languages []string,
+	sourcePosition *cclUtils.SourceCodePosition,
+) ([]gValues.LanguageType, error) {
+	if len(languages) == 0 {
+		return nil, nil
+	}
+
+	resolved := []gValues.LanguageType{}
+	for _, lang := range languages {
+		langType := gValues.GetLanguageTypeFromName(strings.ToLower(lang))
+		if langType.IsUnsupported() || langType == gValues.LanguageUnknown {
+			return nil, &AttributeResolutionError{
+				Message:        "unsupported attribute language '" + lang + "'",
+				SourcePosition: sourcePosition,
+			}
+		}
+
+		resolved = append(resolved, langType)
+	}
+
+	return resolved, nil
 }
 
 func resolveAttributeParams(

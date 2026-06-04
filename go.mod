@@ -1,6 +1,6 @@
 module github.com/ccl-lang/ccl
 
-go 1.22.3
+go 1.26.3
 
 require github.com/ALiwoto/ssg v1.1.43
 
