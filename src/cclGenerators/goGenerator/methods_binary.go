@@ -11,6 +11,11 @@ import (
 //---------------------------------------------------------
 
 func (c *GoGenerationContext) generateSerializeBinaryMethod(model *CCLModel) error {
+	// Generated SerializeBinary methods build output with bytes.Buffer.
+	registerGoImport(c.MethodsCode, "bytes")
+	// Generated SerializeBinary methods write fields with encoding/binary.
+	registerGoImport(c.MethodsCode, "encoding/binary")
+
 	endian, err := c.GetBinarySerializationEndian(CurrentLanguage, model)
 	if err != nil {
 		return err
@@ -241,6 +246,11 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(field *CCLField
 }
 
 func (c *GoGenerationContext) generateDeserializeBinaryMethod(model *CCLModel) error {
+	// Generated DeserializeBinary methods read input with bytes.Reader.
+	registerGoImport(c.MethodsCode, "bytes")
+	// Generated DeserializeBinary methods read fields with encoding/binary.
+	registerGoImport(c.MethodsCode, "encoding/binary")
+
 	endian, err := c.GetBinarySerializationEndian(CurrentLanguage, model)
 	if err != nil {
 		return err
@@ -360,6 +370,8 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(field *CCLFie
 			WriteLine("}").
 			LineD("$field = bytesData")
 	case cclValues.TypeNameDateTime:
+		// Generated datetime deserialization rebuilds values with time.Unix.
+		registerGoImport(c.MethodsCode, "time")
 		c.MethodsCode.LineD("var $fieldUnix int64").
 			LineD("if err := binary.Read(buf, binaryEndian, &$fieldUnix); err != nil {").
 			Indent().
@@ -532,6 +544,8 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(field *CCLFie
 			WriteLine("}").
 			LineD("$field[i] = elemBytes")
 	case cclValues.TypeNameDateTime:
+		// Generated datetime array deserialization rebuilds elements with time.Unix.
+		registerGoImport(c.MethodsCode, "time")
 		c.MethodsCode.WriteLine("var elemUnix int64").
 			WriteLine("if err := binary.Read(buf, binaryEndian, &elemUnix); err != nil {").
 			Indent().

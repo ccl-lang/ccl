@@ -13,17 +13,16 @@ func (c *GoGenerationContext) ensureJsonHelpers() {
 
 	c.HelpersCode.BeginSection("helpers")
 	defer c.HelpersCode.EndSection()
+	defer closeGoImportGroup(c.HelpersCode)
 
-	c.HelpersCode.WriteLine("import (").
-		Indent().
-		WriteLine("\"encoding/base64\"").
-		WriteLine("\"encoding/json\"").
-		WriteLine("\"strconv\"").
-		WriteLine("\"strings\"").
-		Unindent().
-		WriteLine(")").
-		NewLine().
-		WriteLine("func cclReadJSONMap(data string) (map[string]json.RawMessage, error) {").
+	registerGoImports(c.HelpersCode, map[string]bool{
+		"encoding/base64": true,
+		"encoding/json":   true,
+		"strconv":         true,
+		"strings":         true,
+	})
+
+	c.HelpersCode.WriteLine("func cclReadJSONMap(data string) (map[string]json.RawMessage, error) {").
 		Indent().
 		WriteLine("data = strings.TrimSpace(data)").
 		WriteLine("if data == \"\" || data == \"null\" {").

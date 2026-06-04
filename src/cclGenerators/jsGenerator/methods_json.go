@@ -260,7 +260,7 @@ func (c *JavaScriptGenerationContext) generateFieldDeserializeJson(
 	jsonName string,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	fieldName := caseUtils.ToCamelCase(field.Name)
+	fieldName := caseUtils.ToCamelCase(field.GetName())
 	resultField := "result." + fieldName
 	valueName := fieldName + "Value"
 	builder.MapVarPairs(
