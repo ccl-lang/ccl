@@ -3,12 +3,15 @@ package pyGenerator
 import (
 	"os"
 
-	"github.com/ALiwoto/ssg/ssg"
 	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 )
 
 func (c *PythonGenerationContext) generateInitFile() error {
-	builder := codeBuilder.NewCodeBuilder()
+	builder := codeBuilder.NewCodeBuilderWithOptions(&codeBuilder.CodeBuilderOptions{
+		IndentationStr:  "\t",
+		NewLineStr:      "\n",
+		EnableDebugInfo: c.Options.GenerateDebugInfo,
+	})
 	builder.BeginSection("init")
 	defer builder.EndSection()
 
@@ -35,5 +38,5 @@ func (c *PythonGenerationContext) generateInitFile() error {
 	builder.WriteLine("]")
 
 	path := c.Options.OutputPath + string(os.PathSeparator) + "__init__.py"
-	return ssg.WriteFileStr(path, builder.String(nil))
+	return c.WriteCodeFile(path, builder.Build(nil))
 }

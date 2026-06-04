@@ -51,7 +51,7 @@ func (c *CodeGenerationBase) GetFileNameForModel(
 	supportedStyles []gValues.NamingStyle,
 ) (string, error) {
 	namingStyle := c.GetFileNamingStyle(targetLang, currentModel, defaultStyle)
-	fileName := ""
+	fileName := currentModel.GetName()
 	if !namingStyle.IsValid() {
 		return "", &cclErrors.UnsupportedFileNamingStyleError{
 			ModelName:       currentModel.GetFullName(),

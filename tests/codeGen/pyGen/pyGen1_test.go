@@ -49,9 +49,10 @@ func TestPythonGenerator1(t *testing.T) {
 	// Generate Code
 	cclLoader.LoadGenerators()
 	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
-		CCLDefinition:  parsedDefinitions,
-		OutputPath:     filepath.Join(tmpDir, "models"),
-		TargetLanguage: "python",
+		CCLDefinition:     parsedDefinitions,
+		OutputPath:        filepath.Join(tmpDir, "models"),
+		TargetLanguage:    "python",
+		GenerateDebugInfo: true,
 	})
 	if err != nil {
 		t.Fatalf("Error: failed to generate code: %v\n", err)
@@ -59,6 +60,11 @@ func TestPythonGenerator1(t *testing.T) {
 	} else if result == nil {
 		t.Fatalf("Unknown error: failed to generate code")
 		return
+	}
+
+	debugInfoPath := filepath.Join(tmpDir, "models", "auth_guest_answer.py.cclinfo")
+	if _, err := os.Stat(debugInfoPath); err != nil {
+		t.Fatalf("Expected Python debug info file to generate %s: %v", debugInfoPath, err)
 	}
 
 	output, err := RunPythonProject(&RunPythonOptions{

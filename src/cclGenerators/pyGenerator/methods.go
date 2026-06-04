@@ -44,7 +44,11 @@ func (c *PythonGenerationContext) GenerateCode() error {
 
 func (c *PythonGenerationContext) generateCodeForModel(model *CCLModel) error {
 	modelName := model.GetFullName()
-	builder := codeBuilder.NewCodeBuilder()
+	builder := codeBuilder.NewCodeBuilderWithOptions(&codeBuilder.CodeBuilderOptions{
+		IndentationStr:  "\t",
+		NewLineStr:      "\n",
+		EnableDebugInfo: c.Options.GenerateDebugInfo,
+	})
 	c.ModelClasses[modelName] = builder
 
 	builder.BeginSection(modelName)
@@ -78,7 +82,7 @@ func (c *PythonGenerationContext) generateCodeForModel(model *CCLModel) error {
 	}
 
 	fullPath := path + fileName + ".py"
-	err = ssg.WriteFileStr(fullPath, builder.String(nil))
+	err = c.WriteCodeFile(fullPath, builder.Build(nil))
 	if err != nil {
 		return err
 	}
