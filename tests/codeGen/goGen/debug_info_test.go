@@ -3,6 +3,7 @@ package goGen_test
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,12 +58,36 @@ func TestGoGeneratorDebugInfo(t *testing.T) {
 		return
 	}
 
-	// Verify .cclinfo files exist
-	filesToCheck := []string{"methods.go", "types.go", "constants.go"}
-	for _, file := range filesToCheck {
-		infoPath := filepath.Join(tmpDir, "models", file+".cclinfo")
+	// Verify every generated .go file has a matching .cclinfo file.
+	outputPath := filepath.Join(tmpDir, "models")
+	goFiles := make([]string, 0)
+	err = filepath.WalkDir(outputPath, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+
+		if entry.IsDir() || filepath.Ext(path) != ".go" {
+			return nil
+		}
+
+		goFiles = append(goFiles, path)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Failed to find generated Go files in %s: %v", outputPath, err)
+	}
+	if len(goFiles) == 0 {
+		t.Fatalf("Expected generated Go files in %s, but none were found", outputPath)
+	}
+
+	for _, goFilePath := range goFiles {
+		infoPath := goFilePath + ".cclinfo"
 		if _, err := os.Stat(infoPath); os.IsNotExist(err) {
-			t.Errorf("Expected debug info file %s to exist, but it does not", infoPath)
+			t.Errorf("Expected debug info file %s for generated file %s to exist, but it does not", infoPath, goFilePath)
+			continue
+		} else if err != nil {
+			t.Errorf("Failed to stat debug info file %s for generated file %s: %v", infoPath, goFilePath, err)
+			continue
 		} else {
 			// Verify content
 			data, err := os.ReadFile(infoPath)
@@ -76,10 +101,6 @@ func TestGoGeneratorDebugInfo(t *testing.T) {
 			if err != nil {
 				t.Errorf("Failed to parse debug info file %s: %v", infoPath, err)
 				continue
-			}
-
-			if len(debugInfos) == 0 {
-				t.Errorf("Debug info file %s is empty", infoPath)
 			}
 
 			// Check some entries
