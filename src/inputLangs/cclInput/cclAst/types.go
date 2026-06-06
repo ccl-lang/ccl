@@ -1,6 +1,6 @@
 package cclAst
 
-import "github.com/ccl-lang/ccl/src/core/cclUtils"
+import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 
 // AttributeLiteralKind represents the literal kind of an attribute value.
 type AttributeLiteralKind int

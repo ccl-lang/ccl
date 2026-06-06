@@ -2,7 +2,7 @@ package tsGenerator
 
 import (
 	gen "github.com/ccl-lang/ccl/src/cclGenerators"
-	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
 )
 
 func GenerateCode(options *gen.CodeGenerationOptions) (*gen.CodeGenerationResult, error) {

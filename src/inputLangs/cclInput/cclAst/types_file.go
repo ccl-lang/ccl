@@ -1,6 +1,6 @@
 package cclAst
 
-import "github.com/ccl-lang/ccl/src/core/cclUtils"
+import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 
 // CCLFileAST represents a parsed CCL source file (syntax only).
 type CCLFileAST struct {

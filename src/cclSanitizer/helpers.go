@@ -3,8 +3,8 @@ package cclSanitizer
 import (
 	"fmt"
 
-	"github.com/ccl-lang/ccl/src/core/cclAst"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 

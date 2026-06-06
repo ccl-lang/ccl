@@ -1,8 +1,8 @@
 package goGenerator
 
 import (
-	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 

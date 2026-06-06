@@ -1,7 +1,7 @@
 package cclGenerators
 
 import (
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 

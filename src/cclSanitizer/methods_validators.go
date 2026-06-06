@@ -1,9 +1,9 @@
 package cclSanitizer
 
 import (
-	"github.com/ccl-lang/ccl/src/core/cclAst"
-	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
 //---------------------------------------------------------

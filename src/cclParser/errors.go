@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 	"github.com/ccl-lang/ccl/src/core/globalValues"
 )
 

@@ -1,6 +1,6 @@
 package cclAst
 
-import "github.com/ccl-lang/ccl/src/core/cclUtils"
+import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 
 // GetAttributeName returns the name of the attribute.
 func (a *AttributeNode) GetAttributeName() string {

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
-	"github.com/ccl-lang/ccl/src/core/cclUtils/sourcePos"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/sourcePos"
 )
 
 func TestFormatErrorShowsCulpritForLongLine(t *testing.T) {

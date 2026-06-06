@@ -3,10 +3,10 @@ package cclSanitizer
 import (
 	"strings"
 
-	"github.com/ccl-lang/ccl/src/core/cclAst"
-	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 

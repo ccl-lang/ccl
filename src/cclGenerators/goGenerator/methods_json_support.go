@@ -1,8 +1,8 @@
 package goGenerator
 
 import (
-	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
 func (c *GoGenerationContext) ensureJsonHelpers() {

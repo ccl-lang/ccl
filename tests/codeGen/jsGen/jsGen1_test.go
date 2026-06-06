@@ -10,7 +10,7 @@ import (
 	"github.com/ccl-lang/ccl/src/cclGenerators"
 	"github.com/ccl-lang/ccl/src/cclLoader"
 	"github.com/ccl-lang/ccl/src/cclParser"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
 var (

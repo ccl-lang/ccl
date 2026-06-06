@@ -1,6 +1,6 @@
 package cclAst
 
-import "github.com/ccl-lang/ccl/src/core/cclUtils"
+import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 
 // AttributeNodeBase is the common interface for attribute nodes.
 type AttributeNodeBase interface {

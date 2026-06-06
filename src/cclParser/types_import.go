@@ -1,6 +1,6 @@
 package cclParser
 
-import "github.com/ccl-lang/ccl/src/core/cclAst"
+import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 
 type importGraphResolver struct {
 	visitedFiles map[string]bool

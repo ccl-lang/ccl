@@ -3,7 +3,7 @@ package cclSanitizer
 import (
 	"strings"
 
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
 var builtinTypeNamesLower = map[string]string{

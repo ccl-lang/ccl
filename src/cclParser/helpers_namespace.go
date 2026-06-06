@@ -3,7 +3,7 @@ package cclParser
 import (
 	"strings"
 
-	"github.com/ccl-lang/ccl/src/core/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 )
 
 func parseAttributeScope(scope string) cclAst.AttributeScope {

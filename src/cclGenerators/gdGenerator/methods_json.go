@@ -2,8 +2,8 @@ package gdGenerator
 
 import (
 	"github.com/ALiwoto/ssg/ssg/caseUtils"
-	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
 func (c *GDScriptGenerationContext) generateSerializeJsonMethods(

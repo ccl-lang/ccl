@@ -1,6 +1,6 @@
 package cclValues
 
-import "github.com/ccl-lang/ccl/src/core/cclUtils"
+import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 
 // cclTypeFlag represents flags for a specific ccl type definition.
 type cclTypeFlag int

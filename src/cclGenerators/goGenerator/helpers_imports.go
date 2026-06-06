@@ -1,6 +1,6 @@
 package goGenerator
 
-import "github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
+import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
 
 func registerGoImport(builder *codeBuilder.CodeBuilder, importPath string) {
 	if !builder.IsImported(openImportKey) {

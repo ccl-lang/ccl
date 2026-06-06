@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
-	"github.com/ccl-lang/ccl/src/core/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 

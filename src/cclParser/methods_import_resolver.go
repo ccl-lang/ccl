@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ccl-lang/ccl/src/core/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 )
 
 func (r *importGraphResolver) parseSourceFileAsAST(options *CCLParseOptions) (*cclAst.CCLFileAST, error) {

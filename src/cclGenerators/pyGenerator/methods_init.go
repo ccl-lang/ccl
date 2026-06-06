@@ -3,7 +3,7 @@ package pyGenerator
 import (
 	"os"
 
-	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
 )
 
 func (c *PythonGenerationContext) generateInitFile() error {

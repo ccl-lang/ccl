@@ -1,6 +1,6 @@
 package cclSanitizer
 
-import "github.com/ccl-lang/ccl/src/core/cclUtils"
+import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 
 // TypeUsageResolutionError represents a failure to resolve a type expression into a type usage.
 type TypeUsageResolutionError struct {

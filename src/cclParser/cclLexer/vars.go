@@ -1,6 +1,6 @@
 package cclLexer
 
-import "github.com/ccl-lang/ccl/src/core/cclValues"
+import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 
 var (
 	tokenTypesToNames = map[CCLTokenType]string{

@@ -3,7 +3,7 @@ package cclParser
 import (
 	"fmt"
 
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 )
 
 // ImportResolutionError describes a failure while resolving CCL import declarations.

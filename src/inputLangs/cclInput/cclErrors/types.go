@@ -1,7 +1,7 @@
 package cclErrors
 
 import (
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 )
 
 // ConflictKind represents the kind of conflict that occurred, such as "model", "builtin type", "reserved name", etc.

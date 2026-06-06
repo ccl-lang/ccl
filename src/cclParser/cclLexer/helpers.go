@@ -5,7 +5,7 @@ import (
 	"unicode"
 
 	"github.com/ALiwoto/ssg/ssg/rangeValues"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
 func Lex(input string) ([]*CCLToken, error) {

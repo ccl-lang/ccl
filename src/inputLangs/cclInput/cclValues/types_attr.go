@@ -1,7 +1,7 @@
 package cclValues
 
 import (
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 

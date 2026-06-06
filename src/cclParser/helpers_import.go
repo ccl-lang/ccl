@@ -3,8 +3,8 @@ package cclParser
 import (
 	"path/filepath"
 
-	"github.com/ccl-lang/ccl/src/core/cclAst"
-	"github.com/ccl-lang/ccl/src/core/cclUtils"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 )
 
 func newImportGraphResolver() *importGraphResolver {

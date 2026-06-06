@@ -6,7 +6,7 @@ import (
 
 	"github.com/ccl-lang/ccl/src/cclParser"
 	"github.com/ccl-lang/ccl/src/cclSanitizer"
-	"github.com/ccl-lang/ccl/src/core/cclErrors"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
 )
 
 const DuplicateModelsInput = `

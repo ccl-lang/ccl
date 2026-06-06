@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/ccl-lang/ccl/src/cclSanitizer"
-	"github.com/ccl-lang/ccl/src/core/cclAst"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
 func TestResolveTypeUsageBuiltin(t *testing.T) {

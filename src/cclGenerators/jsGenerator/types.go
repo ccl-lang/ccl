@@ -2,8 +2,8 @@ package jsGenerator
 
 import (
 	gen "github.com/ccl-lang/ccl/src/cclGenerators"
-	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
 // CCLModel is a type alias for the model definition type from the CCL's

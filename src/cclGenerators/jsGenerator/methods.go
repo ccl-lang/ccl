@@ -7,9 +7,9 @@ import (
 	"github.com/ALiwoto/ssg/ssg"
 	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	gen "github.com/ccl-lang/ccl/src/cclGenerators"
-	"github.com/ccl-lang/ccl/src/core/cclErrors"
-	"github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
-	"github.com/ccl-lang/ccl/src/core/cclValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
