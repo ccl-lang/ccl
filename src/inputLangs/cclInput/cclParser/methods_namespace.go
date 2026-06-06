@@ -3,7 +3,7 @@ package cclParser
 import (
 	"strings"
 
-	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
 )
 
 func (p *CCLAstParser) parseNamespaceDeclAst() (string, error) {

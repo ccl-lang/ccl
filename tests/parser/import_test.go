@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ccl-lang/ccl/src/cclParser"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 

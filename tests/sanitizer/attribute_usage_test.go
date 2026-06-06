@@ -3,8 +3,8 @@ package sanitizer_test
 import (
 	"testing"
 
-	"github.com/ccl-lang/ccl/src/cclParser"
-	"github.com/ccl-lang/ccl/src/cclSanitizer"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclSanitizer"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"

@@ -3,7 +3,7 @@ package parser_test
 import (
 	"testing"
 
-	"github.com/ccl-lang/ccl/src/cclParser"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser"
 )
 
 // ---------------------------------------------------------

@@ -1,7 +1,7 @@
 package cclParser
 
 import (
-	"github.com/ccl-lang/ccl/src/cclParser/cclLexer"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
