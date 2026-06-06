@@ -204,6 +204,12 @@ func (c *CodeBuilder) UnmapGlobalVar(varName string) *CodeBuilder {
 	return c
 }
 
+// GetIndentationStr returns the string that's used as a single
+// indentation.
+func (c *CodeBuilder) GetIndentationStr() string {
+	return c.indentationStr
+}
+
 // Indent increases the indentation level.
 func (c *CodeBuilder) Indent() *CodeBuilder {
 	c.checkSection()

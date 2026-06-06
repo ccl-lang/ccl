@@ -15,12 +15,8 @@ type CCLField = cclValues.ModelFieldDefinition
 type GoGenerationContext struct {
 	*gen.CodeGenerationBase
 
-	// MethodsCode is a string builder that contains the generated Go code for the methods.
-	MethodsCode   *codeBuilder.CodeBuilder
-	TypesCode     *codeBuilder.CodeBuilder
-	HelpersCode   *codeBuilder.CodeBuilder
-	VarsCode      *codeBuilder.CodeBuilder
-	ConstantsCode *codeBuilder.CodeBuilder
+	// CodeByPath maps relative output file paths to their builders.
+	CodeByPath map[string]*codeBuilder.CodeBuilder
 
 	JsonHelpersGenerated bool
 }

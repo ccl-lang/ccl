@@ -2,6 +2,7 @@ package cclGenerators
 
 import (
 	"strings"
+	"unicode"
 )
 
 func DoGenerateCode(options *CodeGenerationOptions) (*CodeGenerationResult, error) {
@@ -15,4 +16,22 @@ func DoGenerateCode(options *CodeGenerationOptions) (*CodeGenerationResult, erro
 	}
 
 	return generatorFunc(options)
+}
+
+func isValidOutputFileGroup(group string) bool {
+	if group == "" {
+		return true
+	}
+
+	for _, currentRune := range group {
+		if unicode.IsLetter(currentRune) ||
+			unicode.IsDigit(currentRune) ||
+			currentRune == '_' {
+			continue
+		}
+
+		return false
+	}
+
+	return true
 }

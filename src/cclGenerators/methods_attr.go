@@ -1,6 +1,7 @@
 package cclGenerators
 
 import (
+	"github.com/ccl-lang/ccl/src/core/cclErrors"
 	"github.com/ccl-lang/ccl/src/core/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
@@ -150,6 +151,47 @@ func (c *CodeGenerationBase) GetModelOrGlobalAttributes(
 		attrs = c.GetGlobalAttributes(targetLang, name)
 	}
 	return cclValues.NewAttrsCollection(attrs)
+}
+
+// GetOutputFileGroup returns the generated output file group for a model.
+func (c *CodeGenerationBase) GetOutputFileGroup(
+	targetLang gValues.LanguageType,
+	currentModel *cclValues.ModelDefinition,
+) (string, error) {
+	attrs := c.GetModelOrGlobalAttributes(
+		targetLang,
+		AttributeOutputFileGroup,
+		currentModel,
+	)
+	if attrs.IsEmpty() {
+		return "", nil
+	}
+
+	if len(attrs.Attrs) > 1 {
+		return "", &cclErrors.ValidationError{
+			Message: AttributeOutputFileGroup + " must be defined at most once for model " +
+				currentModel.GetFullName(),
+		}
+	}
+
+	param := attrs.Attrs[0].GetParamAt(0)
+	if param == nil || param.GetAsString() == "" {
+		return "", &cclErrors.ValidationError{
+			Message: AttributeOutputFileGroup + " requires a non-empty string parameter for model " +
+				currentModel.GetFullName(),
+		}
+	}
+
+	group := param.GetAsString()
+	if !isValidOutputFileGroup(group) {
+		return "", &cclErrors.ValidationError{
+			Message: AttributeOutputFileGroup + " value '" + group +
+				"' is not valid for model " + currentModel.GetFullName() +
+				"; use only letters, digits, and underscores",
+		}
+	}
+
+	return group, nil
 }
 
 //---------------------------------------------------------

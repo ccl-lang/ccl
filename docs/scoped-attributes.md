@@ -221,3 +221,37 @@ describe whether model fallback, scoped fallback, or global fallback is allowed.
 
 For backward compatibility, existing generator helpers can delegate to the new
 resolver first, then gradually be replaced at call sites.
+
+## Output File Groups
+
+Generators may use `OutputFileGroup` to route generated artifacts into grouped
+output files.
+
+```ccl
+#file:[$go:OutputFileGroup("users")]
+```
+
+The attribute is resolved per type definition, not per source file. File scope
+is only one convenient way to apply the group to all models in a file. The same
+attribute may also be applied to a model directly or inherited through namespace
+or global scope:
+
+```ccl
+#[OutputFileGroup("shared")]
+
+namespace main.users;
+#namespace:[$go:OutputFileGroup("users")]
+
+[$go:OutputFileGroup("auth")]
+model LoginRequest {
+    Id: int64;
+}
+```
+
+For Go generation, a model whose resolved group is `users` writes type and
+method artifacts to files such as `types_users.go` and `methods_users.go`.
+Models without a resolved group keep the default files, such as `types.go` and
+`methods.go`.
+
+Constants are routed by artifact semantics, not by a blanket rule. Currently,
+Go model ID constants remain in `constants.go`.

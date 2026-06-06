@@ -30,27 +30,9 @@ func GenerateCode(options *gen.CodeGenerationOptions) (*gen.CodeGenerationResult
 			Options: options,
 		},
 	}
-	err := goCtx.GenerateCode()
+	outputFiles, err := goCtx.GenerateCode()
 	if err != nil {
 		return nil, err
-	}
-
-	outputFiles := []string{}
-	basePath := options.OutputPath + string(os.PathSeparator)
-	if goCtx.ConstantsCode != nil {
-		outputFiles = append(outputFiles, basePath+ConstantsFileName)
-	}
-	if goCtx.VarsCode != nil {
-		outputFiles = append(outputFiles, basePath+VarsFileName)
-	}
-	if goCtx.TypesCode != nil {
-		outputFiles = append(outputFiles, basePath+TypesFileName)
-	}
-	if goCtx.HelpersCode != nil {
-		outputFiles = append(outputFiles, basePath+HelpersFileName)
-	}
-	if goCtx.MethodsCode != nil {
-		outputFiles = append(outputFiles, basePath+MethodsFileName)
 	}
 
 	return &gen.CodeGenerationResult{
@@ -58,4 +40,12 @@ func GenerateCode(options *gen.CodeGenerationOptions) (*gen.CodeGenerationResult
 		TargetLanguage: CurrentLanguage.String(),
 		OutputFiles:    outputFiles,
 	}, nil
+}
+
+func getGoCategoryFileName(category string, group string) string {
+	if group == "" {
+		return category + ".go"
+	}
+
+	return category + "_" + group + ".go"
 }

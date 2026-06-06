@@ -1,14 +1,16 @@
 package goGenerator
 
+import "github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
+
 //---------------------------------------------------------
 
-func (c *GoGenerationContext) generateCloneMethods() error {
-	c.MethodsCode.ExpectMappedVars(
+func (c *GoGenerationContext) generateCloneMethods(builder *codeBuilder.CodeBuilder) error {
+	builder.ExpectMappedVars(
 		"model",
 		"modelName",
 	)
 
-	c.MethodsCode.NewLine().
+	builder.NewLine().
 		LineD("func (m $model) CloneEmpty() $model {").
 		Indent().
 		WriteLine("if m == nil {").
@@ -21,7 +23,7 @@ func (c *GoGenerationContext) generateCloneMethods() error {
 		WriteLine("}")
 
 	if c.GetGlobalAttribute(CurrentLanguage, "AddSerializableInterface") != nil {
-		c.MethodsCode.NewLine().
+		builder.NewLine().
 			LineD("func (m $model) CloneEmptySerializable() Serializable {").
 			Indent().
 			WriteLine("if m == nil {").

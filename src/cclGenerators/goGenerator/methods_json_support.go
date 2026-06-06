@@ -11,18 +11,16 @@ func (c *GoGenerationContext) ensureJsonHelpers() {
 	}
 	c.JsonHelpersGenerated = true
 
-	c.HelpersCode.BeginSection("helpers")
-	defer c.HelpersCode.EndSection()
-	defer closeGoImportGroup(c.HelpersCode)
+	builder := c.getCodeBuilder(HelpersFileName, "helpers")
 
-	registerGoImports(c.HelpersCode, map[string]bool{
+	registerGoImports(builder, map[string]bool{
 		"encoding/base64": true,
 		"encoding/json":   true,
 		"strconv":         true,
 		"strings":         true,
 	})
 
-	c.HelpersCode.WriteLine("func cclReadJSONMap(data string) (map[string]json.RawMessage, error) {").
+	builder.WriteLine("func cclReadJSONMap(data string) (map[string]json.RawMessage, error) {").
 		Indent().
 		WriteLine("data = strings.TrimSpace(data)").
 		WriteLine("if data == \"\" || data == \"null\" {").

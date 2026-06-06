@@ -3,16 +3,17 @@ package goGenerator
 import "github.com/ccl-lang/ccl/src/core/cclUtils/codeBuilder"
 
 func registerGoImport(builder *codeBuilder.CodeBuilder, importPath string) {
-	if !builder.IsImported("__go_import_group_open") {
-		builder.DoImport("__go_import_group_open", "import (")
+	if !builder.IsImported(openImportKey) {
+		builder.DoImport(openImportKey, "import (")
 	}
 
-	builder.DoImport(importPath, "\t\""+importPath+"\"")
+	indentStr := builder.GetIndentationStr()
+	builder.DoImport(importPath, indentStr+"\""+importPath+"\"")
 }
 
 func closeGoImportGroup(builder *codeBuilder.CodeBuilder) {
-	if builder.IsImported("__go_import_group_open") && !builder.IsImported("__go_import_group_close") {
-		builder.DoImport("__go_import_group_close", ")")
+	if builder.IsImported(openImportKey) && !builder.IsImported(closeImportKey) {
+		builder.DoImport(closeImportKey, ")")
 	}
 }
 
