@@ -1,6 +1,7 @@
 package cclErrors
 
 import (
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 )
 
@@ -11,6 +12,14 @@ type ConflictKind string
 // error occurs.
 type ValidationError struct {
 	Message string
+}
+
+// InvalidAttributeUsageError represents an attribute usage with wrong set of params
+// or used in wrong context or on wrong entity.
+type InvalidAttributeUsageError struct {
+	Message        string
+	AttrName       cclAttr.CCLAttributeName
+	SourcePosition *cclUtils.SourceCodePosition
 }
 
 // DuplicateFieldError is an error that is returned when a field

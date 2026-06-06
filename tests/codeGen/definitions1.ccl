@@ -6,7 +6,18 @@
 #[SerializationType("json")]
 import "imported_definitions.ccl";
 
+#[OutputFileGroup("shared1")]
+
+#namespace:[$cs:OutputFileGroup("my_cs")]
+
+#namespace:[$go:OutputFileGroup("common2")]
+#namespace:[$go:OutputFileGroup("common")]
+
+#[$go:OutputFileGroup("shared")]
+
+
 // Basic geometric types
+[OutputFileGroup("positions")]
 model PositionInfo {
     X: int64;
     Y: int64;

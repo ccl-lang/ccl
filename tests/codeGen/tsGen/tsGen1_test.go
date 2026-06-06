@@ -9,6 +9,7 @@ import (
 
 	"github.com/ccl-lang/ccl/src/cclGenerators"
 	"github.com/ccl-lang/ccl/src/cclLoader"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
@@ -145,7 +146,7 @@ func addSingleFileGenerationAttribute(
 	fileNameParam.ChangeValue(fileName)
 
 	definition.GlobalAttributes = append(definition.GlobalAttributes, &cclValues.AttributeUsageInfo{
-		Name: "CCLGenerateSingleFile",
+		Name: cclAttr.AttrGenerateSingleFile,
 		Parameters: []*cclValues.ParameterInstance{
 			enabledParam,
 			fileNameParam,

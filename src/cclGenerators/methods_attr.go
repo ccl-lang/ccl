@@ -14,11 +14,7 @@ func (c *CodeGenerationBase) GetGlobalAttribute(
 	targetLang gValues.LanguageType,
 	name cclAttr.CCLAttributeName,
 ) *cclValues.AttributeUsageInfo {
-	if ctx := c.getCodeContext(); ctx != nil {
-		return ctx.FindContextGlobalAttribute(targetLang, name)
-	}
-
-	return nil
+	return c.getCodeContext().FindContextGlobalAttribute(targetLang, name)
 }
 
 // GetGlobalAttributes retrieves all global attributes with the specified name.
@@ -26,11 +22,7 @@ func (c *CodeGenerationBase) GetGlobalAttributes(
 	targetLang gValues.LanguageType,
 	name cclAttr.CCLAttributeName,
 ) []*cclValues.AttributeUsageInfo {
-	if ctx := c.getCodeContext(); ctx != nil {
-		return ctx.FindContextGlobalAttributes(targetLang, name)
-	}
-
-	return nil
+	return c.getCodeContext().FindContextGlobalAttributes(targetLang, name)
 }
 
 // GetGlobalOrModelAttribute retrieves an attribute with the specified name
@@ -40,18 +32,14 @@ func (c *CodeGenerationBase) GetGlobalOrModelAttribute(
 	name cclAttr.CCLAttributeName,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributeUsageInfo {
-	if ctx := c.getCodeContext(); ctx != nil {
-		return ctx.ResolveAttribute(
-			targetLang,
-			name,
-			&cclValues.AttributeResolutionSubject{
-				Model: currentModel,
-			},
-			nil,
-		)
-	}
-
-	return c.GetModelOrGlobalAttribute(targetLang, name, currentModel)
+	return c.getCodeContext().ResolveAttribute(
+		targetLang,
+		name,
+		&cclValues.AttributeResolutionSubject{
+			Model: currentModel,
+		},
+		nil,
+	)
 }
 
 // GetGlobalOrModelAttributes retrieves all attributes with the specified name
@@ -61,22 +49,16 @@ func (c *CodeGenerationBase) GetGlobalOrModelAttributes(
 	name cclAttr.CCLAttributeName,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
-	if ctx := c.getCodeContext(); ctx != nil {
-		return cclValues.NewAttrsCollection(ctx.ResolveAttributes(
+	return cclValues.NewAttrsCollection(
+		c.getCodeContext().ResolveAttributes(
 			targetLang,
 			name,
 			&cclValues.AttributeResolutionSubject{
 				Model: currentModel,
 			},
 			nil,
-		))
-	}
-
-	attrs := currentModel.FindAttributes(targetLang, name)
-	if len(attrs) == 0 {
-		attrs = c.GetGlobalAttributes(targetLang, name)
-	}
-	return cclValues.NewAttrsCollection(attrs)
+		),
+	)
 }
 
 // GetGlobalAndModelAttributes retrieves all attributes with the specified name
@@ -98,23 +80,14 @@ func (c *CodeGenerationBase) GetModelOrGlobalAttribute(
 	name cclAttr.CCLAttributeName,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributeUsageInfo {
-	if ctx := c.getCodeContext(); ctx != nil {
-		return ctx.ResolveAttribute(
-			targetLang,
-			name,
-			&cclValues.AttributeResolutionSubject{
-				Model: currentModel,
-			},
-			nil,
-		)
-	}
-
-	attr := currentModel.FindAttribute(name)
-	if attr == nil {
-		attr = c.GetGlobalAttribute(targetLang, name)
-	}
-
-	return attr
+	return c.getCodeContext().ResolveAttribute(
+		targetLang,
+		name,
+		&cclValues.AttributeResolutionSubject{
+			Model: currentModel,
+		},
+		nil,
+	)
 }
 
 // GetModelAndGlobalAttributes retrieves all attributes with the specified name
@@ -136,22 +109,16 @@ func (c *CodeGenerationBase) GetModelOrGlobalAttributes(
 	name cclAttr.CCLAttributeName,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
-	if ctx := c.getCodeContext(); ctx != nil {
-		return cclValues.NewAttrsCollection(ctx.ResolveAttributes(
+	return cclValues.NewAttrsCollection(
+		c.getCodeContext().ResolveAttributes(
 			targetLang,
 			name,
 			&cclValues.AttributeResolutionSubject{
 				Model: currentModel,
 			},
 			nil,
-		))
-	}
-
-	attrs := currentModel.FindAttributes(targetLang, name)
-	if len(attrs) == 0 {
-		attrs = c.GetGlobalAttributes(targetLang, name)
-	}
-	return cclValues.NewAttrsCollection(attrs)
+		),
+	)
 }
 
 // GetOutputFileGroup returns the generated output file group for a model.
@@ -159,37 +126,31 @@ func (c *CodeGenerationBase) GetOutputFileGroup(
 	targetLang gValues.LanguageType,
 	currentModel *cclValues.ModelDefinition,
 ) (string, error) {
-	attrs := c.GetModelOrGlobalAttributes(
+	attr := c.GetModelOrGlobalAttributes(
 		targetLang,
-		AttributeOutputFileGroup,
+		cclAttr.AttrOutputFileGroup,
 		currentModel,
-	)
-	if attrs.IsEmpty() {
+	).GetLast()
+	if attr == nil {
 		return "", nil
 	}
 
-	// wtf is this?
-	// if len(attrs.Attrs) > 1 {
-	// 	return "", &cclErrors.ValidationError{
-	// 		Message: AttributeOutputFileGroup + " must be defined at most once for model " +
-	// 			currentModel.GetFullName(),
-	// 	}
-	// }
-
-	param := attrs.Attrs[0].GetParamAt(0)
+	param := attr.GetParamAt(0)
 	if param == nil || param.GetAsString() == "" {
-		return "", &cclErrors.ValidationError{
-			Message: AttributeOutputFileGroup + " requires a non-empty string parameter for model " +
-				currentModel.GetFullName(),
+		return "", &cclErrors.InvalidAttributeUsageError{
+			AttrName:       attr.Name,
+			Message:        "requires a non-empty string first-parameter",
+			SourcePosition: attr.SourcePosition,
 		}
 	}
 
 	group := param.GetAsString()
 	if !isValidOutputFileGroup(group) {
-		return "", &cclErrors.ValidationError{
-			Message: AttributeOutputFileGroup + " value '" + group +
-				"' is not valid for model " + currentModel.GetFullName() +
-				"; use only letters, digits, and underscores",
+		return "", &cclErrors.InvalidAttributeUsageError{
+			AttrName: attr.Name,
+			Message: " value '" + group +
+				"' is not valid; only letters, digits, and underscores are allowed",
+			SourcePosition: attr.SourcePosition,
 		}
 	}
 
@@ -226,39 +187,27 @@ func (c *CodeGenerationBase) FindFieldAttribute(
 		return nil
 	}
 
-	if ctx := c.getCodeContext(); ctx != nil {
-		return ctx.ResolveAttribute(
-			targetLang,
-			name,
-			&cclValues.AttributeResolutionSubject{
-				Field: field,
-			},
-			nil,
-		)
-	}
-
-	for _, attr := range field.Attributes {
-		if attr.Name != name {
-			continue
-		}
-		if attr.IsForLanguage(targetLang) {
-			return attr
-		}
-	}
-
-	return nil
+	return c.getCodeContext().ResolveAttribute(
+		targetLang,
+		name,
+		&cclValues.AttributeResolutionSubject{
+			Field: field,
+		},
+		nil,
+	)
 }
 
+// getCodeContext returns the current code context.
+// from ccl version 0.0.4; having code context is strictly mandatory, hence
+// all the code paths using this method can easily omit all the nil-checks on
+// the returned pointer of this method, because it will be fine to panic if
+// the returned pointer is nil, since that means something is *VERY* wrong with
+// our current operation and it's better to be halted on panic instead of adding
+// lots of hacks and unreliable fallbacks (and in most cases, those fallbacks will
+// just bring code duplicates for us, which is why they shouldn't exist in multiple
+// places at all).
 func (c *CodeGenerationBase) getCodeContext() *cclValues.CCLCodeContext {
-	if c == nil || c.Options == nil {
-		return nil
-	}
-
-	if c.Options.CodeContext != nil {
-		return c.Options.CodeContext
-	}
-
-	return nil
+	return c.Options.CodeContext
 }
 
 //---------------------------------------------------------
@@ -266,7 +215,7 @@ func (c *CodeGenerationBase) getCodeContext() *cclValues.CCLCodeContext {
 // IsSingleFileMode checks if the code generation should be done in single file mode
 // and returns the single file name if applicable.
 func (c *CodeGenerationBase) IsSingleFileMode(targetLang gValues.LanguageType) (bool, string) {
-	attr := c.GetGlobalAttribute(targetLang, "CCLGenerateSingleFile")
+	attr := c.GetGlobalAttribute(targetLang, cclAttr.AttrGenerateSingleFile)
 	if attr != nil {
 		return attr.GetParamAt(0).GetAsBool(), attr.GetParamAt(1).GetAsString()
 	}

@@ -12,12 +12,21 @@ func (p *SourceCodePosition) FormatError(message string) string {
 		return message
 	}
 
+	filePath := p.FilePath
+	if filePath == "" {
+		// we will make it become like this for two reasons:
+		// 1. we don't get empty weird lines such as ":10:20"
+		// 2. we check the logs, find out in some places we are not passing the correct
+		// 	source position, so we can easily check it
+		filePath = "unknown_file"
+	}
+	location := fmt.Sprintf("%s:%d:%d", filePath, p.Line, p.Column)
+
 	if p.SourceLine == "" {
 		return fmt.Sprintf(
-			"%s at line %d, column %d",
+			"%s: Error: %s",
+			location,
 			message,
-			p.Line,
-			p.Column,
 		)
 	}
 
@@ -26,10 +35,9 @@ func (p *SourceCodePosition) FormatError(message string) string {
 	trimmedLine, caretColumn := buildErrorLineSnippet(expandedLine, visualColumn)
 
 	result := fmt.Sprintf(
-		"Error: %s\n  at line %d, column %d\n",
+		"Error: %s\n at %s \n",
 		message,
-		p.Line,
-		p.Column,
+		location,
 	)
 
 	result += "  " + trimmedLine + "\n"

@@ -9,10 +9,6 @@ func (v *ValidationError) Error() string {
 //---------------------------------------------------------
 
 func (d *DuplicateFieldError) Error() string {
-	if d == nil {
-		return "Duplicate field"
-	}
-
 	message := "Duplicate field: " + d.ModelName + "." + d.FieldName
 	return d.SourcePosition.FormatError(message)
 }
@@ -20,10 +16,6 @@ func (d *DuplicateFieldError) Error() string {
 //---------------------------------------------------------
 
 func (d *DuplicateModelError) Error() string {
-	if d == nil {
-		return "Duplicate model"
-	}
-
 	message := "Duplicate model: " + d.ModelName
 	return d.SourcePosition.FormatError(message)
 }
@@ -56,10 +48,6 @@ func (u *UnsupportedFileNamingStyleError) Error() string {
 //---------------------------------------------------------
 
 func (e *FieldNameConflictError) Error() string {
-	if e == nil {
-		return "Field name conflicts with reserved name"
-	}
-
 	message := "Field name '" + e.FieldName +
 		"' in model '" + e.ModelName +
 		"' conflicts with " + string(e.Kind) +
@@ -67,6 +55,19 @@ func (e *FieldNameConflictError) Error() string {
 
 	if e.Namespace != "" {
 		message += " in namespace '" + e.Namespace + "'"
+	}
+
+	return e.SourcePosition.FormatError(message)
+}
+
+//---------------------------------------------------------
+
+func (e *InvalidAttributeUsageError) Error() string {
+	message := "Invalid attribute usage for '" +
+		e.AttrName.ToString() + "'"
+
+	if e.Message != "" {
+		message += ": " + e.Message
 	}
 
 	return e.SourcePosition.FormatError(message)

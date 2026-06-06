@@ -5,7 +5,7 @@ import (
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
 )
 
-// ResolveAttribute resolves one attribute using local, file, namespace, and
+// ResolveAttribute resolves the last attribute usage using local, file, namespace, and
 // global fallback rules.
 func (c *CCLCodeContext) ResolveAttribute(
 	targetLang gValues.LanguageType,
@@ -18,7 +18,7 @@ func (c *CCLCodeContext) ResolveAttribute(
 		return nil
 	}
 
-	return attrs[0]
+	return attrs[len(attrs)-1]
 }
 
 // ResolveAttributes resolves attributes using local, file, namespace, and
@@ -74,6 +74,7 @@ func (c *CCLCodeContext) ResolveAttributes(
 			namespace = subject.Model.GetNamespace()
 		}
 	}
+
 	if subject.Field != nil && subject.Field.OwnedBy != nil {
 		if sourceFileId == 0 {
 			sourceFileId = subject.Field.OwnedBy.SourceFileId
@@ -82,6 +83,7 @@ func (c *CCLCodeContext) ResolveAttributes(
 			namespace = subject.Field.OwnedBy.GetNamespace()
 		}
 	}
+
 	if namespace == "" {
 		namespace = gValues.DefaultMainNamespace
 	}

@@ -37,6 +37,21 @@ func (a *AttributeUsageInfo) GetParamAt(index int) *ParameterInstance {
 
 //---------------------------------------------------------
 
+// GetLast returns the last non-nil attribute from the collection.
+func (c *AttributesCollection) GetLast() *AttributeUsageInfo {
+	if c == nil {
+		return nil
+	}
+
+	for i := len(c.Attrs) - 1; i >= 0; i-- {
+		if c.Attrs[i] != nil {
+			return c.Attrs[i]
+		}
+	}
+
+	return nil
+}
+
 // GetParamsAt returns all parameters at the specified index from all attributes
 // in the collection.
 func (c *AttributesCollection) GetParamsAt(index int) []*ParameterInstance {
