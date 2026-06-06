@@ -1,10 +1,13 @@
 package cclAst
 
-import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
+import (
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
+)
 
 // AttributeNodeBase is the common interface for attribute nodes.
 type AttributeNodeBase interface {
-	GetAttributeName() string
+	GetAttributeName() cclAttr.CCLAttributeName
 	GetAttributeParams() []*AttributeParamNode
 	GetAttributeLanguages() []string
 	GetSourcePosition() *cclUtils.SourceCodePosition
@@ -12,7 +15,7 @@ type AttributeNodeBase interface {
 
 // AttributeNode represents a normal attribute usage, such as [MyAttribute(...)].
 type AttributeNode struct {
-	Name           string
+	Name           cclAttr.CCLAttributeName
 	Languages      []string
 	Params         []*AttributeParamNode
 	SourcePosition *cclUtils.SourceCodePosition
@@ -21,7 +24,7 @@ type AttributeNode struct {
 // GlobalAttributeNode represents a hash-prefixed scoped attribute usage,
 // such as #[MyAttribute(...)] or #file:[$go:MyAttribute(...)].
 type GlobalAttributeNode struct {
-	Name           string
+	Name           cclAttr.CCLAttributeName
 	Scope          AttributeScope
 	Namespace      string
 	Languages      []string

@@ -3,9 +3,10 @@ package cclParser
 import (
 	"strings"
 
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
 )
 
 func (p *CCLAstParser) parseGlobalAttributeNode() (*cclAst.GlobalAttributeNode, error) {
@@ -266,7 +267,7 @@ func (p *CCLAstParser) parseSingleAttributeNode() (*cclAst.AttributeNode, error)
 	}
 
 	return &cclAst.AttributeNode{
-		Name:           name,
+		Name:           cclAttr.CCLAttributeName(name),
 		Languages:      languages,
 		Params:         attrParams,
 		SourcePosition: p.getSourcePositionForToken(startingToken),

@@ -1,15 +1,16 @@
 package cclValues
 
 import (
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 )
 
 // AttributeUsageInfo is a struct that represents an attribute definition
 // in the source code with its parameters.
 type AttributeUsageInfo struct {
 	// Name is the name of the attribute.
-	Name string
+	Name cclAttr.CCLAttributeName
 
 	// SourceFileId is the source file where this attribute is defined.
 	SourceFileId SourceFileId

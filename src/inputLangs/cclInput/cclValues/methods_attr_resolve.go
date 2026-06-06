@@ -1,12 +1,15 @@
 package cclValues
 
-import gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+import (
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
+)
 
 // ResolveAttribute resolves one attribute using local, file, namespace, and
 // global fallback rules.
 func (c *CCLCodeContext) ResolveAttribute(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 	subject *AttributeResolutionSubject,
 	options *AttributeResolutionOptions,
 ) *AttributeUsageInfo {
@@ -22,12 +25,13 @@ func (c *CCLCodeContext) ResolveAttribute(
 // global fallback rules. It stops at the first scoped level with matches.
 func (c *CCLCodeContext) ResolveAttributes(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 	subject *AttributeResolutionSubject,
 	options *AttributeResolutionOptions,
 ) []*AttributeUsageInfo {
 	if subject == nil {
-		return nil
+		// no specific subject to work on, just assume we want global
+		return c.FindContextGlobalAttributes(targetLang, name)
 	}
 
 	if options == nil {
@@ -44,11 +48,8 @@ func (c *CCLCodeContext) ResolveAttributes(
 			return attrs
 		}
 
-		if options.AllowModelFallback && subject.Field.OwnedBy != nil {
-			attrs = subject.Field.OwnedBy.FindAttributes(targetLang, name)
-			if len(attrs) > 0 {
-				return attrs
-			}
+		if options.AllowModelFallback && subject.Field.OwnedBy != nil && subject.Model == nil {
+			subject.Model = subject.Field.OwnedBy
 		}
 	}
 

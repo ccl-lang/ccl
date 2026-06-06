@@ -1,9 +1,10 @@
 package cclGenerators
 
 import (
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
-	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 //---------------------------------------------------------
@@ -11,7 +12,7 @@ import (
 // GetGlobalAttribute retrieves a global attribute with the specified name.
 func (c *CodeGenerationBase) GetGlobalAttribute(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) *cclValues.AttributeUsageInfo {
 	if ctx := c.getCodeContext(); ctx != nil {
 		return ctx.FindContextGlobalAttribute(targetLang, name)
@@ -23,7 +24,7 @@ func (c *CodeGenerationBase) GetGlobalAttribute(
 // GetGlobalAttributes retrieves all global attributes with the specified name.
 func (c *CodeGenerationBase) GetGlobalAttributes(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) []*cclValues.AttributeUsageInfo {
 	if ctx := c.getCodeContext(); ctx != nil {
 		return ctx.FindContextGlobalAttributes(targetLang, name)
@@ -36,7 +37,7 @@ func (c *CodeGenerationBase) GetGlobalAttributes(
 // from global attributes or the current model.
 func (c *CodeGenerationBase) GetGlobalOrModelAttribute(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributeUsageInfo {
 	if ctx := c.getCodeContext(); ctx != nil {
@@ -57,7 +58,7 @@ func (c *CodeGenerationBase) GetGlobalOrModelAttribute(
 // from global attributes or the current model.
 func (c *CodeGenerationBase) GetGlobalOrModelAttributes(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
 	if ctx := c.getCodeContext(); ctx != nil {
@@ -82,7 +83,7 @@ func (c *CodeGenerationBase) GetGlobalOrModelAttributes(
 // from both global attributes and the current model.
 func (c *CodeGenerationBase) GetGlobalAndModelAttributes(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
 	attrs := c.GetGlobalAttributes(targetLang, name)
@@ -94,7 +95,7 @@ func (c *CodeGenerationBase) GetGlobalAndModelAttributes(
 // from the current model or global attributes.
 func (c *CodeGenerationBase) GetModelOrGlobalAttribute(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributeUsageInfo {
 	if ctx := c.getCodeContext(); ctx != nil {
@@ -120,7 +121,7 @@ func (c *CodeGenerationBase) GetModelOrGlobalAttribute(
 // from both global attributes and the current model.
 func (c *CodeGenerationBase) GetModelAndGlobalAttributes(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
 	attrs := c.GetGlobalAttributes(targetLang, name)
@@ -132,7 +133,7 @@ func (c *CodeGenerationBase) GetModelAndGlobalAttributes(
 // from the current model or global attributes.
 func (c *CodeGenerationBase) GetModelOrGlobalAttributes(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 	currentModel *cclValues.ModelDefinition,
 ) *cclValues.AttributesCollection {
 	if ctx := c.getCodeContext(); ctx != nil {
@@ -167,12 +168,13 @@ func (c *CodeGenerationBase) GetOutputFileGroup(
 		return "", nil
 	}
 
-	if len(attrs.Attrs) > 1 {
-		return "", &cclErrors.ValidationError{
-			Message: AttributeOutputFileGroup + " must be defined at most once for model " +
-				currentModel.GetFullName(),
-		}
-	}
+	// wtf is this?
+	// if len(attrs.Attrs) > 1 {
+	// 	return "", &cclErrors.ValidationError{
+	// 		Message: AttributeOutputFileGroup + " must be defined at most once for model " +
+	// 			currentModel.GetFullName(),
+	// 	}
+	// }
 
 	param := attrs.Attrs[0].GetParamAt(0)
 	if param == nil || param.GetAsString() == "" {
@@ -218,7 +220,7 @@ func (c *CodeGenerationBase) NeedsCloneMethods(
 func (c *CodeGenerationBase) FindFieldAttribute(
 	field *CCLField,
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) *cclValues.AttributeUsageInfo {
 	if field == nil {
 		return nil

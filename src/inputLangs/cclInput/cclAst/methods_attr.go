@@ -1,9 +1,12 @@
 package cclAst
 
-import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
+import (
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
+)
 
 // GetAttributeName returns the name of the attribute.
-func (a *AttributeNode) GetAttributeName() string {
+func (a *AttributeNode) GetAttributeName() cclAttr.CCLAttributeName {
 	if a == nil {
 		return ""
 	}
@@ -35,7 +38,7 @@ func (a *AttributeNode) GetSourcePosition() *cclUtils.SourceCodePosition {
 }
 
 // GetAttributeName returns the name of the global attribute.
-func (g *GlobalAttributeNode) GetAttributeName() string {
+func (g *GlobalAttributeNode) GetAttributeName() cclAttr.CCLAttributeName {
 	if g == nil {
 		return ""
 	}

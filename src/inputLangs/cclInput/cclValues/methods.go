@@ -6,6 +6,7 @@ import (
 
 	"github.com/ALiwoto/ssg/ssg"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
 )
 
 //---------------------------------------------------------
@@ -19,7 +20,7 @@ func (d *SourceCodeDefinition) GetNextModelId() int64 {
 // FindGlobalAttributes returns all global attributes with the given name.
 func (d *SourceCodeDefinition) FindGlobalAttributes(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) []*AttributeUsageInfo {
 	attributes := []*AttributeUsageInfo{}
 
@@ -35,7 +36,7 @@ func (d *SourceCodeDefinition) FindGlobalAttributes(
 // FindGlobalAttributes returns the first global attribute with the given name.
 func (d *SourceCodeDefinition) FindGlobalAttribute(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) *AttributeUsageInfo {
 	for _, attr := range d.GlobalAttributes {
 		if attr.Name == name && attr.IsForLanguage(targetLang) {
@@ -49,7 +50,7 @@ func (d *SourceCodeDefinition) FindGlobalAttribute(
 // FindFileAttributes returns all file-scoped attributes with the given name.
 func (d *SourceCodeDefinition) FindFileAttributes(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) []*AttributeUsageInfo {
 	attributes := []*AttributeUsageInfo{}
 
@@ -65,7 +66,7 @@ func (d *SourceCodeDefinition) FindFileAttributes(
 // FindFileAttribute returns the first file-scoped attribute with the given name.
 func (d *SourceCodeDefinition) FindFileAttribute(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) *AttributeUsageInfo {
 	for _, attr := range d.FileAttributes {
 		if attr.Name == name && attr.IsForLanguage(targetLang) {
@@ -103,7 +104,7 @@ func (d *SourceCodeDefinition) GetAllModels() []*ModelDefinition {
 
 // HasGlobalAttribute returns true if the source code definition
 // has at least one of the given global attributes.
-func (d *SourceCodeDefinition) HasGlobalAttribute(attributeName ...string) bool {
+func (d *SourceCodeDefinition) HasGlobalAttribute(attributeName ...cclAttr.CCLAttributeName) bool {
 	for _, attr := range d.GlobalAttributes {
 		if slices.Contains(attributeName, attr.Name) {
 			return true
@@ -151,7 +152,7 @@ func (m *ModelDefinition) GetName() string {
 
 // HasAttribute returns true if the model definition has at least one of the
 // given attributes.
-func (m *ModelDefinition) HasAttribute(attributeName ...string) bool {
+func (m *ModelDefinition) HasAttribute(attributeName ...cclAttr.CCLAttributeName) bool {
 	for _, attr := range m.Attributes {
 		if slices.Contains(attributeName, attr.Name) {
 			return true
@@ -175,7 +176,7 @@ func (m *ModelDefinition) GetFieldByName(name string) *ModelFieldDefinition {
 // FindAttributes returns all attributes with the given name.
 func (m *ModelDefinition) FindAttributes(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) []*AttributeUsageInfo {
 	attributes := []*AttributeUsageInfo{}
 	for _, attr := range m.Attributes {
@@ -188,7 +189,7 @@ func (m *ModelDefinition) FindAttributes(
 }
 
 // FindAttribute returns the first attribute with the given name.
-func (m *ModelDefinition) FindAttribute(name string) *AttributeUsageInfo {
+func (m *ModelDefinition) FindAttribute(name cclAttr.CCLAttributeName) *AttributeUsageInfo {
 	for _, attr := range m.Attributes {
 		if attr.Name == name {
 			return attr

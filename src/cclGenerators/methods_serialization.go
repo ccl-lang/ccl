@@ -3,6 +3,7 @@ package cclGenerators
 import (
 	"slices"
 
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 
@@ -55,7 +56,11 @@ func (c *CodeGenerationBase) GetJsonFieldName(
 		}
 	}
 
-	attr := c.FindFieldAttribute(field, targetLang, "JsonPropertyName")
+	attr := c.FindFieldAttribute(
+		field,
+		targetLang,
+		cclAttr.AttrJsonPropertyName,
+	)
 	if attr != nil {
 		param := attr.GetParamAt(0)
 		if param == nil || param.GetAsString() == "" {
@@ -114,7 +119,7 @@ func (c *CodeGenerationBase) NeedsSerializationType(
 ) bool {
 	collection := c.GetGlobalOrModelAttributes(
 		targetLang,
-		"SerializationType",
+		cclAttr.AttrSerializationType,
 		currentModel,
 	)
 	return slices.Contains(collection.GetParamsAtAsStrings(0), sType)

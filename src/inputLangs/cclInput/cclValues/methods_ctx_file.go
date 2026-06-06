@@ -1,6 +1,9 @@
 package cclValues
 
-import gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+import (
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
+)
 
 // RegisterSourceCodeDefinition registers one source file definition in the context.
 func (c *CCLCodeContext) RegisterSourceCodeDefinition(def *SourceCodeDefinition) SourceFileId {
@@ -105,7 +108,7 @@ func (c *CCLCodeContext) RegisterGlobalAttribute(attr *AttributeUsageInfo) {
 // FindContextGlobalAttributes returns context-wide global attributes.
 func (c *CCLCodeContext) FindContextGlobalAttributes(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) []*AttributeUsageInfo {
 	c.scopedAttributesLock.RLock()
 	defer c.scopedAttributesLock.RUnlock()
@@ -116,7 +119,7 @@ func (c *CCLCodeContext) FindContextGlobalAttributes(
 // FindContextGlobalAttribute returns the first context-wide global attribute.
 func (c *CCLCodeContext) FindContextGlobalAttribute(
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) *AttributeUsageInfo {
 	attrs := c.FindContextGlobalAttributes(targetLang, name)
 	if len(attrs) == 0 {
@@ -130,7 +133,7 @@ func (c *CCLCodeContext) FindContextGlobalAttribute(
 func (c *CCLCodeContext) FindNamespaceAttributes(
 	namespace string,
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) []*AttributeUsageInfo {
 	c.scopedAttributesLock.RLock()
 	defer c.scopedAttributesLock.RUnlock()
@@ -142,7 +145,7 @@ func (c *CCLCodeContext) FindNamespaceAttributes(
 func (c *CCLCodeContext) FindNamespaceAttribute(
 	namespace string,
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) *AttributeUsageInfo {
 	attrs := c.FindNamespaceAttributes(namespace, targetLang, name)
 	if len(attrs) == 0 {

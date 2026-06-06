@@ -3,8 +3,9 @@ package parser_test
 import (
 	"testing"
 
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser"
 )
 
 type attributeParamInfo struct {
@@ -13,7 +14,7 @@ type attributeParamInfo struct {
 }
 
 type attributeInfo struct {
-	Name       string
+	Name       cclAttr.CCLAttributeName
 	Parameters []attributeParamInfo
 }
 

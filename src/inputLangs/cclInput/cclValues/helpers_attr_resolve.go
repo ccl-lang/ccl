@@ -4,12 +4,13 @@ import (
 	"strings"
 
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
 )
 
 func filterAttributes(
 	attrs []*AttributeUsageInfo,
 	targetLang gValues.LanguageType,
-	name string,
+	name cclAttr.CCLAttributeName,
 ) []*AttributeUsageInfo {
 	result := []*AttributeUsageInfo{}
 	for _, attr := range attrs {

@@ -28,7 +28,7 @@ func (a *AttributeUsageInfo) IsForLanguage(lang gValues.LanguageType) bool {
 
 // GetParamAt returns the parameter at the specified index.
 func (a *AttributeUsageInfo) GetParamAt(index int) *ParameterInstance {
-	if index < 0 || index >= len(a.Parameters) {
+	if a == nil || index < 0 || index >= len(a.Parameters) {
 		return nil
 	}
 
