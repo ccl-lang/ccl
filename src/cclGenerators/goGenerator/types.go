@@ -17,6 +17,4 @@ type GoGenerationContext struct {
 
 	// CodeByPath maps relative output file paths to their builders.
 	CodeByPath map[string]*codeBuilder.CodeBuilder
-
-	JsonHelpersGenerated bool
 }

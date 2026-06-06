@@ -10,7 +10,6 @@ func (c *GoGenerationContext) generateSerializeJsonMethods(
 	builder *codeBuilder.CodeBuilder,
 	model *CCLModel,
 ) error {
-	c.ensureJsonHelpers()
 	if err := c.generateSerializeJsonMethod(builder, model); err != nil {
 		return err
 	}
@@ -81,10 +80,10 @@ func (c *GoGenerationContext) generateDeserializeJsonMethod(
 	builder *codeBuilder.CodeBuilder,
 	model *CCLModel,
 ) error {
-	if len(model.Fields) > 0 {
-		// Generated JSON field readers check null values with strings.TrimSpace.
-		registerGoImport(builder, "strings")
-	}
+	// Generated JSON deserialization reads object fields directly with encoding/json.
+	registerGoImport(builder, "encoding/json")
+	// Generated JSON field readers check null values and parse quoted primitives with strings.TrimSpace.
+	registerGoImport(builder, "strings")
 
 	builder.ExpectMappedVars("model")
 	builder.LineD("func (m $model) DeserializeJSON(data string) error {").
@@ -94,8 +93,14 @@ func (c *GoGenerationContext) generateDeserializeJsonMethod(
 		WriteLine("return nil").
 		Unindent().
 		WriteLine("}").
-		WriteLine("fields, err := cclReadJSONMap(data)").
-		WriteLine("if err != nil || fields == nil {").
+		WriteLine("data = strings.TrimSpace(data)").
+		WriteLine("if data == \"\" || data == \"null\" {").
+		Indent().
+		WriteLine("return nil").
+		Unindent().
+		WriteLine("}").
+		WriteLine("var fields map[string]json.RawMessage").
+		WriteLine("if err := json.Unmarshal([]byte(data), &fields); err != nil {").
 		Indent().
 		WriteLine("return err").
 		Unindent().
@@ -127,6 +132,7 @@ func (c *GoGenerationContext) generateDeserializeJsonMethod(
 		Unindent().
 		WriteLine("}").
 		NewLine()
+
 	return nil
 }
 
@@ -278,37 +284,17 @@ func (c *GoGenerationContext) generateFieldDeserializeJson(
 	valueName := caseUtils.ToCamelCase(fieldRawName) + "Value"
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(valueName + ", err := cclReadJSONString(" + rawName + ")").
-			WriteLine("if err != nil {").
-			Indent().
-			WriteLine("return err").
-			Unindent().
-			WriteLine("}").
-			WriteLine(fieldName + " = " + valueName)
+		c.writeGoJsonStringRead(builder, valueName, rawName)
+		builder.WriteLine(fieldName + " = " + valueName)
 	case cclValues.TypeNameBool:
-		builder.WriteLine(valueName + ", err := cclReadJSONBool(" + rawName + ")").
-			WriteLine("if err != nil {").
-			Indent().
-			WriteLine("return err").
-			Unindent().
-			WriteLine("}").
-			WriteLine(fieldName + " = " + valueName)
+		c.writeGoJsonBoolRead(builder, valueName, rawName)
+		builder.WriteLine(fieldName + " = " + valueName)
 	case cclValues.TypeNameBytes:
-		builder.WriteLine(valueName + ", err := cclReadJSONBytes(" + rawName + ")").
-			WriteLine("if err != nil {").
-			Indent().
-			WriteLine("return err").
-			Unindent().
-			WriteLine("}").
-			WriteLine(fieldName + " = " + valueName)
+		c.writeGoJsonBytesRead(builder, valueName, rawName)
+		builder.WriteLine(fieldName + " = " + valueName)
 	default:
 		if c.isGoJsonSignedInteger(field.Type) {
-			builder.WriteLine(valueName + ", err := cclReadJSONInt(" + rawName + ")").
-				WriteLine("if err != nil {").
-				Indent().
-				WriteLine("return err").
-				Unindent().
-				WriteLine("}")
+			c.writeGoJsonIntRead(builder, valueName, rawName)
 			if field.Type.GetName() == cclValues.TypeNameDateTime {
 				// Generated datetime JSON deserialization rebuilds values with time.Unix.
 				registerGoImport(builder, "time")
@@ -317,21 +303,11 @@ func (c *GoGenerationContext) generateFieldDeserializeJson(
 				builder.WriteLine(fieldName + " = " + c.goJsonIntegerCast(field.Type) + "(" + valueName + ")")
 			}
 		} else if c.isGoJsonUnsignedInteger(field.Type) {
-			builder.WriteLine(valueName + ", err := cclReadJSONUint(" + rawName + ")").
-				WriteLine("if err != nil {").
-				Indent().
-				WriteLine("return err").
-				Unindent().
-				WriteLine("}").
-				WriteLine(fieldName + " = " + c.goJsonIntegerCast(field.Type) + "(" + valueName + ")")
+			c.writeGoJsonUintRead(builder, valueName, rawName)
+			builder.WriteLine(fieldName + " = " + c.goJsonIntegerCast(field.Type) + "(" + valueName + ")")
 		} else if c.isGoJsonFloat(field.Type) {
-			builder.WriteLine(valueName + ", err := cclReadJSONFloat(" + rawName + ")").
-				WriteLine("if err != nil {").
-				Indent().
-				WriteLine("return err").
-				Unindent().
-				WriteLine("}").
-				WriteLine(fieldName + " = " + c.goJsonFloatCast(field.Type) + "(" + valueName + ")")
+			c.writeGoJsonFloatRead(builder, valueName, rawName)
+			builder.WriteLine(fieldName + " = " + c.goJsonFloatCast(field.Type) + "(" + valueName + ")")
 		} else if field.IsCustomTypeModel() {
 			builder.WriteLine(fieldName + " = new(" + field.Type.GetName() + ")").
 				WriteLine("if err := " + fieldName + ".DeserializeJSON(string(" + rawName + ")); err != nil {").
@@ -360,30 +336,25 @@ func (c *GoGenerationContext) generateArrayDeserializeJson(
 		return c.unsupportedGoJsonField(field)
 	}
 
-	builder.WriteLine(valueName + ", err := cclReadJSONArray(" + rawName + ")").
-		WriteLine("if err != nil {").
-		Indent().
-		WriteLine("return err").
-		Unindent().
-		WriteLine("}").
-		WriteLine(fieldName + " = make([]" + itemType + ", 0, len(" + valueName + "))").
+	c.writeGoJsonArrayRead(builder, valueName, rawName)
+	builder.WriteLine(fieldName + " = make([]" + itemType + ", 0, len(" + valueName + "))").
 		WriteLine("for _, item := range " + valueName + " {").
 		Indent()
 
 	switch targetType.GetName() {
 	case cclValues.TypeNameString:
-		builder.WriteLine(itemValueName + ", err := cclReadJSONString(item)")
+		c.writeGoJsonStringRead(builder, itemValueName, "item")
 	case cclValues.TypeNameBool:
-		builder.WriteLine(itemValueName + ", err := cclReadJSONBool(item)")
+		c.writeGoJsonBoolRead(builder, itemValueName, "item")
 	case cclValues.TypeNameBytes:
-		builder.WriteLine(itemValueName + ", err := cclReadJSONBytes(item)")
+		c.writeGoJsonBytesRead(builder, itemValueName, "item")
 	default:
 		if c.isGoJsonSignedInteger(targetType) {
-			builder.WriteLine(itemValueName + ", err := cclReadJSONInt(item)")
+			c.writeGoJsonIntRead(builder, itemValueName, "item")
 		} else if c.isGoJsonUnsignedInteger(targetType) {
-			builder.WriteLine(itemValueName + ", err := cclReadJSONUint(item)")
+			c.writeGoJsonUintRead(builder, itemValueName, "item")
 		} else if c.isGoJsonFloat(targetType) {
-			builder.WriteLine(itemValueName + ", err := cclReadJSONFloat(item)")
+			c.writeGoJsonFloatRead(builder, itemValueName, "item")
 		} else if targetType.IsCustomTypeModel() {
 			builder.WriteLine("if strings.TrimSpace(string(item)) == \"null\" {").
 				Indent().
@@ -393,14 +364,13 @@ func (c *GoGenerationContext) generateArrayDeserializeJson(
 				WriteLine("}").
 				WriteLine(itemValueName + " := new(" + targetType.GetName() + ")").
 				WriteLine("err := " + itemValueName + ".DeserializeJSON(string(item))")
+			builder.WriteLine("if err != nil {").
+				Indent().
+				WriteLine("return err").
+				Unindent().
+				WriteLine("}")
 		}
 	}
-
-	builder.WriteLine("if err != nil {").
-		Indent().
-		WriteLine("return err").
-		Unindent().
-		WriteLine("}")
 
 	if targetType.IsCustomTypeModel() || targetType.GetName() == cclValues.TypeNameString ||
 		targetType.GetName() == cclValues.TypeNameBool || targetType.GetName() == cclValues.TypeNameBytes {

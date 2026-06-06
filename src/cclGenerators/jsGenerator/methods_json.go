@@ -11,7 +11,6 @@ func (c *JavaScriptGenerationContext) generateSerializeJsonMethods(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
 ) error {
-	c.generateJsonByteHelpers(builder)
 	if err := c.generateSerializeJsonObjectMethod(model, builder); err != nil {
 		return err
 	}
@@ -22,30 +21,6 @@ func (c *JavaScriptGenerationContext) generateSerializeJsonMethods(
 	c.generateDeserializeJsonMethod(model, builder)
 
 	return nil
-}
-
-func (c *JavaScriptGenerationContext) generateJsonByteHelpers(builder *codeBuilder.CodeBuilder) {
-	builder.WriteLine("static _bytesToBase64(bytes) {").
-		Indent().
-		WriteLine("if (!bytes) return \"\";").
-		WriteLine("if (typeof Buffer !== \"undefined\") return Buffer.from(bytes).toString(\"base64\");").
-		WriteLine("let binary = \"\";").
-		WriteLine("for (const byte of bytes) binary += String.fromCharCode(byte);").
-		WriteLine("return btoa(binary);").
-		Unindent().
-		WriteLine("}").
-		NewLine().
-		WriteLine("static _base64ToBytes(value) {").
-		Indent().
-		WriteLine("if (typeof value !== \"string\") return null;").
-		WriteLine("if (typeof Buffer !== \"undefined\") return new Uint8Array(Buffer.from(value, \"base64\"));").
-		WriteLine("const binary = atob(value);").
-		WriteLine("const bytes = new Uint8Array(binary.length);").
-		WriteLine("for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);").
-		WriteLine("return bytes;").
-		Unindent().
-		WriteLine("}").
-		NewLine()
 }
 
 func (c *JavaScriptGenerationContext) generateSerializeJsonObjectMethod(
@@ -169,18 +144,16 @@ func (c *JavaScriptGenerationContext) generateFieldSerializeJson(
 	fieldName := "this." + caseUtils.ToCamelCase(field.Name)
 	builder.MapVarPairs(
 		"field", fieldName,
-		"helperOwner", field.OwnedBy.GetName(),
 		"jsonName", jsonName,
 	)
 	defer builder.UnmapVar(
 		"field",
-		"helperOwner",
 		"jsonName",
 	)
 
 	switch field.Type.GetName() {
 	case cclValues.TypeNameBytes:
-		builder.LineD(`data["$jsonName"] = $helperOwner._bytesToBase64($field);`)
+		c.writeJavaScriptJsonBytesSerialize(builder, fieldName, `data["`+jsonName+`"]`, false)
 	default:
 		if field.IsCustomTypeModel() {
 			builder.LineD(`data["$jsonName"] = $field ? $field.serializeJsonObject() : null;`)
@@ -210,13 +183,11 @@ func (c *JavaScriptGenerationContext) generateArraySerializeJson(
 	listName := caseUtils.ToCamelCase(field.Name) + "JsonList"
 	builder.MapVarPairs(
 		"field", fieldName,
-		"helperOwner", field.OwnedBy.GetName(),
 		"jsonName", jsonName,
 		"list", listName,
 	)
 	defer builder.UnmapVar(
 		"field",
-		"helperOwner",
 		"jsonName",
 		"list",
 	)
@@ -229,7 +200,10 @@ func (c *JavaScriptGenerationContext) generateArraySerializeJson(
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameBytes:
-		builder.LineD("$list.push($helperOwner._bytesToBase64(item));")
+		c.writeJavaScriptJsonBytesSerialize(builder, "item", listName+"Value", true)
+		builder.MapVarPairs("listValue", listName+"Value")
+		builder.LineD("$list.push($listValue);")
+		builder.UnmapVar("listValue")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
 			builder.LineD("$list.push(item ? item.serializeJsonObject() : null);")
@@ -265,14 +239,12 @@ func (c *JavaScriptGenerationContext) generateFieldDeserializeJson(
 	valueName := fieldName + "Value"
 	builder.MapVarPairs(
 		"field", resultField,
-		"helperOwner", field.OwnedBy.GetName(),
 		"jsonName", jsonName,
 		"type", field.Type.GetName(),
 		"value", valueName,
 	)
 	defer builder.UnmapVar(
 		"field",
-		"helperOwner",
 		"jsonName",
 		"type",
 		"value",
@@ -300,9 +272,8 @@ func (c *JavaScriptGenerationContext) generateFieldDeserializeJson(
 			Unindent().
 			WriteLine("}")
 	case cclValues.TypeNameBytes:
-		builder.LineD("const bytesValue = $helperOwner._base64ToBytes($value);").
-			WriteLine("if (bytesValue === null) return null;").
-			LineD("$field = bytesValue;")
+		c.writeJavaScriptJsonBytesDeserialize(builder, valueName, "bytesValue")
+		builder.LineD("$field = bytesValue;")
 	default:
 		if c.isJavaScriptJsonNumber(field.Type) {
 			builder.LineD("const numberValue = Number($value);").
@@ -340,7 +311,6 @@ func (c *JavaScriptGenerationContext) generateArrayDeserializeJson(
 	itemName := fieldName + "Item"
 	builder.MapVarPairs(
 		"field", resultField,
-		"helperOwner", field.OwnedBy.GetName(),
 		"item", itemName,
 		"jsonName", jsonName,
 		"type", targetFieldType.GetName(),
@@ -348,7 +318,6 @@ func (c *JavaScriptGenerationContext) generateArrayDeserializeJson(
 	)
 	defer builder.UnmapVar(
 		"field",
-		"helperOwner",
 		"item",
 		"jsonName",
 		"type",
@@ -387,9 +356,8 @@ func (c *JavaScriptGenerationContext) generateArrayDeserializeJson(
 			WriteLine("}").
 			LineD("$field.push($item);")
 	case cclValues.TypeNameBytes:
-		builder.LineD("const $item = $helperOwner._base64ToBytes(item);").
-			LineD("if ($item === null) return null;").
-			LineD("$field.push($item);")
+		c.writeJavaScriptJsonBytesDeserialize(builder, "item", itemName)
+		builder.LineD("$field.push($item);")
 	default:
 		if c.isJavaScriptJsonNumber(targetFieldType) {
 			builder.LineD("const $item = Number(item);").
@@ -444,4 +412,64 @@ func (c *JavaScriptGenerationContext) isJavaScriptJsonNumber(targetType *cclValu
 	default:
 		return false
 	}
+}
+
+func (c *JavaScriptGenerationContext) writeJavaScriptJsonBytesSerialize(
+	builder *codeBuilder.CodeBuilder,
+	valueName string,
+	targetName string,
+	declareTarget bool,
+) {
+	builder.MapVarPairs(
+		"value", valueName,
+		"target", targetName,
+	)
+	defer builder.UnmapVar("value", "target")
+
+	if declareTarget {
+		builder.LineD("let $target = \"\";")
+	} else {
+		builder.LineD("$target = \"\";")
+	}
+	builder.LineD("if ($value) {").
+		Indent().
+		WriteLine("if (typeof Buffer !== \"undefined\") {").
+		Indent().
+		LineD("$target = Buffer.from($value).toString(\"base64\");").
+		Unindent().
+		WriteLine("} else {").
+		Indent().
+		WriteLine("let binary = \"\";").
+		LineD("for (const byte of $value) binary += String.fromCharCode(byte);").
+		LineD("$target = btoa(binary);").
+		Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}")
+}
+
+func (c *JavaScriptGenerationContext) writeJavaScriptJsonBytesDeserialize(
+	builder *codeBuilder.CodeBuilder,
+	valueName string,
+	targetName string,
+) {
+	builder.MapVarPairs(
+		"value", valueName,
+		"target", targetName,
+	)
+	defer builder.UnmapVar("value", "target")
+
+	builder.LineD("if (typeof $value !== \"string\") return null;").
+		LineD("let $target;").
+		WriteLine("if (typeof Buffer !== \"undefined\") {").
+		Indent().
+		LineD("$target = new Uint8Array(Buffer.from($value, \"base64\"));").
+		Unindent().
+		WriteLine("} else {").
+		Indent().
+		LineD("const binary = atob($value);").
+		LineD("$target = new Uint8Array(binary.length);").
+		LineD("for (let i = 0; i < binary.length; i++) $target[i] = binary.charCodeAt(i);").
+		Unindent().
+		WriteLine("}")
 }

@@ -167,7 +167,7 @@ func (c *CodeGenerationBase) NeedsCloneMethods(
 ) bool {
 	attr := c.GetModelOrGlobalAttribute(
 		targetLang,
-		"AddCloneMethods",
+		cclAttr.AttrAddCloneMethods,
 		currentModel,
 	)
 	if attr != nil {

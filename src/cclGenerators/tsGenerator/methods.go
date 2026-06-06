@@ -7,10 +7,10 @@ import (
 	"github.com/ALiwoto/ssg/ssg"
 	"github.com/ALiwoto/ssg/ssg/caseUtils"
 	gen "github.com/ccl-lang/ccl/src/cclGenerators"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
-	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 func (c *TypeScriptGenerationContext) generateCode() (*gen.CodeGenerationResult, error) {
@@ -241,10 +241,8 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		}
 	}
 
-	builder.UnindentLine().
+	builder.Unindent().
 		WriteLine("}")
-
-	builder.NewLine()
 
 	return nil
 }

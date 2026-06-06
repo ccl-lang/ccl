@@ -24,8 +24,10 @@ func (c *TypeScriptGenerationContext) generateSerializeBinaryMethod(model *CCLMo
 	}
 
 	builder.WriteLine("return new Uint8Array(buffer);").
-		UnindentLine().
-		WriteLine("}")
+		Unindent().
+		WriteLine("}").
+		NewLine()
+
 	return nil
 }
 
@@ -105,7 +107,6 @@ func (c *TypeScriptGenerationContext) generateFieldSerializeBinary(field *CCLFie
 				WriteLine("}")
 		}
 	}
-	builder.NewLine()
 }
 
 func (c *TypeScriptGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
@@ -205,8 +206,9 @@ func (c *TypeScriptGenerationContext) generateDeserializeBinaryMethod(model *CCL
 	}
 
 	builder.WriteLine("return result;").
-		UnindentLine().
+		Unindent().
 		WriteLine("}")
+
 	return nil
 }
 
@@ -232,7 +234,7 @@ func (c *TypeScriptGenerationContext) generateFieldDeserializeBinary(field *CCLF
 			WriteLine("const bytes = data.subarray(offset, offset + len);").
 			LineD("$field = new TextDecoder().decode(bytes);").
 			WriteLine("offset += len;").
-			UnindentLine().
+			Unindent().
 			WriteLine("}")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
 		builder.LineD("$field = view.getInt32(offset, true);").

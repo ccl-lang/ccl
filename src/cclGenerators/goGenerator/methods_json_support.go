@@ -2,166 +2,9 @@ package goGenerator
 
 import (
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
-
-func (c *GoGenerationContext) ensureJsonHelpers() {
-	if c.JsonHelpersGenerated {
-		return
-	}
-	c.JsonHelpersGenerated = true
-
-	builder := c.getCodeBuilder(HelpersFileName, "helpers")
-
-	registerGoImports(builder, map[string]bool{
-		"encoding/base64": true,
-		"encoding/json":   true,
-		"strconv":         true,
-		"strings":         true,
-	})
-
-	builder.WriteLine("func cclReadJSONMap(data string) (map[string]json.RawMessage, error) {").
-		Indent().
-		WriteLine("data = strings.TrimSpace(data)").
-		WriteLine("if data == \"\" || data == \"null\" {").
-		Indent().
-		WriteLine("return nil, nil").
-		Unindent().
-		WriteLine("}").
-		WriteLine("var result map[string]json.RawMessage").
-		WriteLine("if err := json.Unmarshal([]byte(data), &result); err != nil {").
-		Indent().
-		WriteLine("return nil, err").
-		Unindent().
-		WriteLine("}").
-		WriteLine("return result, nil").
-		Unindent().
-		WriteLine("}").
-		NewLine().
-		WriteLine("func cclReadJSONString(data json.RawMessage) (string, error) {").
-		Indent().
-		WriteLine("var result string").
-		WriteLine("if err := json.Unmarshal(data, &result); err != nil {").
-		Indent().
-		WriteLine("return \"\", err").
-		Unindent().
-		WriteLine("}").
-		WriteLine("return result, nil").
-		Unindent().
-		WriteLine("}").
-		NewLine().
-		WriteLine("func cclReadJSONInt(data json.RawMessage) (int64, error) {").
-		Indent().
-		WriteLine("value := strings.TrimSpace(string(data))").
-		WriteLine("if len(value) >= 2 && value[0] == '\"' && value[len(value)-1] == '\"' {").
-		Indent().
-		WriteLine("unquoted, err := strconv.Unquote(value)").
-		WriteLine("if err != nil {").
-		Indent().
-		WriteLine("return 0, err").
-		Unindent().
-		WriteLine("}").
-		WriteLine("value = unquoted").
-		Unindent().
-		WriteLine("}").
-		WriteLine("return strconv.ParseInt(value, 10, 64)").
-		Unindent().
-		WriteLine("}").
-		NewLine().
-		WriteLine("func cclReadJSONUint(data json.RawMessage) (uint64, error) {").
-		Indent().
-		WriteLine("value := strings.TrimSpace(string(data))").
-		WriteLine("if len(value) >= 2 && value[0] == '\"' && value[len(value)-1] == '\"' {").
-		Indent().
-		WriteLine("unquoted, err := strconv.Unquote(value)").
-		WriteLine("if err != nil {").
-		Indent().
-		WriteLine("return 0, err").
-		Unindent().
-		WriteLine("}").
-		WriteLine("value = unquoted").
-		Unindent().
-		WriteLine("}").
-		WriteLine("return strconv.ParseUint(value, 10, 64)").
-		Unindent().
-		WriteLine("}").
-		NewLine().
-		WriteLine("func cclReadJSONFloat(data json.RawMessage) (float64, error) {").
-		Indent().
-		WriteLine("value := strings.TrimSpace(string(data))").
-		WriteLine("if len(value) >= 2 && value[0] == '\"' && value[len(value)-1] == '\"' {").
-		Indent().
-		WriteLine("unquoted, err := strconv.Unquote(value)").
-		WriteLine("if err != nil {").
-		Indent().
-		WriteLine("return 0, err").
-		Unindent().
-		WriteLine("}").
-		WriteLine("value = unquoted").
-		Unindent().
-		WriteLine("}").
-		WriteLine("return strconv.ParseFloat(value, 64)").
-		Unindent().
-		WriteLine("}").
-		NewLine().
-		WriteLine("func cclReadJSONBool(data json.RawMessage) (bool, error) {").
-		Indent().
-		WriteLine("value := strings.TrimSpace(string(data))").
-		WriteLine("if len(value) >= 2 && value[0] == '\"' && value[len(value)-1] == '\"' {").
-		Indent().
-		WriteLine("unquoted, err := strconv.Unquote(value)").
-		WriteLine("if err != nil {").
-		Indent().
-		WriteLine("return false, err").
-		Unindent().
-		WriteLine("}").
-		WriteLine("value = strings.ToLower(unquoted)").
-		Unindent().
-		WriteLine("}").
-		WriteLine("switch value {").
-		Indent().
-		WriteLine("case \"true\", \"1\":").
-		Indent().
-		WriteLine("return true, nil").
-		Unindent().
-		WriteLine("case \"false\", \"0\", \"\":").
-		Indent().
-		WriteLine("return false, nil").
-		Unindent().
-		WriteLine("default:").
-		Indent().
-		WriteLine("return false, strconv.ErrSyntax").
-		Unindent().
-		Unindent().
-		WriteLine("}").
-		Unindent().
-		WriteLine("}").
-		NewLine().
-		WriteLine("func cclReadJSONBytes(data json.RawMessage) ([]byte, error) {").
-		Indent().
-		WriteLine("value, err := cclReadJSONString(data)").
-		WriteLine("if err != nil {").
-		Indent().
-		WriteLine("return nil, err").
-		Unindent().
-		WriteLine("}").
-		WriteLine("return base64.StdEncoding.DecodeString(value)").
-		Unindent().
-		WriteLine("}").
-		NewLine().
-		WriteLine("func cclReadJSONArray(data json.RawMessage) ([]json.RawMessage, error) {").
-		Indent().
-		WriteLine("var result []json.RawMessage").
-		WriteLine("if err := json.Unmarshal(data, &result); err != nil {").
-		Indent().
-		WriteLine("return nil, err").
-		Unindent().
-		WriteLine("}").
-		WriteLine("return result, nil").
-		Unindent().
-		WriteLine("}").
-		NewLine()
-}
 
 func (c *GoGenerationContext) isGoJsonSignedInteger(targetType *cclValues.CCLTypeUsage) bool {
 	switch targetType.GetName() {
@@ -190,6 +33,207 @@ func (c *GoGenerationContext) isGoJsonFloat(targetType *cclValues.CCLTypeUsage) 
 	default:
 		return false
 	}
+}
+
+func (c *GoGenerationContext) writeGoJsonStringRead(
+	builder *codeBuilder.CodeBuilder,
+	valueName string,
+	rawName string,
+) {
+	registerGoImport(builder, "encoding/json")
+	builder.MapVarPairs(
+		"value", valueName,
+		"raw", rawName,
+	)
+	defer builder.UnmapVar("value", "raw")
+
+	builder.LineD("var $value string").
+		LineD("if err := json.Unmarshal($raw, &$value); err != nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}")
+}
+
+func (c *GoGenerationContext) writeGoJsonIntRead(
+	builder *codeBuilder.CodeBuilder,
+	valueName string,
+	rawName string,
+) {
+	registerGoImport(builder, "strconv")
+	registerGoImport(builder, "strings")
+	valueTextName := valueName + "Text"
+	builder.MapVarPairs(
+		"value", valueName,
+		"raw", rawName,
+		"text", valueTextName,
+	)
+	defer builder.UnmapVar("value", "raw", "text")
+
+	builder.LineD("$text := strings.TrimSpace(string($raw))")
+	c.writeGoJsonQuotedValueUnwrap(builder, false)
+	builder.LineD("$value, err := strconv.ParseInt($text, 10, 64)").
+		WriteLine("if err != nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}")
+}
+
+func (c *GoGenerationContext) writeGoJsonUintRead(
+	builder *codeBuilder.CodeBuilder,
+	valueName string,
+	rawName string,
+) {
+	registerGoImport(builder, "strconv")
+	registerGoImport(builder, "strings")
+	valueTextName := valueName + "Text"
+	builder.MapVarPairs(
+		"value", valueName,
+		"raw", rawName,
+		"text", valueTextName,
+	)
+	defer builder.UnmapVar("value", "raw", "text")
+
+	builder.LineD("$text := strings.TrimSpace(string($raw))")
+	c.writeGoJsonQuotedValueUnwrap(builder, false)
+	builder.LineD("$value, err := strconv.ParseUint($text, 10, 64)").
+		WriteLine("if err != nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}")
+}
+
+func (c *GoGenerationContext) writeGoJsonFloatRead(
+	builder *codeBuilder.CodeBuilder,
+	valueName string,
+	rawName string,
+) {
+	registerGoImport(builder, "strconv")
+	registerGoImport(builder, "strings")
+	valueTextName := valueName + "Text"
+	builder.MapVarPairs(
+		"value", valueName,
+		"raw", rawName,
+		"text", valueTextName,
+	)
+	defer builder.UnmapVar("value", "raw", "text")
+
+	builder.LineD("$text := strings.TrimSpace(string($raw))")
+	c.writeGoJsonQuotedValueUnwrap(builder, false)
+	builder.LineD("$value, err := strconv.ParseFloat($text, 64)").
+		WriteLine("if err != nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}")
+}
+
+func (c *GoGenerationContext) writeGoJsonBoolRead(
+	builder *codeBuilder.CodeBuilder,
+	valueName string,
+	rawName string,
+) {
+	registerGoImport(builder, "strconv")
+	registerGoImport(builder, "strings")
+	valueTextName := valueName + "Text"
+	builder.MapVarPairs(
+		"value", valueName,
+		"raw", rawName,
+		"text", valueTextName,
+	)
+	defer builder.UnmapVar("value", "raw", "text")
+
+	builder.LineD("$text := strings.TrimSpace(string($raw))")
+	c.writeGoJsonQuotedValueUnwrap(builder, true)
+	builder.LineD("var $value bool").
+		LineD("switch $text {").
+		Indent().
+		WriteLine("case \"true\", \"1\":").
+		Indent().
+		LineD("$value = true").
+		Unindent().
+		WriteLine("case \"false\", \"0\", \"\":").
+		Indent().
+		LineD("$value = false").
+		Unindent().
+		WriteLine("default:").
+		Indent().
+		WriteLine("return strconv.ErrSyntax").
+		Unindent().
+		Unindent().
+		WriteLine("}")
+}
+
+func (c *GoGenerationContext) writeGoJsonBytesRead(
+	builder *codeBuilder.CodeBuilder,
+	valueName string,
+	rawName string,
+) {
+	registerGoImport(builder, "encoding/base64")
+	registerGoImport(builder, "encoding/json")
+	textName := valueName + "Text"
+	builder.MapVarPairs(
+		"value", valueName,
+		"raw", rawName,
+		"text", textName,
+	)
+	defer builder.UnmapVar("value", "raw", "text")
+
+	builder.LineD("var $text string").
+		LineD("if err := json.Unmarshal($raw, &$text); err != nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}").
+		LineD("$value, err := base64.StdEncoding.DecodeString($text)").
+		WriteLine("if err != nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}")
+}
+
+func (c *GoGenerationContext) writeGoJsonArrayRead(
+	builder *codeBuilder.CodeBuilder,
+	valueName string,
+	rawName string,
+) {
+	registerGoImport(builder, "encoding/json")
+	builder.MapVarPairs(
+		"value", valueName,
+		"raw", rawName,
+	)
+	defer builder.UnmapVar("value", "raw")
+
+	builder.LineD("var $value []json.RawMessage").
+		LineD("if err := json.Unmarshal($raw, &$value); err != nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}")
+}
+
+func (c *GoGenerationContext) writeGoJsonQuotedValueUnwrap(
+	builder *codeBuilder.CodeBuilder,
+	lowercase bool,
+) {
+	builder.LineD("if len($text) >= 2 && $text[0] == '\"' && $text[len($text)-1] == '\"' {").
+		Indent().
+		LineD("unquoted, err := strconv.Unquote($text)").
+		WriteLine("if err != nil {").
+		Indent().
+		WriteLine("return err").
+		Unindent().
+		WriteLine("}")
+	if lowercase {
+		builder.LineD("$text = strings.ToLower(unquoted)")
+	} else {
+		builder.LineD("$text = unquoted")
+	}
+	builder.Unindent().
+		WriteLine("}")
 }
 
 func (c *GoGenerationContext) goJsonIntegerCast(targetType *cclValues.CCLTypeUsage) string {
