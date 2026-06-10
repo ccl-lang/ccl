@@ -9,8 +9,8 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("No command provided. Use 'generate' to generate code.")
-		os.Exit(1)
+		cclCmd.HandleHelpCommand()
+		return
 	}
 
 	command := os.Args[1]
@@ -22,7 +22,7 @@ func main() {
 		cclCmd.HandleInfoCommand()
 	case "version", "--version":
 		cclCmd.HandleVersionCommand()
-	case "help":
+	case "help", "--help", "-help", "-h":
 		cclCmd.HandleHelpCommand()
 	default:
 		fmt.Printf("Unknown command: %s\n", command)

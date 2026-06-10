@@ -16,21 +16,3 @@ func closeGoImportGroup(builder *codeBuilder.CodeBuilder) {
 		builder.DoImport(closeImportKey, ")")
 	}
 }
-
-func registerGoImports(builder *codeBuilder.CodeBuilder, imports map[string]bool) {
-	orderedImports := [...]string{
-		"bytes",
-		"encoding/base64",
-		"encoding/binary",
-		"encoding/json",
-		"strconv",
-		"strings",
-		"time",
-	}
-
-	for _, importPath := range orderedImports {
-		if imports[importPath] {
-			registerGoImport(builder, importPath)
-		}
-	}
-}
