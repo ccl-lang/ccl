@@ -61,4 +61,8 @@ type CCLCodeContext struct {
 
 	// scopedAttributesLock is the lock for global and namespace attributes.
 	scopedAttributesLock *sync.RWMutex
+
+	// modelIdCounter is a counter that is used to generate unique model IDs.
+	// needs a lock to be put on typeDefinitionsLock.
+	modelIdCounter int64
 }

@@ -41,9 +41,6 @@ type SourceCodeDefinition struct {
 	// NamespaceAttributes is an array of attribute definitions which are applied
 	// to namespaces declared in this source file.
 	NamespaceAttributes []*AttributeUsageInfo
-
-	// modelIdCounter is a counter that is used to generate unique model IDs.
-	modelIdCounter int64
 }
 
 // CCLTypeDefinition is a struct that represents a CCL *type*.

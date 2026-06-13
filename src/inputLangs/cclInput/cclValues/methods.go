@@ -13,8 +13,7 @@ import (
 
 // GetNextModelId returns the next model ID.
 func (d *SourceCodeDefinition) GetNextModelId() int64 {
-	d.modelIdCounter++
-	return d.modelIdCounter
+	return d.CodeContext.GetNextModelId()
 }
 
 // FindGlobalAttributes returns all global attributes with the given name.

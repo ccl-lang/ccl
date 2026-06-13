@@ -1,7 +1,7 @@
 package globalValues
 
 const (
-	CurrentCCLVersion = "v0.0.4"
+	CurrentCCLVersion = "v0.0.5"
 )
 
 const (

@@ -202,6 +202,15 @@ func (c *CCLCodeContext) NewModelTypeDefinition(
 	return typeDef, nil
 }
 
+// GetNextModelId returns the next model ID.
+func (c *CCLCodeContext) GetNextModelId() int64 {
+	c.typeDefinitionsLock.Lock()
+	defer c.typeDefinitionsLock.Unlock()
+
+	c.modelIdCounter++
+	return c.modelIdCounter
+}
+
 // markAsCompleteTypeDefinition marks the given incomplete type definition
 // as complete and updates its flags.
 // It also removes it from the incomplete type definitions cache
