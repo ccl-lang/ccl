@@ -174,11 +174,22 @@ func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, 
 }
 
 func (c *CSharpGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
+	strictBinaryParsing, err := c.UsesStrictBinaryParsing(CurrentLanguage, model)
+	if err != nil {
+		return err
+	}
+	binaryParseFallback := "result"
+	if strictBinaryParsing {
+		binaryParseFallback = "null"
+	}
+
 	builder.MapVarPairs(
 		"model", model.Name,
+		"binaryParseFallback", binaryParseFallback,
 	)
 	defer builder.UnmapVar(
 		"model",
+		"binaryParseFallback",
 	)
 
 	builder.LineD("public static $model DeserializeBinary(byte[] data)").
@@ -186,6 +197,9 @@ func (c *CSharpGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 		Indent().
 		WriteLine("if (data == null || data.Length == 0) return null;").
 		LineD("var result = new $model();").
+		WriteLine("try").
+		WriteLine("{").
+		Indent().
 		WriteLine("using (var ms = new MemoryStream(data))").
 		WriteLine("{").
 		Indent().
@@ -204,6 +218,20 @@ func (c *CSharpGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 
 	builder.Unindent().
 		WriteLine("}").
+		Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}").
+		WriteLine("catch (EndOfStreamException)").
+		WriteLine("{").
+		Indent().
+		LineD("return $binaryParseFallback;").
+		Unindent().
+		WriteLine("}").
+		WriteLine("catch (ArgumentException)").
+		WriteLine("{").
+		Indent().
+		LineD("return $binaryParseFallback;").
 		Unindent().
 		WriteLine("}").
 		WriteLine("return result;").
@@ -228,51 +256,69 @@ func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
 		builder.WriteLine("{").
-			Indent().
-			WriteLine("var len = reader.ReadUInt32();").
+			Indent()
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
+		builder.WriteLine("var len = reader.ReadUInt32();").
+			LineD("if (len > ms.Length - ms.Position) return $binaryParseFallback;").
 			WriteLine("var bytes = reader.ReadBytes((int)len);").
 			LineD("$field = Encoding.UTF8.GetString(bytes);").
 			Unindent().
 			WriteLine("}")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
 		builder.LineD("$field = reader.ReadInt32();")
 	case cclValues.TypeNameInt8:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "1")
 		builder.LineD("$field = reader.ReadSByte();")
 	case cclValues.TypeNameInt16:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "2")
 		builder.LineD("$field = reader.ReadInt16();")
 	case cclValues.TypeNameInt64:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "8")
 		builder.LineD("$field = reader.ReadInt64();")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
 		builder.LineD("$field = reader.ReadUInt32();")
 	case cclValues.TypeNameUint8:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "1")
 		builder.LineD("$field = reader.ReadByte();")
 	case cclValues.TypeNameUint16:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "2")
 		builder.LineD("$field = reader.ReadUInt16();")
 	case cclValues.TypeNameUint64:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "8")
 		builder.LineD("$field = reader.ReadUInt64();")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
 		builder.LineD("$field = reader.ReadSingle();")
 	case cclValues.TypeNameFloat64:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "8")
 		builder.LineD("$field = reader.ReadDouble();")
 	case cclValues.TypeNameBool:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "1")
 		builder.LineD("$field = reader.ReadByte() != 0;")
 	case cclValues.TypeNameBytes:
 		builder.WriteLine("{").
-			Indent().
-			WriteLine("var len = reader.ReadUInt32();").
+			Indent()
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
+		builder.WriteLine("var len = reader.ReadUInt32();").
+			LineD("if (len > ms.Length - ms.Position) return $binaryParseFallback;").
 			LineD("$field = reader.ReadBytes((int)len);").
 			Unindent().
 			WriteLine("}")
 	case cclValues.TypeNameDateTime:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "8")
 		builder.LineD("$field = reader.ReadInt64();")
 	default:
 		if field.IsCustomTypeModel() {
 			builder.WriteLine("{").
-				Indent().
-				WriteLine("var len = reader.ReadUInt32();").
+				Indent()
+			c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
+			builder.WriteLine("var len = reader.ReadUInt32();").
 				WriteLine("if (len > 0)").
 				WriteLine("{").
 				Indent().
+				LineD("if (len > ms.Length - ms.Position) return $binaryParseFallback;").
 				WriteLine("var bytes = reader.ReadBytes((int)len);").
 				LineD("$field = $type.DeserializeBinary(bytes);").
 				Unindent().
@@ -299,8 +345,9 @@ func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField
 	)
 
 	builder.WriteLine("{").
-		Indent().
-		WriteLine("var len = reader.ReadUInt32();").
+		Indent()
+	c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
+	builder.WriteLine("var len = reader.ReadUInt32();").
 		LineD("$field = new $fieldType();").
 		WriteLine("for (var i = 0; i < len; i++)").
 		WriteLine("{").
@@ -308,37 +355,52 @@ func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
 		builder.WriteLine("var itemLen = reader.ReadUInt32();")
+		builder.LineD("if (itemLen > ms.Length - ms.Position) return $binaryParseFallback;")
 		builder.WriteLine("var bytes = reader.ReadBytes((int)itemLen);")
 		builder.LineD("$field.Add(Encoding.UTF8.GetString(bytes));")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
 		builder.LineD("$field.Add(reader.ReadInt32());")
 	case cclValues.TypeNameInt8:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "1")
 		builder.LineD("$field.Add(reader.ReadSByte());")
 	case cclValues.TypeNameInt16:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "2")
 		builder.LineD("$field.Add(reader.ReadInt16());")
 	case cclValues.TypeNameInt64:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "8")
 		builder.LineD("$field.Add(reader.ReadInt64());")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
 		builder.LineD("$field.Add(reader.ReadUInt32());")
 	case cclValues.TypeNameUint8:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "1")
 		builder.LineD("$field.Add(reader.ReadByte());")
 	case cclValues.TypeNameUint16:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "2")
 		builder.LineD("$field.Add(reader.ReadUInt16());")
 	case cclValues.TypeNameUint64:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "8")
 		builder.LineD("$field.Add(reader.ReadUInt64());")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
 		builder.LineD("$field.Add(reader.ReadSingle());")
 	case cclValues.TypeNameFloat64:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "8")
 		builder.LineD("$field.Add(reader.ReadDouble());")
 	case cclValues.TypeNameBool:
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, "1")
 		builder.LineD("$field.Add(reader.ReadByte() != 0);")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
+			c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
 			builder.WriteLine("var itemLen = reader.ReadUInt32();").
 				WriteLine("if (itemLen > 0)").
 				WriteLine("{").
 				Indent().
+				LineD("if (itemLen > ms.Length - ms.Position) return $binaryParseFallback;").
 				WriteLine("var bytes = reader.ReadBytes((int)itemLen);").
 				LineD("$field.Add($type.DeserializeBinary(bytes));").
 				Unindent().
@@ -356,4 +418,13 @@ func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField
 		WriteLine("}").
 		Unindent().
 		WriteLine("}")
+}
+
+func (c *CSharpGenerationContext) generateCSharpBinaryDeserializeBoundsCheck(
+	builder *codeBuilder.CodeBuilder,
+	requiredBytes string,
+) {
+	builder.MapVarPairs("requiredBytes", requiredBytes)
+	builder.LineD("if (ms.Length - ms.Position < $requiredBytes) return $binaryParseFallback;")
+	builder.UnmapVar("requiredBytes")
 }

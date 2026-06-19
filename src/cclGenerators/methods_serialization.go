@@ -125,6 +125,33 @@ func (c *CodeGenerationBase) NeedsSerializationType(
 	return slices.Contains(collection.GetParamsAtAsStrings(0), sType)
 }
 
+// UsesStrictBinaryParsing returns true when binary deserialization should fail
+// on missing data. Strict parsing is enabled by default.
+func (c *CodeGenerationBase) UsesStrictBinaryParsing(
+	targetLang gValues.LanguageType,
+	currentModel *cclValues.ModelDefinition,
+) (bool, error) {
+	attr := c.GetModelOrGlobalAttributes(
+		targetLang,
+		cclAttr.AttrStrictBinaryParsing,
+		currentModel,
+	).GetLast()
+	if attr == nil {
+		return true, nil
+	}
+
+	param := attr.GetParamAt(0)
+	if param == nil {
+		return false, &cclErrors.InvalidAttributeUsageError{
+			AttrName:       attr.Name,
+			Message:        "requires a boolean first-parameter",
+			SourcePosition: attr.SourcePosition,
+		}
+	}
+
+	return param.GetAsBool(), nil
+}
+
 // GetBinarySerializationEndian returns the requested endianness for binary
 // serialization. Supported values are "big" and "small" (little-endian).
 // Defaults to "small" to preserve backwards compatibility.

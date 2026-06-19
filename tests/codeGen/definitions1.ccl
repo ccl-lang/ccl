@@ -4,6 +4,7 @@
 #[CCLVersion("1.0.0")]
 #[SerializationType("binary")]
 #[SerializationType("json")]
+#[$go,$gd,$py,$ts,$cs:StrictBinaryParsing(false)]
 import "imported_definitions.ccl";
 
 #[OutputFileGroup("shared1")]
@@ -193,4 +194,16 @@ model UsersList {
     photos: bytes[];
     something: ServerUpdatePlayerLeave[];
     MoreUsers: UserInfo[];
+}
+
+model LooseUserData {
+    Level: int;
+    Name: string;
+    LastQuestDone: int64;
+}
+
+[StrictBinaryParsing(true)]
+model StrictUserData {
+    Level: int;
+    Name: string;
 }

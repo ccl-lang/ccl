@@ -4,6 +4,8 @@ import { UserInfo } from './models/UserInfo';
 import { SkinInfo } from './models/SkinInfo';
 import { BasicSkin } from './models/BasicSkin';
 import { PositionInfo } from './models/PositionInfo';
+import { LooseUserData } from './models/LooseUserData';
+import { StrictUserData } from './models/StrictUserData';
 
 function testUser() {
 	console.log("Testing UserInfo...");
@@ -95,9 +97,34 @@ function testPosition() {
 	console.log("PositionInfo test passed!");
 }
 
+function testStrictBinaryParsing() {
+	console.log("Testing StrictBinaryParsing...");
+	const strictUserData = new StrictUserData();
+	strictUserData.level = 7;
+	strictUserData.name = "Old Save";
+	const oldData = strictUserData.serializeBinary();
+
+	const looseUserData = LooseUserData.deserializeBinary(oldData);
+	if (!looseUserData) {
+		throw new Error("Loose binary parser returned null");
+	}
+	if (looseUserData.level !== 7) {
+		throw new Error("Loose binary parser level mismatch");
+	}
+	if (looseUserData.name !== "Old Save") {
+		throw new Error("Loose binary parser name mismatch");
+	}
+	if (looseUserData.lastQuestDone !== 0) {
+		throw new Error("Loose binary parser default field mismatch");
+	}
+
+	console.log("StrictBinaryParsing test passed!");
+}
+
 try {
 	testUser();
 	testPosition();
+	testStrictBinaryParsing();
 	console.log("Runtime verification successful!");
 } catch (e) {
 	console.error("Verification failed:", e);

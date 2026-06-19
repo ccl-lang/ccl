@@ -2,13 +2,20 @@
 
 import sys
 import os
-import struct
 import json
 
 # Add the current directory to sys.path to ensure we can import the generated models
 sys.path.append(os.getcwd())
 
-from models import UserInfo, SkinInfo, BasicSkin, PositionInfo, UsersList
+from models import (
+	UserInfo,
+	SkinInfo,
+	BasicSkin,
+	PositionInfo,
+	UsersList,
+	LooseUserData,
+	StrictUserData,
+)
 
 def test_user():
 	print("Testing UserInfo...")
@@ -93,10 +100,30 @@ def test_position():
 
 	print("PositionInfo test passed!")
 
+def test_strict_binary_parsing():
+	print("Testing StrictBinaryParsing...")
+	strict_user_data = StrictUserData()
+	strict_user_data.level = 7
+	strict_user_data.name = "Old Save"
+	old_data = strict_user_data.serialize_binary()
+
+	loose_user_data = LooseUserData.deserialize_binary(old_data)
+	if loose_user_data is None:
+		raise Exception("Loose binary parser returned None")
+	if loose_user_data.level != 7:
+		raise Exception("Loose binary parser level mismatch")
+	if loose_user_data.name != "Old Save":
+		raise Exception("Loose binary parser name mismatch")
+	if loose_user_data.last_quest_done != 0:
+		raise Exception("Loose binary parser default field mismatch")
+
+	print("StrictBinaryParsing test passed!")
+
 if __name__ == "__main__":
 	try:
 		test_user()
 		test_position()
+		test_strict_binary_parsing()
 		print("Runtime verification successful!")
 	except Exception as e:
 		print(f"Verification failed: {e}")

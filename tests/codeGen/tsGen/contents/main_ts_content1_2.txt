@@ -1,6 +1,13 @@
-// Main content needed for test function TestTSGenerator1_1 in file tsGen1_test.go.
+// Main content needed for test function TestTSGenerator1_2 in file tsGen1_test.go.
 
-import { UserInfo, SkinInfo, BasicSkin, PositionInfo } from './models/generated';
+import {
+	UserInfo,
+	SkinInfo,
+	BasicSkin,
+	PositionInfo,
+	LooseUserData,
+	StrictUserData,
+} from './models/generated';
 
 function testUser() {
 	console.log("Testing UserInfo...");
@@ -92,9 +99,34 @@ function testPosition() {
 	console.log("PositionInfo test passed!");
 }
 
+function testStrictBinaryParsing() {
+	console.log("Testing StrictBinaryParsing...");
+	const strictUserData = new StrictUserData();
+	strictUserData.level = 7;
+	strictUserData.name = "Old Save";
+	const oldData = strictUserData.serializeBinary();
+
+	const looseUserData = LooseUserData.deserializeBinary(oldData);
+	if (!looseUserData) {
+		throw new Error("Loose binary parser returned null");
+	}
+	if (looseUserData.level !== 7) {
+		throw new Error("Loose binary parser level mismatch");
+	}
+	if (looseUserData.name !== "Old Save") {
+		throw new Error("Loose binary parser name mismatch");
+	}
+	if (looseUserData.lastQuestDone !== 0) {
+		throw new Error("Loose binary parser default field mismatch");
+	}
+
+	console.log("StrictBinaryParsing test passed!");
+}
+
 try {
 	testUser();
 	testPosition();
+	testStrictBinaryParsing();
 	console.log("Runtime verification successful!");
 } catch (e) {
 	console.error("Verification failed:", e);

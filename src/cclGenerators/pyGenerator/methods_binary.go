@@ -153,13 +153,25 @@ func (c *PythonGenerationContext) generateArraySerializeBinary(field *CCLField, 
 }
 
 func (c *PythonGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
+	resultName := "model_result"
+	strictBinaryParsing, err := c.UsesStrictBinaryParsing(CurrentLanguage, model)
+	if err != nil {
+		return err
+	}
+	binaryParseFallback := resultName
+	if strictBinaryParsing {
+		binaryParseFallback = "None"
+	}
+
 	builder.MapVarPairs(
 		"model", model.Name,
-		"result", "model_result",
+		"result", resultName,
+		"binaryParseFallback", binaryParseFallback,
 	)
 	defer builder.UnmapVar(
 		"model",
 		"result",
+		"binaryParseFallback",
 	)
 
 	builder.WriteLine("@staticmethod").
@@ -174,9 +186,9 @@ func (c *PythonGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 		WriteLine("offset = 0").
 		NewLine()
 
-	resultName := "model_result"
 	builder.LineD("$result = $model()").
-		NewLine()
+		WriteLine("try:").
+		Indent()
 
 	for _, field := range model.Fields {
 		if field.IsArray() {
@@ -187,7 +199,12 @@ func (c *PythonGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 		c.generateFieldDeserializeBinary(resultName, field, builder)
 	}
 
-	builder.LineD("return $result").
+	builder.Unindent().
+		WriteLine("except (struct.error, ValueError):").
+		Indent().
+		LineD("return $binaryParseFallback").
+		Unindent().
+		LineD("return $result").
 		UnindentLine().
 		NewLine()
 	return nil
@@ -221,7 +238,7 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 			WriteLine("offset += 4").
 			LineD("if $len > len(buffer) - offset:").
 			Indent().
-			WriteLine("return None").
+			LineD("return $binaryParseFallback").
 			Unindent().
 			LineD(`$field = bytes(buffer[offset:offset+$len]).decode("utf-8")`).
 			LineD("offset += $len")
@@ -261,6 +278,10 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 	case cclValues.TypeNameBytes:
 		builder.LineD("$len = struct.unpack_from('<I', buffer, offset)[0]").
 			WriteLine("offset += 4").
+			LineD("if $len > len(buffer) - offset:").
+			Indent().
+			LineD("return $binaryParseFallback").
+			Unindent().
 			LineD("$field = bytes(buffer[offset:offset+$len])").
 			LineD("offset += $len")
 	case cclValues.TypeNameDateTime:
@@ -271,6 +292,10 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 		if field.IsCustomTypeModel() {
 			builder.LineD("$len = struct.unpack_from('<I', buffer, offset)[0]").
 				WriteLine("offset += 4").
+				LineD("if $len > len(buffer) - offset:").
+				Indent().
+				LineD("return $binaryParseFallback").
+				Unindent().
 				LineD("$rawFieldBytes = bytes(buffer[offset:offset+$len])").
 				LineD("offset += $len").
 				LineD("$field = $type.deserialize_binary($rawFieldBytes)")
@@ -310,7 +335,7 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 			WriteLine("offset += 4").
 			WriteLine("if item_len > len(buffer) - offset:").
 			Indent().
-			WriteLine("return None").
+			LineD("return $binaryParseFallback").
 			Unindent().
 			WriteLine("item = bytes(buffer[offset:offset+item_len]).decode(\"utf-8\")").
 			WriteLine("offset += item_len").
@@ -353,7 +378,7 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 			WriteLine("offset += 4").
 			WriteLine("if item_len > len(buffer) - offset:").
 			Indent().
-			WriteLine("return None").
+			LineD("return $binaryParseFallback").
 			Unindent().
 			LineD("$field.append(bytes(buffer[offset:offset+item_len]))").
 			WriteLine("offset += item_len")
@@ -363,7 +388,7 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 				WriteLine("offset += 4").
 				WriteLine("if item_len > len(buffer) - offset:").
 				Indent().
-				WriteLine("return None").
+				LineD("return $binaryParseFallback").
 				Unindent().
 				WriteLine("item_bytes = bytes(buffer[offset:offset+item_len])").
 				WriteLine("offset += item_len").

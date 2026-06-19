@@ -203,6 +203,23 @@ func main() {
 	check(deserializedUsersList.MoreUsers[0].Skin.Basic != nil, "UsersList.MoreUsers[0].Skin.Basic is nil")
 	check(deserializedUsersList.MoreUsers[0].Skin.Texture != nil, "UsersList.MoreUsers[0].Skin.Texture is nil")
 
+	strictUserData := models.StrictUserData{
+		Level: 7,
+		Name:  "Old Save",
+	}
+	oldSaveData, err := strictUserData.SerializeBinary()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to serialize strict user data: %v", err))
+	}
+
+	looseUserData := &models.LooseUserData{}
+	err = looseUserData.DeserializeBinary(oldSaveData)
+	if err != nil {
+		panic(fmt.Sprintf("Loose binary parser should not return error: %v", err))
+	}
+	check(looseUserData.Level == 7, "Loose binary parser level mismatch")
+	check(looseUserData.Name == "Old Save", "Loose binary parser name mismatch")
+	check(looseUserData.LastQuestDone == 0, "Loose binary parser default field mismatch")
+
 	fmt.Println("Runtime verification successful!")
 }
-

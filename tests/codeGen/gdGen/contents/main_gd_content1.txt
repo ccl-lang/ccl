@@ -94,6 +94,21 @@ func _init():
 		quit(1)
 		return
 
+	var strict_user_data = StrictUserData.new()
+	strict_user_data.level = 7
+	strict_user_data.name = "Old Save"
+	var old_data = strict_user_data.serialize_binary()
+
+	var loose_user_data = LooseUserData.deserialize_binary(old_data)
+	if loose_user_data == null:
+		print("Error: loose binary parser returned null")
+		quit(1)
+		return
+	if loose_user_data.level != 7 or loose_user_data.name != "Old Save" or loose_user_data.last_quest_done != 0:
+		print("Error: loose binary parser partial model mismatch")
+		quit(1)
+		return
+
 	print("Runtime verification successful!")
 	quit(0)
 

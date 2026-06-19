@@ -12,6 +12,7 @@ class Program
         {
             TestUser();
             TestPosition();
+            TestStrictBinaryParsing();
             Console.WriteLine("Runtime verification successful!");
         }
         catch (Exception e)
@@ -123,5 +124,34 @@ class Program
         }
 
         Console.WriteLine("PositionInfo test passed!");
+    }
+
+    static void TestStrictBinaryParsing()
+    {
+        Console.WriteLine("Testing StrictBinaryParsing...");
+        var strictUserData = new StrictUserData();
+        strictUserData.Level = 7;
+        strictUserData.Name = "Old Save";
+        var oldData = strictUserData.SerializeBinary();
+
+        var looseUserData = LooseUserData.DeserializeBinary(oldData);
+        if (looseUserData == null)
+        {
+            throw new Exception("Loose binary parser returned null");
+        }
+        if (looseUserData.Level != 7)
+        {
+            throw new Exception("Loose binary parser level mismatch");
+        }
+        if (looseUserData.Name != "Old Save")
+        {
+            throw new Exception("Loose binary parser name mismatch");
+        }
+        if (looseUserData.LastQuestDone != 0)
+        {
+            throw new Exception("Loose binary parser default field mismatch");
+        }
+
+        Console.WriteLine("StrictBinaryParsing test passed!");
     }
 }

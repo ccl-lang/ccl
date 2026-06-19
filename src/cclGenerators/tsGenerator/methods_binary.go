@@ -183,10 +183,20 @@ func (c *TypeScriptGenerationContext) generateArraySerializeBinary(field *CCLFie
 }
 
 func (c *TypeScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
+	strictBinaryParsing, err := c.UsesStrictBinaryParsing(CurrentLanguage, model)
+	if err != nil {
+		return err
+	}
+	binaryParseFallback := "result"
+	if strictBinaryParsing {
+		binaryParseFallback = "null"
+	}
+
 	builder.MapVarPairs(
 		"model", model.Name,
+		"binaryParseFallback", binaryParseFallback,
 	)
-	defer builder.UnmapVar("model")
+	defer builder.UnmapVar("model", "binaryParseFallback")
 
 	builder.LineD("public static deserializeBinary(data: Uint8Array): $model | null {").
 		Indent().
@@ -194,7 +204,8 @@ func (c *TypeScriptGenerationContext) generateDeserializeBinaryMethod(model *CCL
 		WriteLine("const view = new DataView(data.buffer, data.byteOffset, data.byteLength);").
 		WriteLine("let offset = 0;").
 		LineD("const result = new $model();").
-		NewLine()
+		WriteLine("try {").
+		Indent()
 
 	for _, field := range model.Fields {
 		if field.IsArray() {
@@ -205,7 +216,13 @@ func (c *TypeScriptGenerationContext) generateDeserializeBinaryMethod(model *CCL
 		c.generateFieldDeserializeBinary(field, builder)
 	}
 
-	builder.WriteLine("return result;").
+	builder.Unindent().
+		WriteLine("} catch {").
+		Indent().
+		LineD("return $binaryParseFallback;").
+		Unindent().
+		WriteLine("}").
+		WriteLine("return result;").
 		Unindent().
 		WriteLine("}")
 
@@ -230,7 +247,7 @@ func (c *TypeScriptGenerationContext) generateFieldDeserializeBinary(field *CCLF
 			Indent().
 			WriteLine("const len = view.getUint32(offset, true);").
 			WriteLine("offset += 4;").
-			WriteLine("if (len > data.length - offset) return null;").
+			LineD("if (len > data.length - offset) return $binaryParseFallback;").
 			WriteLine("const bytes = data.subarray(offset, offset + len);").
 			LineD("$field = new TextDecoder().decode(bytes);").
 			WriteLine("offset += len;").
@@ -274,6 +291,7 @@ func (c *TypeScriptGenerationContext) generateFieldDeserializeBinary(field *CCLF
 			Indent().
 			WriteLine("const len = view.getUint32(offset, true);").
 			WriteLine("offset += 4;").
+			LineD("if (len > data.length - offset) return $binaryParseFallback;").
 			LineD("$field = data.slice(offset, offset + len);").
 			WriteLine("offset += len;").
 			UnindentLine().
@@ -287,7 +305,7 @@ func (c *TypeScriptGenerationContext) generateFieldDeserializeBinary(field *CCLF
 				Indent().
 				WriteLine("const len = view.getUint32(offset, true);").
 				WriteLine("offset += 4;").
-				WriteLine("if (len > data.length - offset) return null;").
+				LineD("if (len > data.length - offset) return $binaryParseFallback;").
 				WriteLine("const bytes = data.subarray(offset, offset + len);").
 				LineD("$field = $type.deserializeBinary(bytes);").
 				WriteLine("offset += len;").
@@ -323,7 +341,7 @@ func (c *TypeScriptGenerationContext) generateArrayDeserializeBinary(field *CCLF
 	case cclValues.TypeNameString:
 		builder.WriteLine("const itemLen = view.getUint32(offset, true);").
 			WriteLine("offset += 4;").
-			WriteLine("if (itemLen > data.length - offset) return null;").
+			LineD("if (itemLen > data.length - offset) return $binaryParseFallback;").
 			WriteLine("const bytes = data.subarray(offset, offset + itemLen);").
 			LineD("$field.push(new TextDecoder().decode(bytes));").
 			WriteLine("offset += itemLen;")
@@ -364,7 +382,7 @@ func (c *TypeScriptGenerationContext) generateArrayDeserializeBinary(field *CCLF
 		if targetFieldType.IsCustomTypeModel() {
 			builder.WriteLine("const itemLen = view.getUint32(offset, true);").
 				WriteLine("offset += 4;").
-				WriteLine("if (itemLen > data.length - offset) return null;").
+				LineD("if (itemLen > data.length - offset) return $binaryParseFallback;").
 				WriteLine("const bytes = data.subarray(offset, offset + itemLen);").
 				LineD("$field.push($type.deserializeBinary(bytes));").
 				WriteLine("offset += itemLen;")
