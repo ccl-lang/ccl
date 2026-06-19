@@ -7,4 +7,5 @@ const (
 	AttrOutputFileGroup    CCLAttributeName = "OutputFileGroup"
 	AttrGenerateSingleFile CCLAttributeName = "GenerateSingleFile"
 	AttrAddCloneMethods    CCLAttributeName = "AddCloneMethods"
+	AttrAddAnnotation      CCLAttributeName = "AddAnnotation"
 )

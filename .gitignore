@@ -31,7 +31,7 @@ experiment_files
 *t_docs/
 
 # generated test files
-tests/codeGen/*Gen/ccl_*_test_*
+tests/codeGen/*Gen/ccl_*_test*
 
 # The GitHub Pages folder is in a separate repository.
 ccl-lang.github.io
