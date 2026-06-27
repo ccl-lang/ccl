@@ -335,12 +335,18 @@ func (c *CodeBuilder) writeIndentation() *CodeBuilder {
 
 // expandStr expands the string using the variables defined in the code builder.
 func (c *CodeBuilder) expandStr(inputValue string) string {
+	if !strings.ContainsRune(inputValue, varIndicator) {
+		// fast path: if there is no special var indicator in the string
+		// skip the heavy operations.
+		return inputValue
+	}
+
 	var builder strings.Builder
 	// good heuristic; expanded value may exceed this, but still helps
 	builder.Grow(len(inputValue))
 
 	inVar := false
-	// byte index of var name start (after indicator)
+	// index of var name start (after indicator)
 	varStart := 0
 	indicatorLen := utf8.RuneLen(varIndicator)
 
@@ -351,27 +357,40 @@ func (c *CodeBuilder) expandStr(inputValue string) string {
 				varStart = index + indicatorLen
 				continue
 			}
+
 			builder.WriteRune(current)
 			continue
 		}
 
-		// We are parsing a variable name.
-		// Logic change: Stop on space OR punctuation/symbols.
-		// We only allow letters, digits, and underscores in var names here.
 		if !isVarChar(current) {
 			name := inputValue[varStart:index]
-			val := c.mappedVars.getValue(c.currentSection, name)
-			builder.WriteString(val)
-			builder.WriteRune(current) // Write the char that ended the var
-			inVar = false
+
+			if name == "" {
+				builder.WriteRune(varIndicator)
+			} else {
+				val := c.mappedVars.getValue(c.currentSection, name)
+				builder.WriteString(val)
+			}
+
+			if current == varIndicator {
+				inVar = true
+				varStart = index + indicatorLen
+			} else {
+				builder.WriteRune(current)
+				inVar = false
+			}
 		}
 	}
 
-	// Flush if string ended while still in var mode
 	if inVar {
 		name := inputValue[varStart:]
-		val := c.mappedVars.getValue(c.currentSection, name)
-		builder.WriteString(val)
+
+		if name == "" {
+			builder.WriteRune(varIndicator)
+		} else {
+			val := c.mappedVars.getValue(c.currentSection, name)
+			builder.WriteString(val)
+		}
 	}
 
 	return builder.String()

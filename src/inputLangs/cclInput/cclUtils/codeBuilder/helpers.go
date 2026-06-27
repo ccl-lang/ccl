@@ -55,6 +55,7 @@ func newCodeBuilderVars() *codeBuilderVars {
 
 // Helper to determine valid variable characters
 func isVarChar(r rune) bool {
-	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') ||
+	return r != varIndicator &&
+		(r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') ||
 		(r >= '0' && r <= '9') || r == '_'
 }

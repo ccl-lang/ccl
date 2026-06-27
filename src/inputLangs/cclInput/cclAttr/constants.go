@@ -9,4 +9,5 @@ const (
 	AttrAddCloneMethods     CCLAttributeName = "AddCloneMethods"
 	AttrAddAnnotation       CCLAttributeName = "AddAnnotation"
 	AttrStrictBinaryParsing CCLAttributeName = "StrictBinaryParsing"
+	AttrUseWGodot           CCLAttributeName = "UseWGodot"
 )

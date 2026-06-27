@@ -153,3 +153,87 @@ model AnnotatedThing {
 		t.Fatalf("Generated file did not include raw annotations before class_name.\nExpected header:\n%s\nGenerated:\n%s", expectedHeader, content)
 	}
 }
+
+func TestGdGeneratorUseWGodot(t *testing.T) {
+	tmpDir, err := filepath.Abs("ccl_gd_wgodot_test")
+	if err != nil {
+		t.Fatalf("Failed to get absolute path: %v", err)
+	}
+
+	if err := os.RemoveAll(tmpDir); err != nil {
+		t.Fatalf("Failed to remove existing dir: %v", err)
+	}
+
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		t.Fatalf("Failed to create dir: %v", err)
+	}
+
+	parsedDefinitions, parseErr := cclParser.ParseCCLSourceContent(&cclParser.CCLParseOptions{
+		SourceContent: `
+#[SerializationType("binary")]
+#[$gd:UseWGodot(false)]
+
+model ApiCardInfo {
+	Name: string;
+}
+
+[$gd:UseWGodot(true)]
+model ApiCardEnvelope {
+	Card: ApiCardInfo;
+	Cards: ApiCardInfo[];
+	Payload: bytes;
+}
+`,
+	})
+	if parseErr != nil {
+		t.Fatalf("Failed to parse WGodot source: %v", parseErr)
+	}
+
+	cclLoader.LoadGenerators()
+	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
+		CodeContext:    parsedDefinitions.CodeContext,
+		OutputPath:     filepath.Join(tmpDir, "models"),
+		TargetLanguage: "gd",
+	})
+	if err != nil {
+		t.Fatalf("Failed to generate GDScript code: %v", err)
+	}
+
+	cardInfoContent := readGeneratedGdModel(t, result.OutputFiles, "class_name ApiCardInfo")
+	if !strings.Contains(cardInfoContent, "var name_len := buffer.get_u32()") {
+		t.Fatalf("Expected global UseWGodot(false) to use inferred length declaration.\nGenerated:\n%s", cardInfoContent)
+	}
+	if !strings.Contains(cardInfoContent, "model_result.name = buffer.get_data(name_len)[1].get_string_from_utf8()") {
+		t.Fatalf("Expected global UseWGodot(false) to keep inline string get_data read.\nGenerated:\n%s", cardInfoContent)
+	}
+
+	envelopeContent := readGeneratedGdModel(t, result.OutputFiles, "class_name ApiCardEnvelope")
+	expectedSnippets := []string{
+		"var card_len := buffer.get_u32()",
+		"buffer.get_data_bytes",
+	}
+	for _, snippet := range expectedSnippets {
+		if !strings.Contains(envelopeContent, snippet) {
+			t.Fatalf("Generated WGodot model is missing snippet %q.\nGenerated:\n%s", snippet, envelopeContent)
+		}
+	}
+}
+
+func readGeneratedGdModel(t *testing.T, outputFiles []string, classNameLine string) string {
+	t.Helper()
+
+	for _, outputFile := range outputFiles {
+		data, err := os.ReadFile(outputFile)
+		if err != nil {
+			t.Fatalf("Failed to read generated file %s: %v", outputFile, err)
+		}
+
+		content := string(data)
+		if strings.Contains(content, classNameLine) {
+			return content
+		}
+	}
+
+	t.Fatalf("Generated files did not contain %s", classNameLine)
+	return ""
+}

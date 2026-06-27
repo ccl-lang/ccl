@@ -152,6 +152,33 @@ func (c *CodeGenerationBase) UsesStrictBinaryParsing(
 	return param.GetAsBool(), nil
 }
 
+// UsesWGodot returns true when the target generator should emit WGodot-friendly
+// binary deserialization code.
+func (c *CodeGenerationBase) UsesWGodot(
+	targetLang gValues.LanguageType,
+	currentModel *cclValues.ModelDefinition,
+) (bool, error) {
+	attr := c.GetGlobalOrModelAttributes(
+		targetLang,
+		cclAttr.AttrUseWGodot,
+		currentModel,
+	).GetLast()
+	if attr == nil {
+		return false, nil
+	}
+
+	param := attr.GetParamAt(0)
+	if param == nil {
+		return false, &cclErrors.InvalidAttributeUsageError{
+			AttrName:       attr.Name,
+			Message:        "requires a boolean first-parameter",
+			SourcePosition: attr.SourcePosition,
+		}
+	}
+
+	return param.GetAsBool(), nil
+}
+
 // GetBinarySerializationEndian returns the requested endianness for binary
 // serialization. Supported values are "big" and "small" (little-endian).
 // Defaults to "small" to preserve backwards compatibility.
