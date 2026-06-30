@@ -21,6 +21,7 @@ const (
 	StyleCamelCase  NamingStyle = "camelCase"
 	StyleSnakeCase  NamingStyle = "snake_case"
 	StyleKebabCase  NamingStyle = "kebab-case"
+	StyleUpperCase  NamingStyle = "UPPER_CASE"
 )
 
 // binary serialization endian values

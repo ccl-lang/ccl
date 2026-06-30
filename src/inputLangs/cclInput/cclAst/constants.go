@@ -10,6 +10,7 @@ const (
 	AttributeValueKindUnknown AttributeValueKind = iota
 	AttributeValueKindLiteral
 	AttributeValueKindIdentifier
+	AttributeValueKindQualifiedIdentifier
 )
 
 const (

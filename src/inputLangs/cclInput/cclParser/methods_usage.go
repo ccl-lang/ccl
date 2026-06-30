@@ -1,12 +1,37 @@
 package cclParser
 
 import (
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
+	"strings"
+
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
 )
 
 func (p *CCLAstParser) parseCurrentTypeExpression() (cclAst.TypeExpression, error) {
 	allTokens := p.readUntilSemicolon()
+	return p.parseTypeExpressionFromTokens(allTokens)
+}
+
+func (p *CCLAstParser) parseTypeExpressionUntil(
+	stopTokens ...cclLexer.CCLTokenType,
+) (cclAst.TypeExpression, error) {
+	allTokens := []*cclLexer.CCLToken{}
+	for !p.IsAtEnd() && !p.isCurrentType(stopTokens...) {
+		if p.isCurrentType(cclLexer.TokenTypeComment) {
+			p.advance()
+			continue
+		}
+
+		allTokens = append(allTokens, p.current)
+		p.advance()
+	}
+
+	return p.parseTypeExpressionFromTokens(allTokens)
+}
+
+func (p *CCLAstParser) parseTypeExpressionFromTokens(
+	allTokens []*cclLexer.CCLToken,
+) (cclAst.TypeExpression, error) {
 	if len(allTokens) == 0 {
 		return nil, p.ErrInvalidSyntax("Missing type expression")
 	}
@@ -33,43 +58,73 @@ func (p *CCLAstParser) parseCurrentTypeExpression() (cclAst.TypeExpression, erro
 		}
 	}
 
-	if last != 0 {
-		// there are extra tokens we don't support for now
-		return nil, p.ErrInvalidSyntax("Unsupported type syntax with extra tokens")
-	}
-
-	baseToken := allTokens[0]
-	basePosition := p.getSourcePositionForToken(baseToken)
-
-	var baseTypeExpr *cclAst.SimpleTypeExpression
-	switch baseToken.Type {
-	case cclLexer.TokenTypeDataType:
-		baseTypeExpr = &cclAst.SimpleTypeExpression{
-			TypeName: cclAst.SimpleTypeName{
-				Name: baseToken.GetDataTypeName(),
-			},
-			IsBuiltinToken: true,
-			SourcePosition: basePosition,
-		}
-	case cclLexer.TokenTypeIdentifier:
-		baseTypeExpr = &cclAst.SimpleTypeExpression{
-			TypeName: cclAst.SimpleTypeName{
-				Name: baseToken.GetIdentifier(),
-			},
-			IsBuiltinToken: false,
-			SourcePosition: basePosition,
-		}
-	default:
-		return nil, p.ErrInvalidSyntax("Expected builtin data-type or an identifier as first token")
+	baseTypeExpr, err := p.parseSimpleTypeExpressionFromTokens(allTokens[:last+1])
+	if err != nil {
+		return nil, err
 	}
 
 	if isArray {
 		return &cclAst.ArrayTypeExpression{
 			ElementType:    baseTypeExpr,
 			Length:         arrayLength,
-			SourcePosition: basePosition,
+			SourcePosition: baseTypeExpr.GetSourcePosition(),
 		}, nil
 	}
 
 	return baseTypeExpr, nil
+}
+
+func (p *CCLAstParser) parseSimpleTypeExpressionFromTokens(
+	tokens []*cclLexer.CCLToken,
+) (*cclAst.SimpleTypeExpression, error) {
+	if len(tokens) == 0 {
+		return nil, p.ErrInvalidSyntax("Missing type name")
+	}
+
+	baseToken := tokens[0]
+	basePosition := p.getSourcePositionForToken(baseToken)
+	if baseToken.Type == cclLexer.TokenTypeDataType {
+		if len(tokens) != 1 {
+			return nil, p.ErrInvalidSyntax("Built-in data-types cannot be qualified")
+		}
+
+		return &cclAst.SimpleTypeExpression{
+			TypeName: cclAst.SimpleTypeName{
+				Name: baseToken.GetDataTypeName(),
+			},
+			IsBuiltinToken: true,
+			SourcePosition: basePosition,
+		}, nil
+	}
+
+	parts := []string{}
+	expectIdentifier := true
+	for _, token := range tokens {
+		if expectIdentifier {
+			if token.Type != cclLexer.TokenTypeIdentifier {
+				return nil, p.ErrInvalidSyntax("Expected identifier in type name")
+			}
+			parts = append(parts, token.GetIdentifier())
+			expectIdentifier = false
+			continue
+		}
+
+		if token.Type != cclLexer.TokenTypeDot {
+			return nil, p.ErrInvalidSyntax("Expected dot in qualified type name")
+		}
+		expectIdentifier = true
+	}
+
+	if expectIdentifier || len(parts) == 0 {
+		return nil, p.ErrInvalidSyntax("Incomplete qualified type name")
+	}
+
+	return &cclAst.SimpleTypeExpression{
+		TypeName: cclAst.SimpleTypeName{
+			Name:      parts[len(parts)-1],
+			Namespace: strings.Join(parts[:len(parts)-1], "."),
+		},
+		IsBuiltinToken: false,
+		SourcePosition: basePosition,
+	}, nil
 }

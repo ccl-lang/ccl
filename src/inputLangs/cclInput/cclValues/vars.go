@@ -5,6 +5,7 @@ var (
 		"import":    KeywordNameImport,
 		"model":     KeywordNameModel,
 		"namespace": KeywordNameNamespace,
+		"enum":      KeywordNameEnum,
 	}
 )
 

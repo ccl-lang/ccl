@@ -71,6 +71,16 @@ func (t *CCLToken) GetIntLiteral() int {
 	return 0
 }
 
+// GetInt64Literal returns the integer literal value of the token as int64.
+// If the token is not an integer literal, it returns 0.
+func (t *CCLToken) GetInt64Literal() int64 {
+	if t.Type == TokenTypeIntLiteral {
+		return toIntegerValueT[int64](t.value)
+	}
+
+	return 0
+}
+
 // GetFloatLiteral returns the float literal value of the token.
 // If the token is not a float literal, it returns 0.
 func (t *CCLToken) GetFloatLiteral() float64 {

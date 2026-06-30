@@ -8,6 +8,7 @@ import (
 type (
 	CCLModel = cclValues.ModelDefinition
 	CCLField = cclValues.ModelFieldDefinition
+	CCLEnum  = cclValues.EnumDefinition
 )
 
 type GenerateCode func(options *CodeGenerationOptions) (*CodeGenerationResult, error)

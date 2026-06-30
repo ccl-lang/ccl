@@ -3,11 +3,10 @@ package cclSanitizer
 import (
 	"strings"
 
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
-	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 // SanitizeCCLAst converts a syntax-only AST into IR (cclValues).
@@ -89,6 +88,33 @@ func SanitizeCCLAst(
 	}
 	ctx.RegisterScopedAttributes(definition)
 
+	for _, enumAst := range ast.Enums {
+		if enumAst == nil {
+			return nil, &AstSanitizationError{
+				Message: "nil enum declaration in AST",
+			}
+		}
+
+		enumNamespace := enumAst.Namespace
+		if enumNamespace == "" {
+			enumNamespace = fileNamespace
+		}
+
+		enumDef, enumTypeDef, err := sanitizeEnumDeclaration(
+			ctx,
+			definition,
+			sourceFileId,
+			enumNamespace,
+			nil,
+			enumAst,
+		)
+		if err != nil {
+			return nil, err
+		}
+		_ = enumDef
+		definition.TypeDefinitions = append(definition.TypeDefinitions, enumTypeDef)
+	}
+
 	for _, modelAst := range ast.Models {
 		if modelAst == nil {
 			return nil, &AstSanitizationError{
@@ -130,6 +156,29 @@ func SanitizeCCLAst(
 			}
 			attrUsage.SourceFileId = sourceFileId
 			modelDef.Attributes = append(modelDef.Attributes, attrUsage)
+		}
+
+		for _, enumAst := range modelAst.Enums {
+			if enumAst == nil {
+				return nil, &AstSanitizationError{
+					Message:        "nil nested enum declaration in AST",
+					SourcePosition: modelAst.SourcePosition,
+				}
+			}
+
+			enumDef, enumTypeDef, err := sanitizeEnumDeclaration(
+				ctx,
+				definition,
+				sourceFileId,
+				modelNamespace,
+				modelDef,
+				enumAst,
+			)
+			if err != nil {
+				return nil, err
+			}
+			modelDef.Enums = append(modelDef.Enums, enumDef)
+			definition.TypeDefinitions = append(definition.TypeDefinitions, enumTypeDef)
 		}
 
 		for _, fieldAst := range modelAst.Fields {
@@ -177,15 +226,13 @@ func SanitizeCCLAst(
 				fieldDef.Attributes = append(fieldDef.Attributes, attrUsage)
 			}
 
-			if fieldAst.Type != nil && fieldAst.Value != nil {
-				return nil, &AstSanitizationError{
-					Message:        "field has both type and value",
-					SourcePosition: fieldAst.SourcePosition,
-				}
-			}
-
 			if fieldAst.Type != nil {
-				typeUsage, err := ResolveTypeUsage(ctx, modelNamespace, fieldAst.Type)
+				typeUsage, err := ResolveTypeUsageForModel(
+					ctx,
+					modelNamespace,
+					modelDef.Name,
+					fieldAst.Type,
+				)
 				if err != nil {
 					return nil, err
 				}
@@ -202,24 +249,25 @@ func SanitizeCCLAst(
 					typeUsage:      typeUsage,
 					sourcePosition: fieldAst.SourcePosition,
 				})
-			} else if fieldAst.Value != nil {
-				valueType, value, err := resolveFieldAssignment(ctx, fieldAst.Value, fieldAst.SourcePosition)
+			} else {
+				return nil, &AstSanitizationError{
+					Message:        "field has no type",
+					SourcePosition: fieldAst.SourcePosition,
+				}
+			}
+
+			if fieldAst.Value != nil {
+				value, err := resolveFieldDefaultValue(
+					ctx,
+					fieldDef.Type,
+					modelNamespace,
+					modelDef.Name,
+					fieldAst.Value,
+				)
 				if err != nil {
 					return nil, err
 				}
-				fieldDef.ChangeValueType(valueType)
 				fieldDef.ChangeDefaultValue(value)
-				fieldTypeUsages = append(fieldTypeUsages, &fieldTypeUsageCheck{
-					modelName:      modelDef.Name,
-					fieldName:      fieldDef.Name,
-					typeUsage:      valueType,
-					sourcePosition: fieldAst.SourcePosition,
-				})
-			} else {
-				return nil, &AstSanitizationError{
-					Message:        "field has no type or value",
-					SourcePosition: fieldAst.SourcePosition,
-				}
 			}
 
 			modelDef.Fields = append(modelDef.Fields, fieldDef)
@@ -270,42 +318,4 @@ func newFieldNameValidator(ast *cclAst.CCLFileAST, defaultNamespace string) *fie
 
 func normalizeName(name string) string {
 	return strings.ToLower(name)
-}
-
-func resolveFieldAssignment(
-	ctx *cclValues.CCLCodeContext,
-	value cclAst.ValueExpression,
-	sourcePos *cclUtils.SourceCodePosition,
-) (*cclValues.CCLTypeUsage, any, error) {
-	switch expr := value.(type) {
-	case *cclAst.IdentifierValueExpression:
-		if expr == nil {
-			return nil, nil, &AstSanitizationError{
-				Message:        "invalid identifier expression",
-				SourcePosition: sourcePos,
-			}
-		}
-
-		targetVariable := ctx.GetGlobalVariable(expr.Name)
-		if targetVariable == nil {
-			return nil, nil, &AstSanitizationError{
-				Message:        "undefined identifier '" + expr.Name + "'",
-				SourcePosition: expr.SourcePosition,
-			}
-		}
-
-		if targetVariable.IsAutomatic() {
-			return ctx.NewPointerTypeUsage(targetVariable.Type), &cclValues.VariableUsageInstance{
-				Name:       expr.Name,
-				Definition: targetVariable,
-			}, nil
-		}
-
-		return targetVariable.Type, targetVariable.GetValue(), nil
-	default:
-		return nil, nil, &AstSanitizationError{
-			Message:        "unsupported field assignment value",
-			SourcePosition: sourcePos,
-		}
-	}
 }

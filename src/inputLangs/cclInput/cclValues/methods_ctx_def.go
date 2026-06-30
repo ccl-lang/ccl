@@ -202,6 +202,23 @@ func (c *CCLCodeContext) NewModelTypeDefinition(
 	return typeDef, nil
 }
 
+// NewEnumTypeDefinition creates a new enum type definition.
+func (c *CCLCodeContext) NewEnumTypeDefinition(
+	name *SimpleTypeName,
+	enumDef *EnumDefinition,
+) (*CCLTypeDefinition, error) {
+	c.typeDefinitionsLock.Lock()
+	defer c.typeDefinitionsLock.Unlock()
+
+	typeDef, err := c.newCustomTypeDefinition(name, TypeFlagCustomEnum|TypeFlagImmutable)
+	if err != nil {
+		return nil, err
+	}
+
+	typeDef.enum = enumDef
+	return typeDef, nil
+}
+
 // GetNextModelId returns the next model ID.
 func (c *CCLCodeContext) GetNextModelId() int64 {
 	c.typeDefinitionsLock.Lock()

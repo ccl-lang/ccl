@@ -11,6 +11,7 @@ type CCLFileAST struct {
 	FileAttributes      []*GlobalAttributeNode
 	NamespaceAttributes []*GlobalAttributeNode
 	Models              []*ModelDecl
+	Enums               []*EnumDecl
 	SourcePosition      *cclUtils.SourceCodePosition
 }
 
@@ -25,6 +26,7 @@ type ModelDecl struct {
 	Name           string
 	Namespace      string
 	Fields         []*FieldDecl
+	Enums          []*EnumDecl
 	Attributes     []*AttributeNode
 	SourcePosition *cclUtils.SourceCodePosition
 }
@@ -35,5 +37,22 @@ type FieldDecl struct {
 	Type           TypeExpression
 	Value          ValueExpression
 	Attributes     []*AttributeNode
+	SourcePosition *cclUtils.SourceCodePosition
+}
+
+// EnumDecl represents an enum declaration in CCL.
+type EnumDecl struct {
+	Name           string
+	Namespace      string
+	BaseType       TypeExpression
+	Members        []*EnumMemberDecl
+	Attributes     []*AttributeNode
+	SourcePosition *cclUtils.SourceCodePosition
+}
+
+// EnumMemberDecl represents one enum member declaration.
+type EnumMemberDecl struct {
+	Name           string
+	Value          *int64
 	SourcePosition *cclUtils.SourceCodePosition
 }

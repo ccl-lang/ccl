@@ -43,6 +43,7 @@ type AttributesCollection struct {
 type AttributeResolutionSubject struct {
 	SourceFileId SourceFileId
 	Namespace    string
+	Enum         *EnumDefinition
 	Model        *ModelDefinition
 	Field        *ModelFieldDefinition
 }

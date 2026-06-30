@@ -74,6 +74,10 @@ type CCLTypeDefinition struct {
 	// Also take note that the typeFlags must contain TypeFlagCustomModel.
 	model *ModelDefinition
 
+	// enum is a reference to the enum definition if the type is a custom enum
+	// type defined by the user.
+	enum *EnumDefinition
+
 	// typeFlags contains flags applied to the type.
 	// To work with this field, you should use the TypeFlag* constants.
 	typeFlags cclTypeFlag
@@ -139,6 +143,9 @@ type ModelDefinition struct {
 
 	// Fields is an array of field definitions.
 	Fields []*ModelFieldDefinition
+
+	// Enums is an array of enum definitions declared inside this model.
+	Enums []*EnumDefinition
 
 	// Attributes is an array of attribute definitions which are applied
 	// to the model.

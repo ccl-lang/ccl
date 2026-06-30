@@ -90,6 +90,20 @@ func (d *SourceCodeDefinition) GetModelByName(name string) *ModelDefinition {
 	return nil
 }
 
+// GetEnumByName returns the enum definition by the given name.
+func (d *SourceCodeDefinition) GetEnumByName(name string) *EnumDefinition {
+	for _, typeDef := range d.TypeDefinitions {
+		if typeDef.IsCustomEnum() {
+			enum := typeDef.GetEnumDefinition()
+			if enum != nil && enum.Name == name {
+				return enum
+			}
+		}
+	}
+
+	return nil
+}
+
 // GetAllModels returns all model definitions defined in the source code.
 func (d *SourceCodeDefinition) GetAllModels() []*ModelDefinition {
 	models := []*ModelDefinition{}
@@ -166,6 +180,17 @@ func (m *ModelDefinition) GetFieldByName(name string) *ModelFieldDefinition {
 	for _, field := range m.Fields {
 		if field.Name == name {
 			return field
+		}
+	}
+
+	return nil
+}
+
+// GetEnumByName returns the nested enum definition by the given name.
+func (m *ModelDefinition) GetEnumByName(name string) *EnumDefinition {
+	for _, enum := range m.Enums {
+		if enum.Name == name {
+			return enum
 		}
 	}
 

@@ -28,6 +28,7 @@ const (
 	KeywordNameImport    = "import"
 	KeywordNameModel     = "model"
 	KeywordNameNamespace = "namespace"
+	KeywordNameEnum      = "enum"
 )
 
 // ccl type flags.
@@ -39,6 +40,7 @@ const (
 	TypeFlagAlias
 	TypeFlagImmutable
 	TypeFlagCustomModel
+	TypeFlagCustomEnum
 )
 
 // ccl default namespace values

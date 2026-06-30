@@ -101,15 +101,26 @@ func (t *CCLTypeDefinition) GetModelDefinition() *ModelDefinition {
 	return t.model
 }
 
+// GetEnumDefinition returns the enum definition of the type.
+// It returns nil if the type is not a custom enum type.
+func (t *CCLTypeDefinition) GetEnumDefinition() *EnumDefinition {
+	return t.enum
+}
+
 // IsCustomModel returns true if the type is a custom model.
 // It does NOT necessarily check that model field is set.
 func (t *CCLTypeDefinition) IsCustomModel() bool {
 	return t != nil && t.typeFlags&TypeFlagCustomModel != 0
 }
 
-// IsCustomType simply calls IsCustomModel (for now).
+// IsCustomEnum returns true if the type is a custom enum.
+func (t *CCLTypeDefinition) IsCustomEnum() bool {
+	return t != nil && t.typeFlags&TypeFlagCustomEnum != 0
+}
+
+// IsCustomType returns true for any user-defined type.
 func (t *CCLTypeDefinition) IsCustomType() bool {
-	return t.IsCustomModel()
+	return t.IsCustomModel() || t.IsCustomEnum()
 }
 
 func (t *CCLTypeDefinition) HasModelField() bool {

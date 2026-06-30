@@ -59,3 +59,9 @@ type IdentifierValueExpression struct {
 	Name           string
 	SourcePosition *cclUtils.SourceCodePosition
 }
+
+// QualifiedIdentifierValueExpression represents a dotted identifier usage.
+type QualifiedIdentifierValueExpression struct {
+	Parts          []string
+	SourcePosition *cclUtils.SourceCodePosition
+}

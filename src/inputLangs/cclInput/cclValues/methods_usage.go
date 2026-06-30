@@ -22,6 +22,11 @@ func (u *CCLTypeUsage) IsCustomTypeModel() bool {
 	return u != nil && u.definition != nil && u.definition.IsCustomModel()
 }
 
+// IsCustomTypeEnum returns true if the type usage is of a custom enum type.
+func (u *CCLTypeUsage) IsCustomTypeEnum() bool {
+	return u != nil && u.definition != nil && u.definition.IsCustomEnum()
+}
+
 // GetUnderlyingType returns the underlying type of the type usage.
 func (u *CCLTypeUsage) GetUnderlyingType() *CCLTypeUsage {
 	return u.underlyingType
@@ -62,6 +67,20 @@ func (p *ModelFieldDefinition) ChangeValueType(typeInfo *CCLTypeUsage) {
 // ChangeDefaultValue sets the value of the parameter.
 func (p *ModelFieldDefinition) ChangeDefaultValue(value any) {
 	p.defaultValue = value
+}
+
+// GetDefaultValue returns the field's default value.
+func (p *ModelFieldDefinition) GetDefaultValue() any {
+	if p == nil {
+		return nil
+	}
+
+	return p.defaultValue
+}
+
+// HasDefaultValue returns true if this field has an explicit default value.
+func (p *ModelFieldDefinition) HasDefaultValue() bool {
+	return p != nil && p.defaultValue != nil
 }
 
 //---------------------------------------------------------

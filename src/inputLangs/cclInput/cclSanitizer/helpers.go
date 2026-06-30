@@ -3,15 +3,25 @@ package cclSanitizer
 import (
 	"fmt"
 
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
-	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 // ResolveTypeUsage resolves a type expression into a CCL type usage.
 func ResolveTypeUsage(
 	ctx *cclValues.CCLCodeContext,
 	currentNamespace string,
+	expr cclAst.TypeExpression,
+) (*cclValues.CCLTypeUsage, error) {
+	return ResolveTypeUsageForModel(ctx, currentNamespace, "", expr)
+}
+
+// ResolveTypeUsageForModel resolves a type expression with nested model scope.
+func ResolveTypeUsageForModel(
+	ctx *cclValues.CCLCodeContext,
+	currentNamespace string,
+	currentModelName string,
 	expr cclAst.TypeExpression,
 ) (*cclValues.CCLTypeUsage, error) {
 	if expr == nil {
@@ -49,15 +59,7 @@ func ResolveTypeUsage(
 			return usage, nil
 		}
 
-		namespace := node.TypeName.Namespace
-		if namespace == "" {
-			namespace = currentNamespace
-		}
-
-		return ctx.NewCustomTypeUsage(&cclValues.SimpleTypeName{
-			TypeName:  node.TypeName.Name,
-			Namespace: namespace,
-		}), nil
+		return resolveCustomTypeUsage(ctx, currentNamespace, currentModelName, node), nil
 	case *cclAst.ArrayTypeExpression:
 		if node == nil {
 			return nil, &TypeUsageResolutionError{
@@ -65,7 +67,12 @@ func ResolveTypeUsage(
 			}
 		}
 
-		elementType, err := ResolveTypeUsage(ctx, currentNamespace, node.ElementType)
+		elementType, err := ResolveTypeUsageForModel(
+			ctx,
+			currentNamespace,
+			currentModelName,
+			node.ElementType,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -83,6 +90,52 @@ func ResolveTypeUsage(
 			Message: fmt.Sprintf("unsupported type expression kind: %T", node),
 		}
 	}
+}
+
+func resolveCustomTypeUsage(
+	ctx *cclValues.CCLCodeContext,
+	currentNamespace string,
+	currentModelName string,
+	node *cclAst.SimpleTypeExpression,
+) *cclValues.CCLTypeUsage {
+	typeName := node.TypeName.Name
+	namespace := node.TypeName.Namespace
+	if namespace != "" {
+		exactName := &cclValues.SimpleTypeName{
+			TypeName:  typeName,
+			Namespace: namespace,
+		}
+		if ctx.GetTypeDefinition(exactName) != nil {
+			return ctx.NewCustomTypeUsage(exactName)
+		}
+
+		if currentNamespace != "" {
+			nestedName := &cclValues.SimpleTypeName{
+				TypeName:  typeName,
+				Namespace: currentNamespace + "." + namespace,
+			}
+			if ctx.GetTypeDefinition(nestedName) != nil {
+				return ctx.NewCustomTypeUsage(nestedName)
+			}
+		}
+
+		return ctx.NewCustomTypeUsage(exactName)
+	}
+
+	if currentModelName != "" {
+		nestedName := &cclValues.SimpleTypeName{
+			TypeName:  typeName,
+			Namespace: currentNamespace + "." + currentModelName,
+		}
+		if ctx.GetTypeDefinition(nestedName) != nil {
+			return ctx.NewCustomTypeUsage(nestedName)
+		}
+	}
+
+	return ctx.NewCustomTypeUsage(&cclValues.SimpleTypeName{
+		TypeName:  typeName,
+		Namespace: currentNamespace,
+	})
 }
 
 func validateFieldTypeUsages(typeUsages []*fieldTypeUsageCheck) error {

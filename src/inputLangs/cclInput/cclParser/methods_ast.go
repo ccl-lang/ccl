@@ -1,9 +1,9 @@
 package cclParser
 
 import (
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
 )
 
 func (p *CCLAstParser) ParseAsAST() (*cclAst.CCLFileAST, error) {
@@ -107,6 +107,21 @@ func (p *CCLAstParser) ParseAsAST() (*cclAst.CCLFileAST, error) {
 			}
 
 			fileAst.Models = append(fileAst.Models, model)
+			continue
+		}
+
+		if p.current.Type == cclLexer.TokenTypeKeywordEnum {
+			enumDecl, err := p.parseEnumDeclAst(currentNamespace)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(currentPendingAttributes) > 0 {
+				enumDecl.Attributes = append(enumDecl.Attributes, currentPendingAttributes...)
+				currentPendingAttributes = nil
+			}
+
+			fileAst.Enums = append(fileAst.Enums, enumDecl)
 			continue
 		}
 

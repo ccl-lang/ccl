@@ -12,6 +12,7 @@ var (
 		TokenTypeKeywordImport:      "KEYWORD_IMPORT",
 		TokenTypeKeywordModel:       "KEYWORD_MODEL",
 		TokenTypeKeywordNamespace:   "KEYWORD_NAMESPACE",
+		TokenTypeKeywordEnum:        "KEYWORD_ENUM",
 		TokenTypeIdentifier:         "IDENTIFIER",
 		TokenTypeColon:              "COLON",
 		TokenTypeSemicolon:          "SEMICOLON",
@@ -105,6 +106,7 @@ var (
 		cclValues.KeywordNameImport:    TokenTypeKeywordImport,
 		cclValues.KeywordNameModel:     TokenTypeKeywordModel,
 		cclValues.KeywordNameNamespace: TokenTypeKeywordNamespace,
+		cclValues.KeywordNameEnum:      TokenTypeKeywordEnum,
 	}
 )
 

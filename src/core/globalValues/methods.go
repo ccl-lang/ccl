@@ -34,7 +34,8 @@ func (n NamingStyle) IsValid() bool {
 	case StyleCamelCase,
 		StylePascalCase,
 		StyleSnakeCase,
-		StyleKebabCase:
+		StyleKebabCase,
+		StyleUpperCase:
 		return true
 	default:
 		return false
@@ -52,6 +53,8 @@ func (n NamingStyle) ApplyStyle(value string) string {
 		return caseUtils.ToSnakeCase(value)
 	case StyleKebabCase:
 		return strings.ReplaceAll(caseUtils.ToSnakeCase(value), "_", "-")
+	case StyleUpperCase:
+		return strings.ToUpper(caseUtils.ToSnakeCase(value))
 	default:
 		return value
 	}

@@ -13,6 +13,7 @@ const (
 	TokenTypeKeywordImport                        // import
 	TokenTypeKeywordModel                         // model
 	TokenTypeKeywordNamespace                     // namespace
+	TokenTypeKeywordEnum                          // enum
 	TokenTypeKeywordRequired                      // required
 	TokenTypeKeywordPublic                        // public
 	TokenTypeKeywordPrivate                       // private

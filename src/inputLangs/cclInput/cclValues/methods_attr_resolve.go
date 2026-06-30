@@ -60,6 +60,20 @@ func (c *CCLCodeContext) ResolveAttributes(
 		}
 	}
 
+	if subject.Enum != nil {
+		attrs := subject.Enum.FindAttributes(targetLang, name)
+		if len(attrs) > 0 {
+			return attrs
+		}
+
+		if options.AllowModelFallback && subject.Enum.OwnedBy != nil {
+			attrs := subject.Enum.OwnedBy.FindAttributes(targetLang, name)
+			if len(attrs) > 0 {
+				return attrs
+			}
+		}
+	}
+
 	if !options.AllowScopedFallback {
 		return nil
 	}
@@ -72,6 +86,15 @@ func (c *CCLCodeContext) ResolveAttributes(
 		}
 		if namespace == "" {
 			namespace = subject.Model.GetNamespace()
+		}
+	}
+
+	if subject.Enum != nil {
+		if sourceFileId == 0 {
+			sourceFileId = subject.Enum.SourceFileId
+		}
+		if namespace == "" {
+			namespace = subject.Enum.GetNamespace()
 		}
 	}
 

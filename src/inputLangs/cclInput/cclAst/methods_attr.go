@@ -94,3 +94,16 @@ func (i *IdentifierValueExpression) GetSourcePosition() *cclUtils.SourceCodePosi
 	}
 	return i.SourcePosition
 }
+
+// GetAttributeValueKind returns the kind of this qualified identifier value.
+func (i *QualifiedIdentifierValueExpression) GetAttributeValueKind() AttributeValueKind {
+	return AttributeValueKindQualifiedIdentifier
+}
+
+// GetSourcePosition returns the source position of this qualified identifier value.
+func (i *QualifiedIdentifierValueExpression) GetSourcePosition() *cclUtils.SourceCodePosition {
+	if i == nil {
+		return nil
+	}
+	return i.SourcePosition
+}
