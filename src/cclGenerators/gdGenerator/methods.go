@@ -167,7 +167,11 @@ func (c *GDScriptGenerationContext) generateModelAnnotations(
 	builder *codeBuilder.CodeBuilder,
 	model *CCLModel,
 ) error {
-	attrs := model.FindAttributes(CurrentLanguage, cclAttr.AttrAddAnnotation)
+	attrs := c.GetGlobalOrModelAttributes(
+		CurrentLanguage,
+		cclAttr.AttrAddAnnotation,
+		model,
+	).Attrs
 	for _, attr := range attrs {
 		param := attr.GetParamAt(0)
 		if param == nil {

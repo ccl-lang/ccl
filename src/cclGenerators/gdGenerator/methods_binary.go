@@ -162,7 +162,7 @@ func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLMo
 		WriteLine("buffer.big_endian = " + bigEndian).
 		WriteLine("buffer.data_array = data")
 
-	builder.LineD("var $modelResult = $model.new()").
+	builder.LineD("var $modelResult := $model.new()").
 		NewLine()
 
 	for _, field := range model.Fields {
