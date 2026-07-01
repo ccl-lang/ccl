@@ -125,6 +125,19 @@ func TestTSGenerator1_2(t *testing.T) {
 		return
 	}
 
+	generatedContent := readGeneratedTSFile(t, filepath.Join(tmpDir, "models", "generated.ts"))
+	for _, snippet := range []string{
+		"export namespace UserInfo {",
+		"export enum UserType {",
+	} {
+		if !strings.Contains(generatedContent, snippet) {
+			t.Fatalf("Generated single-file TypeScript is missing %q.\nGenerated:\n%s", snippet, generatedContent)
+		}
+	}
+	if strings.Contains(generatedContent, "export namespace  {") {
+		t.Fatalf("Generated single-file TypeScript contains a blank namespace.\nGenerated:\n%s", generatedContent)
+	}
+
 	output, err := RunTSProject(&RunTSOptions{
 		TargetPath:    tmpDir,
 		RunnerContent: mainTSContent1_2,

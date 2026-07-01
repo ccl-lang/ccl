@@ -69,7 +69,7 @@ func (c *TypeScriptGenerationContext) generateNestedEnumNamespace(
 		return nil
 	}
 
-	builder.LineD("export namespace $model {").
+	builder.WriteLine("export namespace " + model.Name + " {").
 		Indent()
 	for enumIndex, enumDef := range model.Enums {
 		if enumIndex > 0 {
