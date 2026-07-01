@@ -7,9 +7,9 @@ import (
 )
 
 func (c *GoGenerationContext) GenerateConstants() error {
-	builder := c.getCodeBuilder(ConstantsFileName, "constants")
+	constantGroups := map[string]*goConstantGroup{}
+	groupOrder := []string{}
 	models := []*CCLModel{}
-	enums := []*CCLEnum{}
 
 	for _, currentTypeDef := range c.GetGenerationTypeDefinitions() {
 		if currentTypeDef.IsCustomModel() {
@@ -18,7 +18,13 @@ func (c *GoGenerationContext) GenerateConstants() error {
 		}
 
 		if currentTypeDef.IsCustomEnum() {
-			enums = append(enums, currentTypeDef.GetEnumDefinition())
+			enumDef := currentTypeDef.GetEnumDefinition()
+			group, err := c.getGoEnumOutputFileGroup(enumDef)
+			if err != nil {
+				return err
+			}
+			constantGroup := getGoConstantGroup(constantGroups, &groupOrder, group)
+			constantGroup.Enums = append(constantGroup.Enums, enumDef)
 			continue
 		}
 
@@ -28,8 +34,8 @@ func (c *GoGenerationContext) GenerateConstants() error {
 		}
 	}
 
-	wroteConstBlock := false
 	if len(models) != 0 {
+		builder := c.getConstantsCodeBuilder("")
 		beginGoConstBlock(builder)
 		for _, currentModel := range models {
 			if err := c.generateConstantsForModel(builder, currentModel); err != nil {
@@ -37,26 +43,35 @@ func (c *GoGenerationContext) GenerateConstants() error {
 			}
 		}
 		endGoConstBlock(builder)
-		wroteConstBlock = true
 	}
 
-	for _, enumDef := range enums {
-		if len(enumDef.Members) == 0 {
-			continue
-		}
+	for _, group := range groupOrder {
+		constantGroup := constantGroups[group]
+		builder := c.getConstantsCodeBuilder(group)
+		wroteConstBlock := len(models) != 0 && group == ""
 
-		if wroteConstBlock {
-			builder.NewLine()
+		for _, enumDef := range constantGroup.Enums {
+			if len(enumDef.Members) == 0 {
+				continue
+			}
+
+			if wroteConstBlock {
+				builder.NewLine()
+			}
+			beginGoConstBlock(builder)
+			if err := c.generateConstantsForEnum(builder, enumDef); err != nil {
+				return err
+			}
+			endGoConstBlock(builder)
+			wroteConstBlock = true
 		}
-		beginGoConstBlock(builder)
-		if err := c.generateConstantsForEnum(builder, enumDef); err != nil {
-			return err
-		}
-		endGoConstBlock(builder)
-		wroteConstBlock = true
 	}
 
 	return nil
+}
+
+func (c *GoGenerationContext) getConstantsCodeBuilder(group string) *codeBuilder.CodeBuilder {
+	return c.getCodeBuilder(getGoCategoryFileName("constants", group), "constants")
 }
 
 func (c *GoGenerationContext) generateConstantsForModel(

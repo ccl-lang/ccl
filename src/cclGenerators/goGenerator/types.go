@@ -21,3 +21,7 @@ type GoGenerationContext struct {
 	// CodeByPath maps relative output file paths to their builders.
 	CodeByPath map[string]*codeBuilder.CodeBuilder
 }
+
+type goConstantGroup struct {
+	Enums []*CCLEnum
+}

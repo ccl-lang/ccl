@@ -63,8 +63,41 @@ func TestGoGenerator1(t *testing.T) {
 		return
 	}
 
-	constantsContent := readGeneratedGoFile(t, filepath.Join(tmpDir, "models", "constants.go"))
-	assertGoConstantsAreGrouped(t, constantsContent)
+	modelIdConstantsContent := readGeneratedGoFile(t, filepath.Join(tmpDir, "models", "constants.go"))
+	assertGoConstantFile(t, modelIdConstantsContent, []string{
+		"ModelIdImportedGdThing",
+		"ModelIdPositionInfo",
+		"ModelIdUserInfo",
+		"ModelIdStrictUserData",
+	}, nil, []string{
+		"MyCoolEnumElement1",
+		"SkinTypeBasic",
+		"UserInfoUserTypeUnknown",
+	})
+
+	commonConstantsContent := readGeneratedGoFile(t, filepath.Join(tmpDir, "models", "constants_common.go"))
+	assertGoConstantFile(t, commonConstantsContent, nil, []string{"MyCoolEnumElement1"}, []string{
+		"ModelIdImportedGdThing",
+		"SkinTypeBasic",
+		"UserInfoUserTypeUnknown",
+	})
+
+	skinsConstantsContent := readGeneratedGoFile(t, filepath.Join(tmpDir, "models", "constants_skins.go"))
+	assertGoConstantFile(t, skinsConstantsContent, nil, []string{"SkinTypeBasic", "SkinTypeTexture"}, []string{
+		"ModelIdUserInfo",
+		"UserInfoUserTypeUnknown",
+		"MyCoolEnumElement1",
+	})
+
+	usersConstantsContent := readGeneratedGoFile(t, filepath.Join(tmpDir, "models", "constants_users.go"))
+	assertGoConstantFile(t, usersConstantsContent, nil, []string{
+		"UserInfoUserTypeUnknown",
+		"UserInfoUserTypePlayer",
+	}, []string{
+		"ModelIdUserInfo",
+		"SkinTypeBasic",
+		"MyCoolEnumElement1",
+	})
 
 	output, err := RunGoProject(&RunGoOptions{
 		TargetPath:    tmpDir,
@@ -158,6 +191,10 @@ model DirectGrouped {
 	}
 
 	unexpectedFiles := []string{
+		"constants_users.go",
+		"constants_filegroup.go",
+		"constants_global.go",
+		"constants_direct.go",
 		"types.go",
 		"methods.go",
 	}
@@ -183,35 +220,57 @@ func readGeneratedGoFile(t *testing.T, path string) string {
 	return string(data)
 }
 
-func assertGoConstantsAreGrouped(t *testing.T, constantsContent string) {
+func assertGoConstantFile(
+	t *testing.T,
+	constantsContent string,
+	requiredModelIdSnippets []string,
+	requiredEnumSnippets []string,
+	forbiddenSnippets []string,
+) {
 	t.Helper()
 
 	constBlocks := extractGoConstBlocks(t, constantsContent)
-	if len(constBlocks) != 4 {
-		t.Fatalf("Expected one model ID const block and three enum const blocks, got %d.\nGenerated:\n%s",
-			len(constBlocks), constantsContent)
+	if len(requiredModelIdSnippets) != 0 && len(requiredEnumSnippets) != 0 {
+		if len(constBlocks) != 2 {
+			t.Fatalf("Expected one model ID const block and one enum const block, got %d.\nGenerated:\n%s",
+				len(constBlocks), constantsContent)
+		}
+	} else if len(constBlocks) != 1 {
+		t.Fatalf("Expected one const block, got %d.\nGenerated:\n%s", len(constBlocks), constantsContent)
 	}
 
-	modelIdBlock := constBlocks[0]
-	requiredModelIds := []string{
-		"ModelIdImportedGdThing",
-		"ModelIdPositionInfo",
-		"ModelIdStrictUserData",
-	}
-	for _, snippet := range requiredModelIds {
-		if !strings.Contains(modelIdBlock, snippet) {
-			t.Fatalf("Generated model ID const block is missing %q.\nBlock:\n%s", snippet, modelIdBlock)
+	if len(requiredModelIdSnippets) != 0 {
+		modelIdBlock := constBlocks[0]
+		for _, snippet := range requiredModelIdSnippets {
+			if !strings.Contains(modelIdBlock, snippet) {
+				t.Fatalf("Generated model ID const block is missing %q.\nBlock:\n%s", snippet, modelIdBlock)
+			}
 		}
-	}
-	for _, enumSnippet := range []string{"MyCoolEnumElement1", "SkinTypeBasic", "UserInfoUserTypeUnknown"} {
-		if strings.Contains(modelIdBlock, enumSnippet) {
-			t.Fatalf("Generated model ID const block contains enum member %q.\nBlock:\n%s", enumSnippet, modelIdBlock)
+		for _, enumSnippet := range requiredEnumSnippets {
+			if strings.Contains(modelIdBlock, enumSnippet) {
+				t.Fatalf("Generated model ID const block contains enum member %q.\nBlock:\n%s", enumSnippet, modelIdBlock)
+			}
 		}
 	}
 
-	assertSingleGoEnumConstBlock(t, constBlocks[1], "MyCoolEnumElement1", []string{"SkinTypeBasic", "UserInfoUserTypeUnknown"})
-	assertSingleGoEnumConstBlock(t, constBlocks[2], "SkinTypeBasic", []string{"MyCoolEnumElement1", "UserInfoUserTypeUnknown"})
-	assertSingleGoEnumConstBlock(t, constBlocks[3], "UserInfoUserTypeUnknown", []string{"MyCoolEnumElement1", "SkinTypeBasic"})
+	if len(requiredEnumSnippets) != 0 {
+		enumBlock := constBlocks[len(constBlocks)-1]
+		if strings.Contains(enumBlock, "ModelId") {
+			t.Fatalf("Generated enum const block contains model IDs.\nBlock:\n%s", enumBlock)
+		}
+		for _, snippet := range requiredEnumSnippets {
+			if !strings.Contains(enumBlock, snippet) {
+				t.Fatalf("Generated enum const block is missing %q.\nBlock:\n%s", snippet, enumBlock)
+			}
+		}
+	}
+
+	for _, snippet := range forbiddenSnippets {
+		if !strings.Contains(constantsContent, snippet) {
+			continue
+		}
+		t.Fatalf("Generated constants file contains forbidden snippet %q.\nGenerated:\n%s", snippet, constantsContent)
+	}
 }
 
 func extractGoConstBlocks(t *testing.T, constantsContent string) []string {
@@ -228,27 +287,6 @@ func extractGoConstBlocks(t *testing.T, constantsContent string) []string {
 	}
 
 	return constBlocks
-}
-
-func assertSingleGoEnumConstBlock(
-	t *testing.T,
-	constBlock string,
-	requiredSnippet string,
-	forbiddenSnippets []string,
-) {
-	t.Helper()
-
-	if !strings.Contains(constBlock, requiredSnippet) {
-		t.Fatalf("Generated enum const block is missing %q.\nBlock:\n%s", requiredSnippet, constBlock)
-	}
-	if strings.Contains(constBlock, "ModelId") {
-		t.Fatalf("Generated enum const block contains model IDs.\nBlock:\n%s", constBlock)
-	}
-	for _, forbiddenSnippet := range forbiddenSnippets {
-		if strings.Contains(constBlock, forbiddenSnippet) {
-			t.Fatalf("Generated enum const block mixes enum member %q.\nBlock:\n%s", forbiddenSnippet, constBlock)
-		}
-	}
 }
 
 func TestGoGeneratorEnums(t *testing.T) {

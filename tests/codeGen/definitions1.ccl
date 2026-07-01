@@ -55,6 +55,7 @@ model TextureSkin {
     SomeIntegers: int64[];
 }
 
+[OutputFileGroup("skins")]
 enum SkinType : uint8 {
     Basic = 0;
     Texture = 1;
@@ -67,6 +68,7 @@ model SkinInfo {
 }
 
 // UserInfo and RoomInfo types
+[OutputFileGroup("users")]
 model UserInfo {
     enum UserType {
         Unknown,
