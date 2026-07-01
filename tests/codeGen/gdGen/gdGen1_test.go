@@ -90,6 +90,10 @@ func TestGdGenerator1(t *testing.T) {
 		t.Fatalf("Failed to run Godot: %v\nOutput:\n%s", err, output)
 		return
 	}
+	if !strings.Contains(output, "Runtime verification successful!") {
+		t.Fatalf("Godot runtime verification did not report success.\nOutput:\n%s", output)
+		return
+	}
 
 	fmt.Printf("Output:\n%s\n", output)
 }

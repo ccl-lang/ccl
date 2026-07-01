@@ -55,21 +55,30 @@ model TextureSkin {
     SomeIntegers: int64[];
 }
 
-// enum SkinType : uint8 {
-//     Basic = 0;
-//     Texture = 1;
-// }
+enum SkinType : uint8 {
+    Basic = 0;
+    Texture = 1;
+}
 
 model SkinInfo {
-    Type: uint8;
+    Type: SkinType;
     Basic: BasicSkin;
     Texture: TextureSkin;
 }
 
 // UserInfo and RoomInfo types
 model UserInfo {
+    enum UserType {
+        Unknown,
+        Player,
+        Tester,
+        Admin,
+        Owner,
+    }
+
     [JsonPropertyName("user_id")]
     Id: string;
+    Type: UserType = UserType.Player;
     Username: string;
     Skin: SkinInfo;
 }

@@ -129,7 +129,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 			Indent().
 			LineD("return $binaryParseFallback").
 			Unindent().
-			WriteLine("var item := buffer.$getDataCall.get_string_from_utf8()").
+			LineD("var item: String = buffer.$getDataCall.get_string_from_utf8()").
 			LineD("$field.append(item)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
 		c.generateBinaryDeserializeBoundsCheck(builder, "4")
