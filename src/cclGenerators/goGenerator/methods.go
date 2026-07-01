@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/ALiwoto/ssg/ssg"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
@@ -36,65 +35,6 @@ func (c *GoGenerationContext) GenerateCode() ([]string, error) {
 
 	c.finalizeCodeBuilders()
 	return c.writeCodeBuilders()
-}
-
-//---------------------------------------------------------
-
-func (c *GoGenerationContext) GenerateConstants() error {
-	builder := c.getCodeBuilder(ConstantsFileName, "constants")
-	builder.WriteLine("const (").
-		Indent()
-
-	for _, currentTypeDef := range c.GetGenerationTypeDefinitions() {
-		if currentTypeDef.IsCustomModel() {
-			if err := c.generateConstantsForModel(builder, currentTypeDef.GetModelDefinition()); err != nil {
-				return err
-			}
-			continue
-		}
-
-		if currentTypeDef.IsCustomEnum() {
-			if err := c.generateConstantsForEnum(builder, currentTypeDef.GetEnumDefinition()); err != nil {
-				return err
-			}
-			continue
-		}
-
-		return &cclErrors.UnsupportedTypeDefinitionError{
-			TypeName:       currentTypeDef.GetFullName(),
-			TargetLanguage: CurrentLanguage.String(),
-		}
-	}
-
-	builder.Unindent().
-		WriteLine(")")
-	return nil
-}
-
-func (c *GoGenerationContext) generateConstantsForModel(
-	builder *codeBuilder.CodeBuilder,
-	currentModel *CCLModel,
-) error {
-	builder.WriteLine("ModelId" +
-		currentModel.Name + " = " + ssg.ToBase10(currentModel.ModelId),
-	)
-	return nil
-}
-
-func (c *GoGenerationContext) generateConstantsForEnum(
-	builder *codeBuilder.CodeBuilder,
-	enumDef *CCLEnum,
-) error {
-	for _, member := range enumDef.Members {
-		memberName, err := c.getGoEnumMemberName(enumDef, member)
-		if err != nil {
-			return err
-		}
-		builder.WriteLine(memberName + " " +
-			c.getGoEnumTypeName(enumDef) + " = " + ssg.ToBase10(member.Value),
-		)
-	}
-	return nil
 }
 
 //---------------------------------------------------------
