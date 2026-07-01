@@ -20,7 +20,16 @@ A basic example of the ccl grammar is as follow:
 // models can also have attribute on them.
 [SerializationType("binary")]
 model UserInfo {
+    enum UserType: uint32 {
+        Unknown,
+        NormalUser,
+        Tester,
+        Admin,
+        Owner,
+    }
+
     Id: int64;
+    Type: UserType;
     Username: string;
     Email: string;
     ProfileImage: bytes;
@@ -37,7 +46,13 @@ model GetUsersResult {
 }
 ```
 
-> NOTE: ccl is a very minimal language, currently we do not have support for complex types such as enums, maps, unions, etc.
+> NOTE: currently we do not have support for maps, unions, etc.
+
+## Syntax features
+
+  - [attributes](https://ccl-lang.github.io/docs/attributes/)
+  - [imports](https://ccl-lang.github.io/docs/imports/)
+  - [enums](https://ccl-lang.github.io/docs/enums/)
 
 ## Installation
 
@@ -55,11 +70,13 @@ ccl generate --source definitions.ccl --output path/to/output --language Go
 
 A list of all programming languages that are either supported or we plan to support in the future are shown here:
 
-- [Golang](https://github.com/ccl-lang/ccl/wiki/Programming-Languages#golang)
-- [GDScript](https://github.com/ccl-lang/ccl/wiki/Programming-Languages#gdscript)
-- [Python](https://github.com/ccl-lang/ccl/wiki/Programming-Languages#python)
-- [CSharp](https://github.com/ccl-lang/ccl/wiki/Programming-Languages#csharp)
-- [Rust](https://github.com/ccl-lang/ccl/wiki/Programming-Languages#rust)
+- [Go](https://ccl-lang.github.io/docs/languages/go/)
+- [GDScript](https://ccl-lang.github.io/docs/languages/gdscript/)
+- [Python](https://ccl-lang.github.io/docs/languages/python/)
+- [TypeScript](https://ccl-lang.github.io/docs/languages/typescript/)
+- [JavaScript](https://ccl-lang.github.io/docs/languages/javascript/)
+- [CSharp](https://ccl-lang.github.io/docs/languages/csharp/)
+- [Rust](https://ccl-lang.github.io/docs/languages/rust/)
 
 If you do not see your desired language in the list, please open an issue and we will consider adding it.
 
