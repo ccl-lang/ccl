@@ -17,7 +17,7 @@ func _init():
 	# Test SkinInfo
 	var skin_info_script = load("res://models/skin_info.gd")
 	var skin_info = skin_info_script.new()
-	skin_info.type = 0
+	skin_info.type = SkinType.SkinTypeEnum.BASIC
 
 	var basic_skin_script = load("res://models/basic_skin.gd")
 	var basic_skin = basic_skin_script.new()

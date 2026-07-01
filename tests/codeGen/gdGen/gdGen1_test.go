@@ -80,6 +80,23 @@ func TestGdGenerator1(t *testing.T) {
 		t.Fatalf("Expected imported CCL model to generate %s: %v", importedOutputPath, err)
 	}
 
+	skinTypeContent := readGeneratedGdModel(t, result.OutputFiles, "class_name SkinType")
+	if !strings.Contains(skinTypeContent, "enum SkinTypeEnum {") {
+		t.Fatalf("Generated SkinType enum did not use named top-level enum.\nGenerated:\n%s", skinTypeContent)
+	}
+
+	skinInfoContent := readGeneratedGdModel(t, result.OutputFiles, "class_name SkinInfo")
+	skinInfoSnippets := []string{
+		"var type: SkinType.SkinTypeEnum",
+		"model_result.type = buffer.get_u8() as SkinType.SkinTypeEnum",
+		"model_result.type = int(type_value) as SkinType.SkinTypeEnum",
+	}
+	for _, snippet := range skinInfoSnippets {
+		if !strings.Contains(skinInfoContent, snippet) {
+			t.Fatalf("Generated SkinInfo model is missing enum snippet %q.\nGenerated:\n%s", snippet, skinInfoContent)
+		}
+	}
+
 	fmt.Printf("Running GDScript code from: %s\n", tmpDir)
 
 	output, err := RunGodotProject(&RunGodotOptions{
@@ -290,7 +307,7 @@ model ApiRequestEnvelop {
 
 	enumContent := readGeneratedGdModel(t, result.OutputFiles, "class_name UserType")
 	enumSnippets := []string{
-		"enum {",
+		"enum UserTypeEnum {",
 		"UNKNOWN = 0,",
 		"ADMIN = 10,",
 		"GUEST = 11,",
@@ -306,9 +323,9 @@ model ApiRequestEnvelop {
 		"enum RequestType {",
 		"GET_USER_DATA = 10,",
 		"GET_USER_AVATAR = 11,",
-		"var request_id: int",
-		"var other_field: int = RequestType.LOGIN",
-		"var user_type: int = UserType.ADMIN",
+		"var request_id: RequestType",
+		"var other_field: RequestType = RequestType.LOGIN",
+		"var user_type: UserType.UserTypeEnum = UserType.UserTypeEnum.ADMIN",
 	}
 	for _, snippet := range modelSnippets {
 		if !strings.Contains(modelContent, snippet) {

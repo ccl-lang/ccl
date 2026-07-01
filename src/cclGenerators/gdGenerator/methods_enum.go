@@ -34,5 +34,5 @@ func (c *GDScriptGenerationContext) getGDScriptEnumReference(
 		return enumDef.Name + "." + memberName, nil
 	}
 
-	return enumDef.Name + "." + memberName, nil
+	return enumDef.Name + "." + gdEnumDeclarationName(enumDef) + "." + memberName, nil
 }

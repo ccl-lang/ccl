@@ -17,6 +17,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 	resultField := modelResultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
 	modelName := field.OwnedBy.GetName()
+	enumCastSuffix := gdEnumCastSuffix(field.Type)
 
 	builder.ExpectMappedVars(
 		"model",
@@ -25,12 +26,14 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 		"value", valueName,
 		"field", resultField,
 		"fieldT", targetFieldTypeName,
+		"enumCast", enumCastSuffix,
 	)
 	defer builder.UnmapVar(
 		"jsonName",
 		"value",
 		"field",
 		"fieldT",
+		"enumCast",
 	)
 
 	// TODO #21: maybe we can have default value (from ccl) instead of null here?
@@ -63,7 +66,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 			Unindent().
 			WriteLine("):").
 			Indent().
-			LineD("$field = int($value)").
+			LineD("$field = int($value)$enumCast").
 			Unindent().
 			WriteLine("else:").
 			Indent().
@@ -177,6 +180,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 	valueName := fieldRawName + "_value"
 	listName := fieldRawName + "_list"
 	modelName := field.OwnedBy.GetName()
+	enumCastSuffix := gdEnumCastSuffix(targetFieldType)
 
 	builder.ExpectMappedVars(
 		"model",
@@ -187,6 +191,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 		"value", valueName,
 		"jsonName", jsonName,
 		"list", listName,
+		"enumCast", enumCastSuffix,
 	)
 	defer builder.UnmapVar(
 		"field",
@@ -195,6 +200,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 		"value",
 		"jsonName",
 		"list",
+		"enumCast",
 	)
 
 	builder.LineD(`var $value = data.get("$jsonName", null)`).
@@ -238,7 +244,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 			Unindent().
 			WriteLine("):").
 			Indent().
-			LineD("$list.append(int(item))").
+			LineD("$list.append(int(item)$enumCast)").
 			Unindent().
 			WriteLine("else:").
 			Indent().

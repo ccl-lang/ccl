@@ -91,6 +91,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	resultField := modelResultName + "." + fieldRawName
 	targetFieldTypeName := gdStorageTypeName(targetFieldType)
 	fieldTargetLangType := c.getGDScriptType(field)
+	enumCastSuffix := gdEnumCastSuffix(targetFieldType)
 	getDataCall := ""
 	if useWGodot {
 		getDataCall = "get_data_bytes(item_len)"
@@ -106,6 +107,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 		"fieldT", targetFieldTypeName,
 		"fieldTargetT", fieldTargetLangType,
 		"getDataCall", getDataCall,
+		"enumCast", enumCastSuffix,
 	)
 	defer builder.UnmapVar(
 		"fieldLen",
@@ -113,6 +115,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 		"fieldT",
 		"fieldTargetT",
 		"getDataCall",
+		"enumCast",
 	)
 
 	c.generateBinaryDeserializeBoundsCheck(builder, "4")
@@ -133,28 +136,28 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 			LineD("$field.append(item)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
 		c.generateBinaryDeserializeBoundsCheck(builder, "4")
-		builder.LineD("$field.append(buffer.get_32())")
+		builder.LineD("$field.append(buffer.get_32()$enumCast)")
 	case cclValues.TypeNameInt8:
 		c.generateBinaryDeserializeBoundsCheck(builder, "1")
-		builder.LineD("$field.append(buffer.get_8())")
+		builder.LineD("$field.append(buffer.get_8()$enumCast)")
 	case cclValues.TypeNameInt16:
 		c.generateBinaryDeserializeBoundsCheck(builder, "2")
-		builder.LineD("$field.append(buffer.get_16())")
+		builder.LineD("$field.append(buffer.get_16()$enumCast)")
 	case cclValues.TypeNameInt64:
 		c.generateBinaryDeserializeBoundsCheck(builder, "8")
-		builder.LineD("$field.append(buffer.get_64())")
+		builder.LineD("$field.append(buffer.get_64()$enumCast)")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
 		c.generateBinaryDeserializeBoundsCheck(builder, "4")
-		builder.LineD("$field.append(buffer.get_u32())")
+		builder.LineD("$field.append(buffer.get_u32()$enumCast)")
 	case cclValues.TypeNameUint8:
 		c.generateBinaryDeserializeBoundsCheck(builder, "1")
-		builder.LineD("$field.append(buffer.get_u8())")
+		builder.LineD("$field.append(buffer.get_u8()$enumCast)")
 	case cclValues.TypeNameUint16:
 		c.generateBinaryDeserializeBoundsCheck(builder, "2")
-		builder.LineD("$field.append(buffer.get_u16())")
+		builder.LineD("$field.append(buffer.get_u16()$enumCast)")
 	case cclValues.TypeNameUint64:
 		c.generateBinaryDeserializeBoundsCheck(builder, "8")
-		builder.LineD("$field.append(buffer.get_u64())")
+		builder.LineD("$field.append(buffer.get_u64()$enumCast)")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
 		c.generateBinaryDeserializeBoundsCheck(builder, "4")
 		builder.LineD("$field.append(buffer.get_float())")
