@@ -53,7 +53,13 @@ func (c *GoGenerationContext) GenerateConstants() error {
 			continue
 		}
 
-		// for now, we only support model type definitions
+		if currentTypeDef.IsCustomEnum() {
+			if err := c.generateConstantsForEnum(builder, currentTypeDef.GetEnumDefinition()); err != nil {
+				return err
+			}
+			continue
+		}
+
 		return &cclErrors.UnsupportedTypeDefinitionError{
 			TypeName:       currentTypeDef.GetFullName(),
 			TargetLanguage: CurrentLanguage.String(),
@@ -75,6 +81,22 @@ func (c *GoGenerationContext) generateConstantsForModel(
 	return nil
 }
 
+func (c *GoGenerationContext) generateConstantsForEnum(
+	builder *codeBuilder.CodeBuilder,
+	enumDef *CCLEnum,
+) error {
+	for _, member := range enumDef.Members {
+		memberName, err := c.getGoEnumMemberName(enumDef, member)
+		if err != nil {
+			return err
+		}
+		builder.WriteLine(memberName + " " +
+			c.getGoEnumTypeName(enumDef) + " = " + ssg.ToBase10(member.Value),
+		)
+	}
+	return nil
+}
+
 //---------------------------------------------------------
 
 func (c *GoGenerationContext) GenerateVars() error {
@@ -86,6 +108,18 @@ func (c *GoGenerationContext) GenerateVars() error {
 
 func (c *GoGenerationContext) GenerateTypes() error {
 	for _, currentTypeDef := range c.GetGenerationTypeDefinitions() {
+		if currentTypeDef.IsCustomEnum() {
+			enumDef := currentTypeDef.GetEnumDefinition()
+			builder, err := c.getEnumCodeBuilder("types", enumDef)
+			if err != nil {
+				return err
+			}
+			if err = c.generateTypesForEnum(builder, enumDef); err != nil {
+				return err
+			}
+			continue
+		}
+
 		if !currentTypeDef.IsCustomModel() {
 			return &cclErrors.UnsupportedTypeDefinitionError{
 				TypeName:       currentTypeDef.GetFullName(),
@@ -112,6 +146,10 @@ func (c *GoGenerationContext) GenerateTypes() error {
 	}
 
 	for _, currentTypeDef := range c.GetGenerationTypeDefinitions() {
+		if currentTypeDef.IsCustomEnum() {
+			continue
+		}
+
 		currentModel := currentTypeDef.GetModelDefinition()
 		builder, err := c.getTypeDefCodeBuilder("types", currentModel)
 		if err != nil {
@@ -132,42 +170,9 @@ func (c *GoGenerationContext) generateTypesForModel(
 	builder.WriteLine("type " + currentModel.Name + " struct {").
 		Indent()
 	for _, currentField := range currentModel.Fields {
-		targetType := currentField.Type
-
-		// TODO: we have to check for other stuff in here
-		// or maybe just refactor this part to a more clean code
-		if targetType.IsArray() {
-			targetType = targetType.GetUnderlyingType()
-		}
-
-		theGoType, ok := CCLTypesToGoTypes[targetType.GetName()]
-		if !ok {
-			if !targetType.IsCustomTypeModel() {
-				return &cclErrors.UnsupportedFieldTypeError{
-					TypeName:       targetType.GetName(),
-					FieldName:      currentField.Name,
-					ModelName:      currentModel.Name,
-					TargetLanguage: CurrentLanguage.String(),
-				}
-			}
-
-			customModel := targetType.GetDefinition().GetModelDefinition()
-			if customModel == nil {
-				return &cclErrors.UnsupportedFieldTypeError{
-					TypeName:       targetType.GetName(),
-					FieldName:      currentField.Name,
-					ModelName:      currentModel.Name,
-					TargetLanguage: CurrentLanguage.String(),
-				}
-			}
-
-			// TODO: add ways to specify this type being pointer or not
-			theGoType = "*" + customModel.Name
-		}
-
-		// TODO: handle extra operators here
-		if currentField.IsArray() {
-			theGoType = "[]" + theGoType
+		theGoType, err := c.getGoTypeForField(currentField)
+		if err != nil {
+			return err
 		}
 		builder.WriteLine(currentField.Name + " " + theGoType)
 	}
@@ -177,10 +182,70 @@ func (c *GoGenerationContext) generateTypesForModel(
 	return nil
 }
 
+func (c *GoGenerationContext) generateTypesForEnum(
+	builder *codeBuilder.CodeBuilder,
+	enumDef *CCLEnum,
+) error {
+	builder.WriteLine("type " + c.getGoEnumTypeName(enumDef) + " " +
+		c.getGoEnumBaseType(enumDef)).
+		NewLine()
+	return nil
+}
+
 //---------------------------------------------------------
 
 func (c *GoGenerationContext) GenerateHelpers() error {
 	c.getCodeBuilder(HelpersFileName, "helpers")
+	for _, currentTypeDef := range c.GetGenerationTypeDefinitions() {
+		if !currentTypeDef.IsCustomModel() {
+			continue
+		}
+
+		currentModel := currentTypeDef.GetModelDefinition()
+		if !goModelHasDefaults(currentModel) {
+			continue
+		}
+
+		builder, err := c.getTypeDefCodeBuilder("helpers", currentModel)
+		if err != nil {
+			return err
+		}
+
+		if err = c.generateHelpersForModel(builder, currentModel); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *GoGenerationContext) generateHelpersForModel(
+	builder *codeBuilder.CodeBuilder,
+	currentModel *CCLModel,
+) error {
+	builder.WriteLine("func New" + currentModel.Name + "() *" + currentModel.Name + " {").
+		Indent().
+		WriteLine("return &" + currentModel.Name + "{").
+		Indent()
+	for _, field := range currentModel.Fields {
+		if !field.HasDefaultValue() {
+			continue
+		}
+
+		defaultValue := goDefaultLiteral(field.GetDefaultValue())
+		if enumRef := c.GetEnumDefaultReference(field); enumRef != nil {
+			memberName, err := c.getGoEnumMemberName(enumRef.Enum, enumRef.Member)
+			if err != nil {
+				return err
+			}
+			defaultValue = memberName
+		}
+		builder.WriteLine(field.Name + ": " + defaultValue + ",")
+	}
+	builder.Unindent().
+		WriteLine("}").
+		Unindent().
+		WriteLine("}").
+		NewLine()
 	return nil
 }
 
@@ -188,6 +253,10 @@ func (c *GoGenerationContext) GenerateHelpers() error {
 
 func (c *GoGenerationContext) GenerateMethods() error {
 	for _, currentTypeDef := range c.GetGenerationTypeDefinitions() {
+		if currentTypeDef.IsCustomEnum() {
+			continue
+		}
+
 		if !currentTypeDef.IsCustomModel() {
 			return &cclErrors.UnsupportedTypeDefinitionError{
 				TypeName:       currentTypeDef.GetFullName(),
@@ -265,6 +334,18 @@ func (c *GoGenerationContext) getTypeDefCodeBuilder(
 	currentModel *CCLModel,
 ) (*codeBuilder.CodeBuilder, error) {
 	group, err := c.getModelOutputFileGroup(currentModel)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.getCodeBuilder(getGoCategoryFileName(category, group), category), nil
+}
+
+func (c *GoGenerationContext) getEnumCodeBuilder(
+	category string,
+	enumDef *CCLEnum,
+) (*codeBuilder.CodeBuilder, error) {
+	group, err := c.getGoEnumOutputFileGroup(enumDef)
 	if err != nil {
 		return nil, err
 	}

@@ -14,6 +14,10 @@ type CCLModel = cclValues.ModelDefinition
 // internal packages.
 type CCLField = cclValues.ModelFieldDefinition
 
+// CCLEnum is a type alias for the enum definition type from the CCL's
+// internal packages.
+type CCLEnum = cclValues.EnumDefinition
+
 type GDScriptGenerationContext struct {
 	*gen.CodeGenerationBase
 

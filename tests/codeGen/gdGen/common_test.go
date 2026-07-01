@@ -94,6 +94,10 @@ func RunGodotProject(opts *RunGodotOptions) (string, error) {
 
 config/name="CCL GDScript Test"
 config/features=PackedStringArray("4.6", "Forward Plus")
+
+[wgodot]
+
+gdscript/strict_type_checking=false
 `
 	if err := os.WriteFile(
 		filepath.Join(opts.TargetPath, "project.godot"),

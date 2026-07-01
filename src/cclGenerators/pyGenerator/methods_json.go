@@ -288,7 +288,16 @@ func (c *PythonGenerationContext) generateFieldDeserializeJson(
 			WriteLine("return None").
 			Unindent()
 	default:
-		if c.isPythonJsonInteger(field.Type) {
+		if field.Type.IsCustomTypeEnum() {
+			builder.WriteLine("try:").
+				Indent().
+				LineD("$field = " + c.pythonEnumCastExpression(field.Type, "int($value)")).
+				Unindent().
+				WriteLine("except (TypeError, ValueError):").
+				Indent().
+				WriteLine("return None").
+				Unindent()
+		} else if c.isPythonJsonInteger(field.Type) {
 			builder.WriteLine("try:").
 				Indent().
 				LineD("$field = int($value)").
@@ -400,7 +409,17 @@ func (c *PythonGenerationContext) generateArrayDeserializeJson(
 			Unindent().
 			LineD("$field.append($item)")
 	default:
-		if c.isPythonJsonInteger(targetFieldType) {
+		if targetFieldType.IsCustomTypeEnum() {
+			builder.WriteLine("try:").
+				Indent().
+				LineD("$item = " + c.pythonEnumCastExpression(targetFieldType, "int(item)")).
+				Unindent().
+				WriteLine("except (TypeError, ValueError):").
+				Indent().
+				WriteLine("return None").
+				Unindent().
+				LineD("$field.append($item)")
+		} else if c.isPythonJsonInteger(targetFieldType) {
 			builder.WriteLine("try:").
 				Indent().
 				LineD("$item = int(item)").
@@ -459,7 +478,7 @@ func (c *PythonGenerationContext) isPythonJsonPrimitive(targetType *cclValues.CC
 }
 
 func (c *PythonGenerationContext) isPythonJsonInteger(targetType *cclValues.CCLTypeUsage) bool {
-	switch targetType.GetName() {
+	switch pythonStorageTypeName(targetType) {
 	case cclValues.TypeNameInt, cclValues.TypeNameInt8, cclValues.TypeNameInt16,
 		cclValues.TypeNameInt32, cclValues.TypeNameInt64,
 		cclValues.TypeNameUint, cclValues.TypeNameUint8, cclValues.TypeNameUint16,

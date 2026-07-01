@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ccl-lang/ccl/src/cclGenerators"
@@ -135,6 +136,83 @@ func TestJSGenerator1_2(t *testing.T) {
 	fmt.Printf("Output:\n%s\n", output)
 }
 
+func TestJSGeneratorEnums(t *testing.T) {
+	tmpDir, err := filepath.Abs("ccl_js_enum_test")
+	if err != nil {
+		t.Fatalf("Failed to get absolute path: %v", err)
+	}
+
+	if err := os.RemoveAll(tmpDir); err != nil {
+		t.Fatalf("Failed to remove existing dir: %v", err)
+	}
+
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		t.Fatalf("Failed to create dir: %v", err)
+	}
+
+	parsedDefinitions, parseErr := cclParser.ParseCCLSourceContent(&cclParser.CCLParseOptions{
+		SourceContent: `
+enum UserType {
+	Unknown,
+	Admin = 10,
+	Guest,
+}
+
+model ApiRequestEnvelop {
+	enum RequestType: int32 {
+		Unknown,
+		Login,
+		GetUserData = 10,
+	}
+
+	RequestId: RequestType;
+	OtherField: RequestType = RequestType.Login;
+	UserType: UserType = UserType.Admin;
+}
+`,
+	})
+	if parseErr != nil {
+		t.Fatalf("Failed to parse enum source: %v", parseErr)
+	}
+
+	cclLoader.LoadGenerators()
+	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
+		CodeContext:    parsedDefinitions.CodeContext,
+		OutputPath:     filepath.Join(tmpDir, "models"),
+		TargetLanguage: "js",
+	})
+	if err != nil {
+		t.Fatalf("Failed to generate JavaScript enum code: %v", err)
+	}
+	if result == nil {
+		t.Fatalf("Expected generation result")
+	}
+
+	enumContent := readGeneratedJSFile(t, filepath.Join(tmpDir, "models", "UserType.js"))
+	for _, snippet := range []string{
+		"export const UserType = Object.freeze({",
+		"ADMIN: 10,",
+		"GUEST: 11,",
+	} {
+		if !strings.Contains(enumContent, snippet) {
+			t.Fatalf("Generated top-level enum is missing %q.\nGenerated:\n%s", snippet, enumContent)
+		}
+	}
+
+	modelContent := readGeneratedJSFile(t, filepath.Join(tmpDir, "models", "ApiRequestEnvelop.js"))
+	for _, snippet := range []string{
+		"import { UserType } from './UserType.js';",
+		"static RequestType = Object.freeze({",
+		"GET_USER_DATA: 10,",
+		"this.otherField = ApiRequestEnvelop.RequestType.LOGIN;",
+		"this.userType = UserType.ADMIN;",
+	} {
+		if !strings.Contains(modelContent, snippet) {
+			t.Fatalf("Generated enum model is missing %q.\nGenerated:\n%s", snippet, modelContent)
+		}
+	}
+}
+
 func addSingleFileGenerationAttribute(
 	definition *cclValues.SourceCodeDefinition,
 	fileName string,
@@ -153,4 +231,14 @@ func addSingleFileGenerationAttribute(
 		},
 	})
 	definition.CodeContext.RegisterGlobalAttribute(definition.GlobalAttributes[len(definition.GlobalAttributes)-1])
+}
+
+func readGeneratedJSFile(t *testing.T, filePath string) string {
+	t.Helper()
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatalf("Failed to read generated file %s: %v", filePath, err)
+	}
+	return string(data)
 }

@@ -231,6 +231,88 @@ model ApiCardEnvelope {
 	}
 }
 
+func TestGdGeneratorEnums(t *testing.T) {
+	tmpDir, err := filepath.Abs("ccl_gd_enum_test")
+	if err != nil {
+		t.Fatalf("Failed to get absolute path: %v", err)
+	}
+
+	if err := os.RemoveAll(tmpDir); err != nil {
+		t.Fatalf("Failed to remove existing dir: %v", err)
+	}
+
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		t.Fatalf("Failed to create dir: %v", err)
+	}
+
+	parsedDefinitions, parseErr := cclParser.ParseCCLSourceContent(&cclParser.CCLParseOptions{
+		SourceContent: `
+enum UserType {
+	Unknown,
+	Admin = 10,
+	Guest,
+}
+
+model ApiRequestEnvelop {
+	enum RequestType: int32 {
+		Unknown,
+		Login,
+		GetUserData = 10,
+		GetUserAvatar,
+	}
+
+	RequestId: RequestType;
+	OtherField: RequestType = RequestType.Login;
+	UserType: UserType = UserType.Admin;
+}
+`,
+	})
+	if parseErr != nil {
+		t.Fatalf("Failed to parse enum source: %v", parseErr)
+	}
+
+	cclLoader.LoadGenerators()
+	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
+		CodeContext:    parsedDefinitions.CodeContext,
+		OutputPath:     filepath.Join(tmpDir, "models"),
+		TargetLanguage: "gd",
+	})
+	if err != nil {
+		t.Fatalf("Failed to generate GDScript enum code: %v", err)
+	}
+	if result == nil || len(result.OutputFiles) != 2 {
+		t.Fatalf("Expected two generated files, got %#v", result)
+	}
+
+	enumContent := readGeneratedGdModel(t, result.OutputFiles, "class_name UserType")
+	enumSnippets := []string{
+		"enum {",
+		"UNKNOWN = 0,",
+		"ADMIN = 10,",
+		"GUEST = 11,",
+	}
+	for _, snippet := range enumSnippets {
+		if !strings.Contains(enumContent, snippet) {
+			t.Fatalf("Generated top-level enum is missing %q.\nGenerated:\n%s", snippet, enumContent)
+		}
+	}
+
+	modelContent := readGeneratedGdModel(t, result.OutputFiles, "class_name ApiRequestEnvelop")
+	modelSnippets := []string{
+		"enum RequestType {",
+		"GET_USER_DATA = 10,",
+		"GET_USER_AVATAR = 11,",
+		"var request_id: int",
+		"var other_field: int = RequestType.LOGIN",
+		"var user_type: int = UserType.ADMIN",
+	}
+	for _, snippet := range modelSnippets {
+		if !strings.Contains(modelContent, snippet) {
+			t.Fatalf("Generated enum model is missing %q.\nGenerated:\n%s", snippet, modelContent)
+		}
+	}
+}
+
 func readGeneratedGdModel(t *testing.T, outputFiles []string, classNameLine string) string {
 	t.Helper()
 

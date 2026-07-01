@@ -38,7 +38,7 @@ func (c *TypeScriptGenerationContext) generateFieldSerializeBinary(field *CCLFie
 	)
 	defer builder.UnmapVar("field")
 
-	switch field.Type.GetName() {
+	switch typeScriptStorageTypeName(field.Type) {
 	case cclValues.TypeNameString:
 		builder.WriteLine("{").
 			Indent().
@@ -122,7 +122,7 @@ func (c *TypeScriptGenerationContext) generateArraySerializeBinary(field *CCLFie
 		LineD("for (const item of $field) {").
 		Indent()
 
-	switch targetFieldType.GetName() {
+	switch typeScriptStorageTypeName(targetFieldType) {
 	case cclValues.TypeNameString:
 		builder.WriteLine("const strBytes = new TextEncoder().encode(item);").
 			WriteLine("dataView.setUint32(0, strBytes.length, true);").
@@ -241,7 +241,7 @@ func (c *TypeScriptGenerationContext) generateFieldDeserializeBinary(field *CCLF
 		"type",
 	)
 
-	switch field.Type.GetName() {
+	switch typeScriptStorageTypeName(field.Type) {
 	case cclValues.TypeNameString:
 		builder.WriteLine("{").
 			Indent().
@@ -337,7 +337,7 @@ func (c *TypeScriptGenerationContext) generateArrayDeserializeBinary(field *CCLF
 		WriteLine("for (let i = 0; i < len; i++) {").
 		Indent()
 
-	switch targetFieldType.GetName() {
+	switch typeScriptStorageTypeName(targetFieldType) {
 	case cclValues.TypeNameString:
 		builder.WriteLine("const itemLen = view.getUint32(offset, true);").
 			WriteLine("offset += 4;").

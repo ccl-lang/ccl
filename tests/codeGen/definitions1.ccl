@@ -16,6 +16,11 @@ import "imported_definitions.ccl";
 
 #[$go:OutputFileGroup("shared")]
 
+enum MyCoolEnum {
+    Element1,
+    Element2,
+    Element3,
+}
 
 // Basic geometric types
 [OutputFileGroup("positions")]

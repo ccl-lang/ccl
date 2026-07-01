@@ -17,7 +17,7 @@ func (p *SourceCodePosition) FormatError(message string) string {
 		// we will make it become like this for two reasons:
 		// 1. we don't get empty weird lines such as ":10:20"
 		// 2. we check the logs, find out in some places we are not passing the correct
-		// 	source position, so we can easily check it
+		// 	source position, so we can easily fix it
 		filePath = "unknown_file"
 	}
 	location := fmt.Sprintf("%s:%d:%d", filePath, p.Line, p.Column)

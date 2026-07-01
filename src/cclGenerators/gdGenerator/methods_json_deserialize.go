@@ -13,7 +13,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 	builder *codeBuilder.CodeBuilder,
 ) error {
 	fieldRawName := caseUtils.ToSnakeCase(field.Name)
-	targetFieldTypeName := field.Type.GetName()
+	targetFieldTypeName := gdStorageTypeName(field.Type)
 	resultField := modelResultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
 	modelName := field.OwnedBy.GetName()
@@ -170,7 +170,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 	builder *codeBuilder.CodeBuilder,
 ) error {
 	targetFieldType := field.Type.GetUnderlyingType()
-	targetFieldTypeName := targetFieldType.GetName()
+	targetFieldTypeName := gdStorageTypeName(targetFieldType)
 	fieldTargetLangType := c.getGDScriptType(field)
 	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	resultField := modelResultName + "." + fieldRawName

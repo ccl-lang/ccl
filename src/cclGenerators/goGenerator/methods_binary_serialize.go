@@ -1,9 +1,9 @@
 package goGenerator
 
 import (
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
-	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 //---------------------------------------------------------
@@ -140,11 +140,7 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(
 				Unindent().
 				WriteLine("}")
 		} else {
-			toWriteStr := fieldVar
-			if fieldTypeName == cclValues.TypeNameInt {
-				// binary.Write does not support int type directly, so we need to convert it to int32
-				toWriteStr = "int32(" + fieldVar + ")"
-			}
+			toWriteStr := goIntegerWriteCast(field.Type, fieldVar)
 			builder.MapVarPairs("toWrite", toWriteStr)
 			builder.LineD("if err := binary.Write(buf, binaryEndian, $toWrite); err != nil {").
 				Indent().
@@ -232,11 +228,7 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(
 				Unindent().
 				WriteLine("}")
 		} else {
-			toWriteStr := "elem"
-			if targetFieldTypeName == cclValues.TypeNameInt {
-				// binary.Write does not support int type directly, so we need to convert it to int32
-				toWriteStr = "int32(elem)"
-			}
+			toWriteStr := goIntegerWriteCast(targetFieldType, "elem")
 			builder.MapVarPairs("toWrite", toWriteStr)
 			builder.LineD("if err := binary.Write(buf, binaryEndian, $toWrite); err != nil {").
 				Indent().

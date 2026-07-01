@@ -43,7 +43,7 @@ func (c *PythonGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 		"rawFieldBytes",
 	)
 
-	switch field.Type.GetName() {
+	switch pythonStorageTypeName(field.Type) {
 	case cclValues.TypeNameString:
 		builder.LineD(`$rawFieldBytes = $field.encode("utf-8")`).
 			LineD("buffer.extend(struct.pack('<I', len($rawFieldBytes)))").
@@ -105,7 +105,7 @@ func (c *PythonGenerationContext) generateArraySerializeBinary(field *CCLField, 
 		LineD("for item in $field:").
 		Indent()
 
-	switch targetFieldType.GetName() {
+	switch pythonStorageTypeName(targetFieldType) {
 	case cclValues.TypeNameString:
 		builder.WriteLine("item_bytes = item.encode(\"utf-8\")").
 			WriteLine("buffer.extend(struct.pack('<I', len(item_bytes)))").
@@ -232,7 +232,7 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 		"type",
 	)
 
-	switch field.Type.GetName() {
+	switch pythonStorageTypeName(field.Type) {
 	case cclValues.TypeNameString:
 		builder.LineD("$len = struct.unpack_from('<I', buffer, offset)[0]").
 			WriteLine("offset += 4").
@@ -243,28 +243,28 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 			LineD(`$field = bytes(buffer[offset:offset+$len]).decode("utf-8")`).
 			LineD("offset += $len")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.LineD("$field = struct.unpack_from('<i', buffer, offset)[0]").
+		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<i', buffer, offset)[0]")).
 			WriteLine("offset += 4")
 	case cclValues.TypeNameInt8:
-		builder.LineD("$field = struct.unpack_from('<b', buffer, offset)[0]").
+		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<b', buffer, offset)[0]")).
 			WriteLine("offset += 1")
 	case cclValues.TypeNameInt16:
-		builder.LineD("$field = struct.unpack_from('<h', buffer, offset)[0]").
+		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<h', buffer, offset)[0]")).
 			WriteLine("offset += 2")
 	case cclValues.TypeNameInt64:
-		builder.LineD("$field = struct.unpack_from('<q', buffer, offset)[0]").
+		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<q', buffer, offset)[0]")).
 			WriteLine("offset += 8")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.LineD("$field = struct.unpack_from('<I', buffer, offset)[0]").
+		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<I', buffer, offset)[0]")).
 			WriteLine("offset += 4")
 	case cclValues.TypeNameUint8:
-		builder.LineD("$field = struct.unpack_from('<B', buffer, offset)[0]").
+		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<B', buffer, offset)[0]")).
 			WriteLine("offset += 1")
 	case cclValues.TypeNameUint16:
-		builder.LineD("$field = struct.unpack_from('<H', buffer, offset)[0]").
+		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<H', buffer, offset)[0]")).
 			WriteLine("offset += 2")
 	case cclValues.TypeNameUint64:
-		builder.LineD("$field = struct.unpack_from('<Q', buffer, offset)[0]").
+		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<Q', buffer, offset)[0]")).
 			WriteLine("offset += 8")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
 		builder.LineD("$field = struct.unpack_from('<f', buffer, offset)[0]").
@@ -329,7 +329,7 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 		LineD("for _ in range($len):").
 		Indent()
 
-	switch targetFieldType.GetName() {
+	switch pythonStorageTypeName(targetFieldType) {
 	case cclValues.TypeNameString:
 		builder.WriteLine("item_len = struct.unpack_from('<I', buffer, offset)[0]").
 			WriteLine("offset += 4").
@@ -341,28 +341,28 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 			WriteLine("offset += item_len").
 			LineD("$field.append(item)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.LineD("$field.append(struct.unpack_from('<i', buffer, offset)[0])").
+		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<i', buffer, offset)[0]") + ")").
 			WriteLine("offset += 4")
 	case cclValues.TypeNameInt8:
-		builder.LineD("$field.append(struct.unpack_from('<b', buffer, offset)[0])").
+		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<b', buffer, offset)[0]") + ")").
 			WriteLine("offset += 1")
 	case cclValues.TypeNameInt16:
-		builder.LineD("$field.append(struct.unpack_from('<h', buffer, offset)[0])").
+		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<h', buffer, offset)[0]") + ")").
 			WriteLine("offset += 2")
 	case cclValues.TypeNameInt64:
-		builder.LineD("$field.append(struct.unpack_from('<q', buffer, offset)[0])").
+		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<q', buffer, offset)[0]") + ")").
 			WriteLine("offset += 8")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.LineD("$field.append(struct.unpack_from('<I', buffer, offset)[0])").
+		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<I', buffer, offset)[0]") + ")").
 			WriteLine("offset += 4")
 	case cclValues.TypeNameUint8:
-		builder.LineD("$field.append(struct.unpack_from('<B', buffer, offset)[0])").
+		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<B', buffer, offset)[0]") + ")").
 			WriteLine("offset += 1")
 	case cclValues.TypeNameUint16:
-		builder.LineD("$field.append(struct.unpack_from('<H', buffer, offset)[0])").
+		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<H', buffer, offset)[0]") + ")").
 			WriteLine("offset += 2")
 	case cclValues.TypeNameUint64:
-		builder.LineD("$field.append(struct.unpack_from('<Q', buffer, offset)[0])").
+		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<Q', buffer, offset)[0]") + ")").
 			WriteLine("offset += 8")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
 		builder.LineD("$field.append(struct.unpack_from('<f', buffer, offset)[0])").

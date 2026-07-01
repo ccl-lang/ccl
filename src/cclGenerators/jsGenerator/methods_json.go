@@ -401,7 +401,7 @@ func (c *JavaScriptGenerationContext) isJavaScriptJsonPrimitive(targetType *cclV
 }
 
 func (c *JavaScriptGenerationContext) isJavaScriptJsonNumber(targetType *cclValues.CCLTypeUsage) bool {
-	switch targetType.GetName() {
+	switch javaScriptJsonStorageTypeName(targetType) {
 	case cclValues.TypeNameInt, cclValues.TypeNameInt8, cclValues.TypeNameInt16,
 		cclValues.TypeNameInt32, cclValues.TypeNameInt64,
 		cclValues.TypeNameUint, cclValues.TypeNameUint8, cclValues.TypeNameUint16,

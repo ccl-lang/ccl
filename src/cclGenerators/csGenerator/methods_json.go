@@ -177,6 +177,9 @@ func (c *CSharpGenerationContext) generateFieldSerializeJson(
 	default:
 		if field.IsCustomTypeModel() {
 			builder.LineD(`data["$jsonName"] = $field != null ? $field.SerializeJsonObject() : null;`)
+		} else if field.Type.IsCustomTypeEnum() {
+			builder.LineD(`data["$jsonName"] = ` +
+				c.csharpBinaryWriteExpression(field.Type, "$field") + `;`)
 		} else if c.isCSharpJsonPrimitive(field.Type) {
 			builder.LineD(`data["$jsonName"] = $field;`)
 		} else {
@@ -222,6 +225,9 @@ func (c *CSharpGenerationContext) generateArraySerializeJson(
 	default:
 		if targetType.IsCustomTypeModel() {
 			builder.LineD("$array.Add(item != null ? item.SerializeJsonObject() : null);")
+		} else if targetType.IsCustomTypeEnum() {
+			builder.LineD("$array.Add(" +
+				c.csharpBinaryWriteExpression(targetType, "item") + ");")
 		} else if c.isCSharpJsonPrimitive(targetType) {
 			builder.LineD("$array.Add(item);")
 		} else {
@@ -274,7 +280,11 @@ func (c *CSharpGenerationContext) generateFieldDeserializeJson(
 	case cclValues.TypeNameBytes:
 		builder.LineD("$field = Convert.FromBase64String($node.GetValue<string>());")
 	default:
-		if c.isCSharpJsonNumber(field.Type) {
+		if field.Type.IsCustomTypeEnum() {
+			baseType := c.getCSharpEnumBaseType(field.Type.GetDefinition().GetEnumDefinition())
+			enumType := c.getCSharpEnumTypeName(field.Type.GetDefinition().GetEnumDefinition())
+			builder.LineD("$field = (" + enumType + ")$node.GetValue<" + baseType + ">();")
+		} else if c.isCSharpJsonNumber(field.Type) {
 			builder.LineD("$field = $node.GetValue<$fieldType>();")
 		} else if field.IsCustomTypeModel() {
 			builder.LineD("$field = $type.DeserializeJsonObject($node);").
@@ -338,7 +348,11 @@ func (c *CSharpGenerationContext) generateArrayDeserializeJson(
 	case cclValues.TypeNameBytes:
 		builder.LineD("$field.Add(Convert.FromBase64String(item.GetValue<string>()));")
 	default:
-		if c.isCSharpJsonNumber(targetType) {
+		if targetType.IsCustomTypeEnum() {
+			baseType := c.getCSharpEnumBaseType(targetType.GetDefinition().GetEnumDefinition())
+			enumType := c.getCSharpEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			builder.LineD("$field.Add((" + enumType + ")item.GetValue<" + baseType + ">());")
+		} else if c.isCSharpJsonNumber(targetType) {
 			builder.LineD("$field.Add(item.GetValue<$itemType>());")
 		} else if targetType.IsCustomTypeModel() {
 			builder.LineD("var itemValue = $type.DeserializeJsonObject(item);").

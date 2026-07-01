@@ -53,7 +53,7 @@ func (c *GDScriptGenerationContext) generateFieldSerializeBinary(
 	fieldRawName := caseUtils.ToSnakeCase(field.GetName())
 	resultField := "self." + fieldRawName
 	modelName := field.OwnedBy.GetName()
-	targetFieldTypeName := field.Type.GetName()
+	targetFieldTypeName := gdStorageTypeName(field.Type)
 
 	builder.ExpectMappedVars(
 		"model",
@@ -202,7 +202,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
 ) error {
 	fieldRawName := caseUtils.ToSnakeCase(field.GetName())
 	resultField := modelResultName + "." + fieldRawName
-	targetFieldTypeName := field.Type.GetName()
+	targetFieldTypeName := gdStorageTypeName(field.Type)
 	fieldLenName := fieldRawName + "_len"
 	getDataCall := ""
 	if useWGodot {

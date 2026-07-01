@@ -12,6 +12,9 @@ type CCLModel = cclValues.ModelDefinition
 // CCLField is a type alias for the field definition type from the CCL library.
 type CCLField = cclValues.ModelFieldDefinition
 
+// CCLEnum is a type alias for the enum definition type from the CCL library.
+type CCLEnum = cclValues.EnumDefinition
+
 type GoGenerationContext struct {
 	*gen.CodeGenerationBase
 

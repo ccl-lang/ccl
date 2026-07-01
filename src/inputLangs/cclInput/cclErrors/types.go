@@ -73,6 +73,8 @@ type UnsupportedFileNamingStyleError struct {
 	// TargetLanguage is the target language in which we where trying to generate
 	// code.
 	TargetLanguage string
+
+	SourcePosition *cclUtils.SourceCodePosition
 }
 
 // FieldNameConflictError is an error that is returned when a field name

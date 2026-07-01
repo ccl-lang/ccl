@@ -97,6 +97,42 @@ func (c *CodeGenerationBase) GetEnumDefaultReference(
 	return ref
 }
 
+// GetEnumOutputFileGroup returns the generated output file group for an enum.
+func (c *CodeGenerationBase) GetEnumOutputFileGroup(
+	targetLang gValues.LanguageType,
+	currentEnum *cclValues.EnumDefinition,
+) (string, error) {
+	attr := c.GetGlobalOrEnumAttributes(
+		targetLang,
+		cclAttr.AttrOutputFileGroup,
+		currentEnum,
+	).GetLast()
+	if attr == nil {
+		return "", nil
+	}
+
+	param := attr.GetParamAt(0)
+	if param == nil || param.GetAsString() == "" {
+		return "", &cclErrors.InvalidAttributeUsageError{
+			AttrName:       attr.Name,
+			Message:        "requires a non-empty string first-parameter",
+			SourcePosition: attr.SourcePosition,
+		}
+	}
+
+	group := param.GetAsString()
+	if !isValidOutputFileGroup(group) {
+		return "", &cclErrors.InvalidAttributeUsageError{
+			AttrName: attr.Name,
+			Message: " value '" + group +
+				"' is not valid; only letters, digits, and underscores are allowed",
+			SourcePosition: attr.SourcePosition,
+		}
+	}
+
+	return group, nil
+}
+
 // FormatPrimitiveDefault formats primitive default values in a C-like syntax.
 func (c *CodeGenerationBase) FormatPrimitiveDefault(value any) string {
 	switch typedValue := value.(type) {

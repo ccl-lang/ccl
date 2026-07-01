@@ -17,6 +17,13 @@ func (u *CCLTypeUsage) GetDefinition() *CCLTypeDefinition {
 	return u.definition
 }
 
+// GetEnumBaseTypeName returns the native enum type name that this type usage
+// belongs to. Make sure the type usage is actually an enum before calling
+// this method.
+func (u *CCLTypeUsage) GetEnumBaseTypeName() string {
+	return u.GetDefinition().GetEnumDefinition().BaseType.GetName()
+}
+
 // IsCustomTypeModel returns true if the type usage is of a custom model type.
 func (u *CCLTypeUsage) IsCustomTypeModel() bool {
 	return u != nil && u.definition != nil && u.definition.IsCustomModel()

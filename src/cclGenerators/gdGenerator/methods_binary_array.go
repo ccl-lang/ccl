@@ -12,7 +12,7 @@ func (c *GDScriptGenerationContext) generateArraySerializeBinary(
 	builder *codeBuilder.CodeBuilder,
 ) error {
 	targetFieldType := field.Type.GetUnderlyingType()
-	targetFieldTypeName := targetFieldType.GetName()
+	targetFieldTypeName := gdStorageTypeName(targetFieldType)
 	modelName := field.OwnedBy.GetName()
 	fieldRawName := caseUtils.ToSnakeCase(field.GetName())
 	resultField := "self." + fieldRawName
@@ -89,7 +89,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	targetFieldType := field.Type.GetUnderlyingType()
 	fieldRawName := caseUtils.ToSnakeCase(field.GetName())
 	resultField := modelResultName + "." + fieldRawName
-	targetFieldTypeName := targetFieldType.GetName()
+	targetFieldTypeName := gdStorageTypeName(targetFieldType)
 	fieldTargetLangType := c.getGDScriptType(field)
 	getDataCall := ""
 	if useWGodot {

@@ -402,7 +402,12 @@ func (c *TypeScriptGenerationContext) isTypeScriptJsonPrimitive(targetType *cclV
 }
 
 func (c *TypeScriptGenerationContext) isTypeScriptJsonNumber(targetType *cclValues.CCLTypeUsage) bool {
-	switch targetType.GetName() {
+	typeName := targetType.GetName()
+	if targetType.IsCustomTypeEnum() {
+		typeName = targetType.GetEnumBaseTypeName()
+	}
+
+	switch typeName {
 	case cclValues.TypeNameInt, cclValues.TypeNameInt8, cclValues.TypeNameInt16,
 		cclValues.TypeNameInt32, cclValues.TypeNameInt64,
 		cclValues.TypeNameUint, cclValues.TypeNameUint8, cclValues.TypeNameUint16,

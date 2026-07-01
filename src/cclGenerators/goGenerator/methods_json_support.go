@@ -7,7 +7,12 @@ import (
 )
 
 func (c *GoGenerationContext) isGoJsonSignedInteger(targetType *cclValues.CCLTypeUsage) bool {
-	switch targetType.GetName() {
+	typeName := targetType.GetName()
+	if targetType.IsCustomTypeEnum() {
+		typeName = targetType.GetEnumBaseTypeName()
+	}
+
+	switch typeName {
 	case cclValues.TypeNameInt, cclValues.TypeNameInt8, cclValues.TypeNameInt16,
 		cclValues.TypeNameInt32, cclValues.TypeNameInt64, cclValues.TypeNameDateTime:
 		return true
@@ -17,7 +22,12 @@ func (c *GoGenerationContext) isGoJsonSignedInteger(targetType *cclValues.CCLTyp
 }
 
 func (c *GoGenerationContext) isGoJsonUnsignedInteger(targetType *cclValues.CCLTypeUsage) bool {
-	switch targetType.GetName() {
+	typeName := targetType.GetName()
+	if targetType.IsCustomTypeEnum() {
+		typeName = targetType.GetEnumBaseTypeName()
+	}
+
+	switch typeName {
 	case cclValues.TypeNameUint, cclValues.TypeNameUint8, cclValues.TypeNameUint16,
 		cclValues.TypeNameUint32, cclValues.TypeNameUint64:
 		return true
@@ -237,6 +247,10 @@ func (c *GoGenerationContext) writeGoJsonQuotedValueUnwrap(
 }
 
 func (c *GoGenerationContext) goJsonIntegerCast(targetType *cclValues.CCLTypeUsage) string {
+	if targetType.IsCustomTypeEnum() {
+		return c.getGoEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+	}
+
 	if mappedType, ok := CCLTypesToGoTypes[targetType.GetName()]; ok {
 		return mappedType
 	}
@@ -253,6 +267,9 @@ func (c *GoGenerationContext) goJsonFloatCast(targetType *cclValues.CCLTypeUsage
 func (c *GoGenerationContext) getGoJsonArrayItemType(targetType *cclValues.CCLTypeUsage) string {
 	if targetType.IsCustomTypeModel() {
 		return "*" + targetType.GetName()
+	}
+	if targetType.IsCustomTypeEnum() {
+		return c.getGoEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
 	}
 	if mappedType, ok := CCLTypesToGoTypes[targetType.GetName()]; ok {
 		return mappedType

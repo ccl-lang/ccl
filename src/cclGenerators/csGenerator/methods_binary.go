@@ -40,14 +40,17 @@ func (c *CSharpGenerationContext) generateSerializeBinaryMethod(model *CCLModel,
 
 func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
 	fieldName := "this." + caseUtils.ToPascalCase(field.Name)
+	fieldWrite := c.csharpBinaryWriteExpression(field.Type, fieldName)
 	builder.MapVarPairs(
 		"field", fieldName,
+		"fieldWrite", fieldWrite,
 	)
 	defer builder.UnmapVar(
 		"field",
+		"fieldWrite",
 	)
 
-	switch field.Type.GetName() {
+	switch csharpStorageTypeName(field.Type) {
 	case cclValues.TypeNameString:
 		builder.WriteLine("{").
 			Indent().
@@ -57,21 +60,21 @@ func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 			Unindent().
 			WriteLine("}")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.LineD("writer.Write($field);")
+		builder.LineD("writer.Write($fieldWrite);")
 	case cclValues.TypeNameInt8:
-		builder.LineD("writer.Write((sbyte)$field);")
+		builder.LineD("writer.Write((sbyte)$fieldWrite);")
 	case cclValues.TypeNameInt16:
-		builder.LineD("writer.Write($field);")
+		builder.LineD("writer.Write($fieldWrite);")
 	case cclValues.TypeNameInt64:
-		builder.LineD("writer.Write($field);")
+		builder.LineD("writer.Write($fieldWrite);")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.LineD("writer.Write($field);")
+		builder.LineD("writer.Write($fieldWrite);")
 	case cclValues.TypeNameUint8:
-		builder.LineD("writer.Write($field);")
+		builder.LineD("writer.Write($fieldWrite);")
 	case cclValues.TypeNameUint16:
-		builder.LineD("writer.Write($field);")
+		builder.LineD("writer.Write($fieldWrite);")
 	case cclValues.TypeNameUint64:
-		builder.LineD("writer.Write($field);")
+		builder.LineD("writer.Write($fieldWrite);")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
 		builder.LineD("writer.Write($field);")
 	case cclValues.TypeNameFloat64:
@@ -106,11 +109,14 @@ func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
 	fieldName := "this." + caseUtils.ToPascalCase(field.Name)
 	targetFieldType := field.Type.GetUnderlyingType()
+	itemWrite := c.csharpBinaryWriteExpression(targetFieldType, "item")
 	builder.MapVarPairs(
 		"field", fieldName,
+		"itemWrite", itemWrite,
 	)
 	defer builder.UnmapVar(
 		"field",
+		"itemWrite",
 	)
 
 	builder.LineD("writer.Write((uint)($field?.Count ?? 0));").
@@ -121,27 +127,27 @@ func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, 
 		WriteLine("{").
 		Indent()
 
-	switch targetFieldType.GetName() {
+	switch csharpStorageTypeName(targetFieldType) {
 	case cclValues.TypeNameString:
 		builder.WriteLine("var strBytes = Encoding.UTF8.GetBytes(item ?? \"\");")
 		builder.WriteLine("writer.Write((uint)strBytes.Length);")
 		builder.WriteLine("writer.Write(strBytes);")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.WriteLine("writer.Write(item);")
+		builder.LineD("writer.Write($itemWrite);")
 	case cclValues.TypeNameInt8:
-		builder.WriteLine("writer.Write((sbyte)item);")
+		builder.LineD("writer.Write((sbyte)$itemWrite);")
 	case cclValues.TypeNameInt16:
-		builder.WriteLine("writer.Write(item);")
+		builder.LineD("writer.Write($itemWrite);")
 	case cclValues.TypeNameInt64:
-		builder.WriteLine("writer.Write(item);")
+		builder.LineD("writer.Write($itemWrite);")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.WriteLine("writer.Write(item);")
+		builder.LineD("writer.Write($itemWrite);")
 	case cclValues.TypeNameUint8:
-		builder.WriteLine("writer.Write(item);")
+		builder.LineD("writer.Write($itemWrite);")
 	case cclValues.TypeNameUint16:
-		builder.WriteLine("writer.Write(item);")
+		builder.LineD("writer.Write($itemWrite);")
 	case cclValues.TypeNameUint64:
-		builder.WriteLine("writer.Write(item);")
+		builder.LineD("writer.Write($itemWrite);")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
 		builder.WriteLine("writer.Write(item);")
 	case cclValues.TypeNameFloat64:
@@ -253,6 +259,16 @@ func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField
 		"type",
 	)
 
+	if field.Type.IsCustomTypeEnum() {
+		baseType := csharpStorageTypeName(field.Type)
+		readerMethod := c.csharpReaderMethod(baseType)
+		enumName := c.getCSharpEnumTypeName(field.Type.GetDefinition().GetEnumDefinition())
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, enumBinarySize(baseType))
+		builder.LineD("$field = (" + enumName + ")reader." + readerMethod + "();")
+		builder.NewLine()
+		return
+	}
+
 	switch field.Type.GetName() {
 	case cclValues.TypeNameString:
 		builder.WriteLine("{").
@@ -352,6 +368,19 @@ func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField
 		WriteLine("for (var i = 0; i < len; i++)").
 		WriteLine("{").
 		Indent()
+
+	if targetFieldType.IsCustomTypeEnum() {
+		baseType := csharpStorageTypeName(targetFieldType)
+		readerMethod := c.csharpReaderMethod(baseType)
+		enumName := c.getCSharpEnumTypeName(targetFieldType.GetDefinition().GetEnumDefinition())
+		c.generateCSharpBinaryDeserializeBoundsCheck(builder, enumBinarySize(baseType))
+		builder.LineD("$field.Add((" + enumName + ")reader." + readerMethod + "());")
+		builder.Unindent().
+			WriteLine("}").
+			Unindent().
+			WriteLine("}")
+		return
+	}
 
 	switch targetFieldType.GetName() {
 	case cclValues.TypeNameString:

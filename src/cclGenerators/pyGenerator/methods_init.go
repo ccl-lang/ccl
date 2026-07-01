@@ -21,17 +21,31 @@ func (c *PythonGenerationContext) generateInitFile() error {
 
 	// Import all classes
 	for _, typeDef := range c.GetGenerationTypeDefinitions() {
-		if !typeDef.IsCustomModel() {
+		if typeDef.IsCustomModel() {
+			importLine, err := c.getImportLineForType(typeDef)
+			if err != nil {
+				return err
+			}
+			builder.DoImport(typeDef.GetFullName(), importLine)
+
+			builder.WriteLine("\"" + typeDef.GetName() + "\",")
 			continue
 		}
 
-		importLine, err := c.getImportLineForType(typeDef)
-		if err != nil {
-			return err
-		}
-		builder.DoImport(typeDef.GetFullName(), importLine)
+		if typeDef.IsCustomEnum() {
+			enumDef := typeDef.GetEnumDefinition()
+			if enumDef.IsNested() {
+				continue
+			}
 
-		builder.WriteLine("\"" + typeDef.GetName() + "\",")
+			importLine, err := c.getImportLineForEnum(enumDef)
+			if err != nil {
+				return err
+			}
+			builder.DoImport(enumDef.GetFullName(), importLine)
+
+			builder.WriteLine("\"" + typeDef.GetName() + "\",")
+		}
 	}
 
 	builder.Unindent()

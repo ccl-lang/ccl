@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
@@ -210,18 +209,29 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(
 				"fieldType",
 			)
 		} else {
-			if fieldTypeName == cclValues.TypeNameInt {
-				// binary.Read does not support int type directly, so we need to read it into an int32 first
+			if fieldTypeName == cclValues.TypeNameInt || field.Type.IsCustomTypeEnum() {
 				toReadName := "tmp" + fieldName
-				builder.MapVarPairs("toRead", toReadName)
-				builder.LineD("var $toRead int32").
+				readType := goBaseIntegerTypeForRead(field.Type)
+				assignExpr := readType + "(" + toReadName + ")"
+				if field.Type.IsCustomTypeEnum() {
+					assignExpr = c.getGoEnumTypeName(field.Type.GetDefinition().GetEnumDefinition()) +
+						"(" + toReadName + ")"
+				} else {
+					assignExpr = "int(" + toReadName + ")"
+				}
+				builder.MapVarPairs(
+					"toRead", toReadName,
+					"readType", readType,
+					"assignExpr", assignExpr,
+				)
+				builder.LineD("var $toRead $readType").
 					LineD("if err := binary.Read(buf, binaryEndian, &$toRead); err != nil {").
 					Indent().
 					LineD("return $binaryParseErrorReturn").
 					Unindent().
 					WriteLine("}").
-					LineD("$field = int($toRead)")
-				builder.UnmapVar("toRead")
+					LineD("$field = $assignExpr")
+				builder.UnmapVar("toRead", "readType", "assignExpr")
 				return nil
 			}
 
@@ -252,16 +262,11 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(
 	if isCustomType {
 		fieldRealType = "*" + targetFieldTypeName
 	} else {
-		mappedType, ok := CCLTypesToGoTypes[targetFieldTypeName]
-		if !ok {
-			return &cclErrors.UnsupportedFieldTypeError{
-				TypeName:       targetFieldTypeName,
-				FieldName:      fieldName,
-				ModelName:      field.GetModelFullName(),
-				TargetLanguage: CurrentLanguage.String(),
-			}
+		resolvedType, err := c.getGoTypeForUsage(targetFieldType, field)
+		if err != nil {
+			return err
 		}
-		fieldRealType = mappedType
+		fieldRealType = resolvedType
 	}
 
 	builder.MapVarPairs(
@@ -363,15 +368,25 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(
 				LineD("$field[i] = elem")
 			builder.UnmapVar("fieldType")
 		} else {
-			if targetFieldTypeName == cclValues.TypeNameInt {
-				// binary.Read does not support int type directly, so we need to read it into an int32 first
-				builder.WriteLine("var elem int32").
+			if targetFieldTypeName == cclValues.TypeNameInt || targetFieldType.IsCustomTypeEnum() {
+				readType := goBaseIntegerTypeForRead(targetFieldType)
+				assignExpr := "int(elem)"
+				if targetFieldType.IsCustomTypeEnum() {
+					assignExpr = c.getGoEnumTypeName(targetFieldType.GetDefinition().GetEnumDefinition()) +
+						"(elem)"
+				}
+				builder.MapVarPairs(
+					"readType", readType,
+					"assignExpr", assignExpr,
+				)
+				builder.LineD("var elem $readType").
 					WriteLine("if err := binary.Read(buf, binaryEndian, &elem); err != nil {").
 					Indent().
 					LineD("return $binaryParseErrorReturn").
 					Unindent().
 					WriteLine("}").
-					LineD("$field[i] = int(elem)")
+					LineD("$field[i] = $assignExpr")
+				builder.UnmapVar("readType", "assignExpr")
 				break
 			}
 

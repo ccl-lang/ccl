@@ -39,10 +39,12 @@ func (u *UnsupportedTypeDefinitionError) Error() string {
 //---------------------------------------------------------
 
 func (u *UnsupportedFileNamingStyleError) Error() string {
-	return "Unsupported file naming style: " + u.StyleName +
+	message := "Unsupported file naming style: " + u.StyleName +
 		" for model " + u.ModelName +
 		". Supported styles are: [" + u.SupportedStyles + "]" +
 		" when compiling to " + u.TargetLanguage
+
+	return u.SourcePosition.FormatError(message)
 }
 
 //---------------------------------------------------------
