@@ -126,7 +126,12 @@ func (c *GoGenerationContext) generateTypesForEnum(
 	builder *codeBuilder.CodeBuilder,
 	enumDef *CCLEnum,
 ) error {
-	builder.WriteLine("type " + c.getGoEnumTypeName(enumDef) + " " +
+	enumTypeName, err := c.getGoEnumTypeName(enumDef)
+	if err != nil {
+		return err
+	}
+
+	builder.WriteLine("type " + enumTypeName + " " +
 		c.getGoEnumBaseType(enumDef)).
 		NewLine()
 	return nil

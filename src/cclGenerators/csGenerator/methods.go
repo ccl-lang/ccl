@@ -205,7 +205,10 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 
 	// Fields
 	for _, field := range model.Fields {
-		csType := c.getCSharpType(field)
+		csType, err := c.getCSharpType(field)
+		if err != nil {
+			return err
+		}
 		fieldName := caseUtils.ToPascalCase(field.Name)
 		builder.MapVarPairs(
 			"field", fieldName,
@@ -230,7 +233,10 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 			"field", fieldName,
 		)
 		if field.IsArray() {
-			csType := c.getCSharpType(field)
+			csType, err := c.getCSharpType(field)
+			if err != nil {
+				return err
+			}
 			builder.MapVarPairs(
 				"type", csType,
 			)
@@ -305,7 +311,12 @@ func (c *CSharpGenerationContext) generateEnumDeclaration(
 	builder *codeBuilder.CodeBuilder,
 	enumDef *CCLEnum,
 ) error {
-	builder.WriteLine("public enum " + c.getCSharpEnumTypeName(enumDef) +
+	enumTypeName, err := c.getCSharpEnumTypeName(enumDef)
+	if err != nil {
+		return err
+	}
+
+	builder.WriteLine("public enum " + enumTypeName +
 		" : " + c.getCSharpEnumBaseType(enumDef)).
 		WriteLine("{").
 		Indent()
@@ -376,7 +387,7 @@ func (c *CSharpGenerationContext) getNamespace() string {
 	return DefaultNamespace
 }
 
-func (c *CSharpGenerationContext) getCSharpType(field *CCLField) string {
+func (c *CSharpGenerationContext) getCSharpType(field *CCLField) (string, error) {
 	targetType := field.Type
 	if targetType.IsArray() {
 		targetType = targetType.GetUnderlyingType()
@@ -385,7 +396,11 @@ func (c *CSharpGenerationContext) getCSharpType(field *CCLField) string {
 	csType := c.getCSharpBuiltinTypeName(targetType.GetName())
 	if csType == "" {
 		if targetType.IsCustomTypeEnum() {
-			csType = c.getCSharpEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			enumTypeName, err := c.getCSharpEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			if err != nil {
+				return "", err
+			}
+			csType = enumTypeName
 		} else if targetType.IsCustomTypeModel() {
 			csType = targetType.GetName()
 		} else {
@@ -401,5 +416,5 @@ func (c *CSharpGenerationContext) getCSharpType(field *CCLField) string {
 		}
 	}
 
-	return csType
+	return csType, nil
 }

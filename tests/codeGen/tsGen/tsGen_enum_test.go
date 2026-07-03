@@ -144,3 +144,66 @@ model ApiRequestEnvelop {
 		}
 	}
 }
+
+func TestTSGeneratorEnumTypeNamePrefix(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	parsedDefinitions, parseErr := cclParser.ParseCCLSourceContent(&cclParser.CCLParseOptions{
+		SourceContent: `
+[EnumTypeNamePrefix("Api")]
+enum TopType {
+	Hello,
+}
+
+model ApiRequestEnvelop {
+	[EnumTypeNamePrefix("Api")]
+	enum RequestType {
+		Login,
+	}
+
+	OtherField: RequestType = RequestType.Login;
+	TopField: TopType = TopType.Hello;
+}
+`,
+	})
+	if parseErr != nil {
+		t.Fatalf("Failed to parse enum type prefix source: %v", parseErr)
+	}
+
+	cclLoader.LoadGenerators()
+	result, err := cclGenerators.DoGenerateCode(&cclGenerators.CodeGenerationOptions{
+		CodeContext:    parsedDefinitions.CodeContext,
+		OutputPath:     filepath.Join(tmpDir, "models"),
+		TargetLanguage: "ts",
+	})
+	if err != nil {
+		t.Fatalf("Failed to generate TypeScript enum type prefix code: %v", err)
+	}
+	if result == nil {
+		t.Fatalf("Expected generation result")
+	}
+
+	topEnumContent := readGeneratedTSFile(t, filepath.Join(tmpDir, "models", "TopType.ts"))
+	for _, snippet := range []string{
+		"export enum ApiTopType {",
+		"Hello = 0,",
+	} {
+		if !strings.Contains(topEnumContent, snippet) {
+			t.Fatalf("Generated top-level enum type prefix is missing %q.\nGenerated:\n%s", snippet, topEnumContent)
+		}
+	}
+
+	modelContent := readGeneratedTSFile(t, filepath.Join(tmpDir, "models", "ApiRequestEnvelop.ts"))
+	for _, snippet := range []string{
+		"import { ApiTopType } from './TopType';",
+		"public otherField: ApiRequestEnvelop.ApiRequestType;",
+		"public topField: ApiTopType;",
+		"this.otherField = ApiRequestEnvelop.ApiRequestType.Login;",
+		"this.topField = ApiTopType.Hello;",
+		"export enum ApiRequestType {",
+	} {
+		if !strings.Contains(modelContent, snippet) {
+			t.Fatalf("Generated enum type prefix model is missing %q.\nGenerated:\n%s", snippet, modelContent)
+		}
+	}
+}

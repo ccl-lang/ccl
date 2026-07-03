@@ -44,7 +44,11 @@ func (c *PythonGenerationContext) generateInitFile() error {
 			}
 			builder.DoImport(enumDef.GetFullName(), importLine)
 
-			builder.WriteLine("\"" + typeDef.GetName() + "\",")
+			enumTypeName, err := c.getPythonEnumLocalTypeName(enumDef)
+			if err != nil {
+				return err
+			}
+			builder.WriteLine("\"" + enumTypeName + "\",")
 		}
 	}
 

@@ -246,15 +246,15 @@ func (c *GoGenerationContext) writeGoJsonQuotedValueUnwrap(
 		WriteLine("}")
 }
 
-func (c *GoGenerationContext) goJsonIntegerCast(targetType *cclValues.CCLTypeUsage) string {
+func (c *GoGenerationContext) goJsonIntegerCast(targetType *cclValues.CCLTypeUsage) (string, error) {
 	if targetType.IsCustomTypeEnum() {
 		return c.getGoEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
 	}
 
 	if mappedType, ok := CCLTypesToGoTypes[targetType.GetName()]; ok {
-		return mappedType
+		return mappedType, nil
 	}
-	return "int64"
+	return "int64", nil
 }
 
 func (c *GoGenerationContext) goJsonFloatCast(targetType *cclValues.CCLTypeUsage) string {
@@ -264,17 +264,17 @@ func (c *GoGenerationContext) goJsonFloatCast(targetType *cclValues.CCLTypeUsage
 	return "float64"
 }
 
-func (c *GoGenerationContext) getGoJsonArrayItemType(targetType *cclValues.CCLTypeUsage) string {
+func (c *GoGenerationContext) getGoJsonArrayItemType(targetType *cclValues.CCLTypeUsage) (string, error) {
 	if targetType.IsCustomTypeModel() {
-		return "*" + targetType.GetName()
+		return "*" + targetType.GetName(), nil
 	}
 	if targetType.IsCustomTypeEnum() {
 		return c.getGoEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
 	}
 	if mappedType, ok := CCLTypesToGoTypes[targetType.GetName()]; ok {
-		return mappedType
+		return mappedType, nil
 	}
-	return ""
+	return "", nil
 }
 
 func (c *GoGenerationContext) unsupportedGoJsonField(field *CCLField) error {

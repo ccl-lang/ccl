@@ -5,12 +5,22 @@ import (
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
-func (c *GoGenerationContext) getGoEnumTypeName(enumDef *CCLEnum) string {
+func (c *GoGenerationContext) getGoEnumTypeName(enumDef *CCLEnum) (string, error) {
+	defaultPrefix := ""
 	if enumDef.IsNested() && enumDef.OwnedBy != nil {
-		return enumDef.OwnedBy.Name + enumDef.Name
+		defaultPrefix = enumDef.OwnedBy.Name
 	}
 
-	return enumDef.Name
+	prefix, err := c.GetEnumTypeNamePrefix(
+		CurrentLanguage,
+		enumDef,
+		defaultPrefix,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return prefix + enumDef.Name, nil
 }
 
 func (c *GoGenerationContext) getGoEnumMemberName(
@@ -86,7 +96,7 @@ func (c *GoGenerationContext) getGoTypeForUsage(
 	}
 
 	if targetType.IsCustomTypeEnum() {
-		return c.getGoEnumTypeName(targetType.GetDefinition().GetEnumDefinition()), nil
+		return c.getGoEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
 	}
 
 	if targetType.IsCustomTypeModel() {

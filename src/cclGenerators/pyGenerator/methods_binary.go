@@ -192,11 +192,15 @@ func (c *PythonGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 
 	for _, field := range model.Fields {
 		if field.IsArray() {
-			c.generateArrayDeserializeBinary(resultName, field, builder)
+			if err = c.generateArrayDeserializeBinary(resultName, field, builder); err != nil {
+				return err
+			}
 			continue
 		}
 
-		c.generateFieldDeserializeBinary(resultName, field, builder)
+		if err = c.generateFieldDeserializeBinary(resultName, field, builder); err != nil {
+			return err
+		}
 	}
 
 	builder.Unindent().
@@ -214,7 +218,7 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 	resultName string,
 	field *CCLField,
 	builder *codeBuilder.CodeBuilder,
-) {
+) error {
 	fieldName := caseUtils.ToSnakeCase(field.Name)
 	resultField := resultName + "." + fieldName
 	builder.MapVarPairs(
@@ -243,28 +247,60 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 			LineD(`$field = bytes(buffer[offset:offset+$len]).decode("utf-8")`).
 			LineD("offset += $len")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<i', buffer, offset)[0]")).
+		castExpression, err := c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<i', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field = " + castExpression).
 			WriteLine("offset += 4")
 	case cclValues.TypeNameInt8:
-		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<b', buffer, offset)[0]")).
+		castExpression, err := c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<b', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field = " + castExpression).
 			WriteLine("offset += 1")
 	case cclValues.TypeNameInt16:
-		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<h', buffer, offset)[0]")).
+		castExpression, err := c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<h', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field = " + castExpression).
 			WriteLine("offset += 2")
 	case cclValues.TypeNameInt64:
-		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<q', buffer, offset)[0]")).
+		castExpression, err := c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<q', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field = " + castExpression).
 			WriteLine("offset += 8")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<I', buffer, offset)[0]")).
+		castExpression, err := c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<I', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field = " + castExpression).
 			WriteLine("offset += 4")
 	case cclValues.TypeNameUint8:
-		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<B', buffer, offset)[0]")).
+		castExpression, err := c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<B', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field = " + castExpression).
 			WriteLine("offset += 1")
 	case cclValues.TypeNameUint16:
-		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<H', buffer, offset)[0]")).
+		castExpression, err := c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<H', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field = " + castExpression).
 			WriteLine("offset += 2")
 	case cclValues.TypeNameUint64:
-		builder.LineD("$field = " + c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<Q', buffer, offset)[0]")).
+		castExpression, err := c.pythonEnumCastExpression(field.Type, "struct.unpack_from('<Q', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field = " + castExpression).
 			WriteLine("offset += 8")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
 		builder.LineD("$field = struct.unpack_from('<f', buffer, offset)[0]").
@@ -302,13 +338,14 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 		}
 	}
 	builder.NewLine()
+	return nil
 }
 
 func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 	resultName string,
 	field *CCLField,
 	builder *codeBuilder.CodeBuilder,
-) {
+) error {
 	targetFieldType := field.Type.GetUnderlyingType()
 	fieldName := caseUtils.ToSnakeCase(field.Name)
 	resultField := resultName + "." + fieldName
@@ -341,28 +378,60 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 			WriteLine("offset += item_len").
 			LineD("$field.append(item)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
-		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<i', buffer, offset)[0]") + ")").
+		castExpression, err := c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<i', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field.append(" + castExpression + ")").
 			WriteLine("offset += 4")
 	case cclValues.TypeNameInt8:
-		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<b', buffer, offset)[0]") + ")").
+		castExpression, err := c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<b', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field.append(" + castExpression + ")").
 			WriteLine("offset += 1")
 	case cclValues.TypeNameInt16:
-		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<h', buffer, offset)[0]") + ")").
+		castExpression, err := c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<h', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field.append(" + castExpression + ")").
 			WriteLine("offset += 2")
 	case cclValues.TypeNameInt64:
-		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<q', buffer, offset)[0]") + ")").
+		castExpression, err := c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<q', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field.append(" + castExpression + ")").
 			WriteLine("offset += 8")
 	case cclValues.TypeNameUint, cclValues.TypeNameUint32:
-		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<I', buffer, offset)[0]") + ")").
+		castExpression, err := c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<I', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field.append(" + castExpression + ")").
 			WriteLine("offset += 4")
 	case cclValues.TypeNameUint8:
-		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<B', buffer, offset)[0]") + ")").
+		castExpression, err := c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<B', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field.append(" + castExpression + ")").
 			WriteLine("offset += 1")
 	case cclValues.TypeNameUint16:
-		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<H', buffer, offset)[0]") + ")").
+		castExpression, err := c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<H', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field.append(" + castExpression + ")").
 			WriteLine("offset += 2")
 	case cclValues.TypeNameUint64:
-		builder.LineD("$field.append(" + c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<Q', buffer, offset)[0]") + ")").
+		castExpression, err := c.pythonEnumCastExpression(targetFieldType, "struct.unpack_from('<Q', buffer, offset)[0]")
+		if err != nil {
+			return err
+		}
+		builder.LineD("$field.append(" + castExpression + ")").
 			WriteLine("offset += 8")
 	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32:
 		builder.LineD("$field.append(struct.unpack_from('<f', buffer, offset)[0])").
@@ -396,4 +465,5 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 		}
 	}
 	builder.UnindentLine()
+	return nil
 }

@@ -5,8 +5,17 @@ import (
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
-func (c *CSharpGenerationContext) getCSharpEnumTypeName(enumDef *CCLEnum) string {
-	return enumDef.Name
+func (c *CSharpGenerationContext) getCSharpEnumTypeName(enumDef *CCLEnum) (string, error) {
+	prefix, err := c.GetEnumTypeNamePrefix(
+		CurrentLanguage,
+		enumDef,
+		"",
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return prefix + enumDef.Name, nil
 }
 
 func (c *CSharpGenerationContext) getCSharpEnumMemberName(
@@ -43,7 +52,12 @@ func (c *CSharpGenerationContext) getCSharpEnumReference(
 		return "", err
 	}
 
-	return c.getCSharpEnumTypeName(enumDef) + "." + memberName, nil
+	enumTypeName, err := c.getCSharpEnumTypeName(enumDef)
+	if err != nil {
+		return "", err
+	}
+
+	return enumTypeName + "." + memberName, nil
 }
 
 func (c *CSharpGenerationContext) getCSharpEnumBaseType(enumDef *CCLEnum) string {
@@ -88,13 +102,13 @@ func (c *CSharpGenerationContext) getCSharpBuiltinTypeName(typeName string) stri
 func (c *CSharpGenerationContext) csharpBinaryWriteExpression(
 	typeUsage *cclValues.CCLTypeUsage,
 	expression string,
-) string {
+) (string, error) {
 	if typeUsage.IsCustomTypeEnum() {
 		return "(" + c.getCSharpEnumBaseType(typeUsage.GetDefinition().GetEnumDefinition()) +
-			")" + expression
+			")" + expression, nil
 	}
 
-	return expression
+	return expression, nil
 }
 
 func (c *CSharpGenerationContext) csharpReaderMethod(typeName string) string {

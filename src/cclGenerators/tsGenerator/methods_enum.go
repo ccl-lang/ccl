@@ -7,12 +7,30 @@ import (
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
-func (c *TypeScriptGenerationContext) getTypeScriptEnumTypeName(enumDef *CCLEnum) string {
-	if enumDef.IsNested() && enumDef.OwnedBy != nil {
-		return enumDef.OwnedBy.Name + "." + enumDef.Name
+func (c *TypeScriptGenerationContext) getTypeScriptEnumLocalTypeName(enumDef *CCLEnum) (string, error) {
+	prefix, err := c.GetEnumTypeNamePrefix(
+		CurrentLanguage,
+		enumDef,
+		"",
+	)
+	if err != nil {
+		return "", err
 	}
 
-	return enumDef.Name
+	return prefix + enumDef.Name, nil
+}
+
+func (c *TypeScriptGenerationContext) getTypeScriptEnumTypeName(enumDef *CCLEnum) (string, error) {
+	enumTypeName, err := c.getTypeScriptEnumLocalTypeName(enumDef)
+	if err != nil {
+		return "", err
+	}
+
+	if enumDef.IsNested() && enumDef.OwnedBy != nil {
+		return enumDef.OwnedBy.Name + "." + enumTypeName, nil
+	}
+
+	return enumTypeName, nil
 }
 
 func (c *TypeScriptGenerationContext) getTypeScriptEnumMemberName(
@@ -49,14 +67,24 @@ func (c *TypeScriptGenerationContext) getTypeScriptEnumReference(
 		return "", err
 	}
 
-	return c.getTypeScriptEnumTypeName(enumDef) + "." + memberName, nil
+	enumTypeName, err := c.getTypeScriptEnumTypeName(enumDef)
+	if err != nil {
+		return "", err
+	}
+
+	return enumTypeName + "." + memberName, nil
 }
 
 func (c *TypeScriptGenerationContext) generateEnumDeclaration(
 	builder *codeBuilder.CodeBuilder,
 	enumDef *CCLEnum,
 ) error {
-	builder.WriteLine("export enum " + enumDef.Name + " {").
+	enumTypeName, err := c.getTypeScriptEnumLocalTypeName(enumDef)
+	if err != nil {
+		return err
+	}
+
+	builder.WriteLine("export enum " + enumTypeName + " {").
 		Indent()
 	for _, member := range enumDef.Members {
 		memberName, err := c.getTypeScriptEnumMemberName(enumDef, member)

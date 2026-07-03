@@ -7,12 +7,30 @@ import (
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
-func (c *PythonGenerationContext) getPythonEnumTypeName(enumDef *CCLEnum) string {
-	if enumDef.IsNested() && enumDef.OwnedBy != nil {
-		return enumDef.OwnedBy.Name + "." + enumDef.Name
+func (c *PythonGenerationContext) getPythonEnumLocalTypeName(enumDef *CCLEnum) (string, error) {
+	prefix, err := c.GetEnumTypeNamePrefix(
+		CurrentLanguage,
+		enumDef,
+		"",
+	)
+	if err != nil {
+		return "", err
 	}
 
-	return enumDef.Name
+	return prefix + enumDef.Name, nil
+}
+
+func (c *PythonGenerationContext) getPythonEnumTypeName(enumDef *CCLEnum) (string, error) {
+	enumTypeName, err := c.getPythonEnumLocalTypeName(enumDef)
+	if err != nil {
+		return "", err
+	}
+
+	if enumDef.IsNested() && enumDef.OwnedBy != nil {
+		return enumDef.OwnedBy.Name + "." + enumTypeName, nil
+	}
+
+	return enumTypeName, nil
 }
 
 func (c *PythonGenerationContext) getPythonEnumMemberName(
@@ -49,14 +67,24 @@ func (c *PythonGenerationContext) getPythonEnumReference(
 		return "", err
 	}
 
-	return c.getPythonEnumTypeName(enumDef) + "." + memberName, nil
+	enumTypeName, err := c.getPythonEnumTypeName(enumDef)
+	if err != nil {
+		return "", err
+	}
+
+	return enumTypeName + "." + memberName, nil
 }
 
 func (c *PythonGenerationContext) generateEnumClass(
 	builder *codeBuilder.CodeBuilder,
 	enumDef *CCLEnum,
 ) error {
-	builder.WriteLine("class " + enumDef.Name + "(IntEnum):").
+	enumTypeName, err := c.getPythonEnumLocalTypeName(enumDef)
+	if err != nil {
+		return err
+	}
+
+	builder.WriteLine("class " + enumTypeName + "(IntEnum):").
 		Indent()
 	if len(enumDef.Members) == 0 {
 		builder.WriteLine("pass")
@@ -88,17 +116,26 @@ func (c *PythonGenerationContext) getImportLineForEnum(enumDef *CCLEnum) (string
 		return "from ." + fileName + " import " + enumDef.OwnedBy.Name, nil
 	}
 
-	return "from ." + pythonEnumFileName(enumDef) + " import " + enumDef.Name, nil
+	enumTypeName, err := c.getPythonEnumLocalTypeName(enumDef)
+	if err != nil {
+		return "", err
+	}
+
+	return "from ." + pythonEnumFileName(enumDef) + " import " + enumTypeName, nil
 }
 
 func (c *PythonGenerationContext) pythonEnumCastExpression(
 	typeUsage *cclValues.CCLTypeUsage,
 	valueExpression string,
-) string {
+) (string, error) {
 	if !typeUsage.IsCustomTypeEnum() {
-		return valueExpression
+		return valueExpression, nil
 	}
 
-	return c.getPythonEnumTypeName(typeUsage.GetDefinition().GetEnumDefinition()) +
-		"(" + valueExpression + ")"
+	enumTypeName, err := c.getPythonEnumTypeName(typeUsage.GetDefinition().GetEnumDefinition())
+	if err != nil {
+		return "", err
+	}
+
+	return enumTypeName + "(" + valueExpression + ")", nil
 }

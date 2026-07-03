@@ -204,7 +204,10 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
 	resultField := modelResultName + "." + fieldRawName
 	targetFieldTypeName := gdStorageTypeName(field.Type)
 	fieldLenName := fieldRawName + "_len"
-	enumCastSuffix := gdEnumCastSuffix(field.Type)
+	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(field.Type)
+	if err != nil {
+		return err
+	}
 	getDataCall := ""
 	if useWGodot {
 		getDataCall = "get_data_bytes(" + fieldLenName + ")"

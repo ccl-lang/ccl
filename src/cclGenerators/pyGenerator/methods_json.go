@@ -289,9 +289,13 @@ func (c *PythonGenerationContext) generateFieldDeserializeJson(
 			Unindent()
 	default:
 		if field.Type.IsCustomTypeEnum() {
+			castExpression, err := c.pythonEnumCastExpression(field.Type, "int($value)")
+			if err != nil {
+				return err
+			}
 			builder.WriteLine("try:").
 				Indent().
-				LineD("$field = " + c.pythonEnumCastExpression(field.Type, "int($value)")).
+				LineD("$field = " + castExpression).
 				Unindent().
 				WriteLine("except (TypeError, ValueError):").
 				Indent().
@@ -410,9 +414,13 @@ func (c *PythonGenerationContext) generateArrayDeserializeJson(
 			LineD("$field.append($item)")
 	default:
 		if targetFieldType.IsCustomTypeEnum() {
+			castExpression, err := c.pythonEnumCastExpression(targetFieldType, "int(item)")
+			if err != nil {
+				return err
+			}
 			builder.WriteLine("try:").
 				Indent().
-				LineD("$item = " + c.pythonEnumCastExpression(targetFieldType, "int(item)")).
+				LineD("$item = " + castExpression).
 				Unindent().
 				WriteLine("except (TypeError, ValueError):").
 				Indent().

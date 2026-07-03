@@ -178,8 +178,11 @@ func (c *CSharpGenerationContext) generateFieldSerializeJson(
 		if field.IsCustomTypeModel() {
 			builder.LineD(`data["$jsonName"] = $field != null ? $field.SerializeJsonObject() : null;`)
 		} else if field.Type.IsCustomTypeEnum() {
-			builder.LineD(`data["$jsonName"] = ` +
-				c.csharpBinaryWriteExpression(field.Type, "$field") + `;`)
+			fieldWrite, err := c.csharpBinaryWriteExpression(field.Type, "$field")
+			if err != nil {
+				return err
+			}
+			builder.LineD(`data["$jsonName"] = ` + fieldWrite + `;`)
 		} else if c.isCSharpJsonPrimitive(field.Type) {
 			builder.LineD(`data["$jsonName"] = $field;`)
 		} else {
@@ -226,8 +229,11 @@ func (c *CSharpGenerationContext) generateArraySerializeJson(
 		if targetType.IsCustomTypeModel() {
 			builder.LineD("$array.Add(item != null ? item.SerializeJsonObject() : null);")
 		} else if targetType.IsCustomTypeEnum() {
-			builder.LineD("$array.Add(" +
-				c.csharpBinaryWriteExpression(targetType, "item") + ");")
+			itemWrite, err := c.csharpBinaryWriteExpression(targetType, "item")
+			if err != nil {
+				return err
+			}
+			builder.LineD("$array.Add(" + itemWrite + ");")
 		} else if c.isCSharpJsonPrimitive(targetType) {
 			builder.LineD("$array.Add(item);")
 		} else {
@@ -252,10 +258,14 @@ func (c *CSharpGenerationContext) generateFieldDeserializeJson(
 	fieldName := caseUtils.ToPascalCase(field.Name)
 	resultField := "result." + fieldName
 	nodeName := caseUtils.ToCamelCase(field.Name) + "Node"
+	fieldType, err := c.getCSharpType(field)
+	if err != nil {
+		return err
+	}
 
 	builder.MapVarPairs(
 		"field", resultField,
-		"fieldType", c.getCSharpType(field),
+		"fieldType", fieldType,
 		"jsonName", jsonName,
 		"node", nodeName,
 		"type", field.Type.GetName(),
@@ -282,7 +292,10 @@ func (c *CSharpGenerationContext) generateFieldDeserializeJson(
 	default:
 		if field.Type.IsCustomTypeEnum() {
 			baseType := c.getCSharpEnumBaseType(field.Type.GetDefinition().GetEnumDefinition())
-			enumType := c.getCSharpEnumTypeName(field.Type.GetDefinition().GetEnumDefinition())
+			enumType, err := c.getCSharpEnumTypeName(field.Type.GetDefinition().GetEnumDefinition())
+			if err != nil {
+				return err
+			}
 			builder.LineD("$field = (" + enumType + ")$node.GetValue<" + baseType + ">();")
 		} else if c.isCSharpJsonNumber(field.Type) {
 			builder.LineD("$field = $node.GetValue<$fieldType>();")
@@ -310,12 +323,20 @@ func (c *CSharpGenerationContext) generateArrayDeserializeJson(
 	resultField := "result." + fieldName
 	nodeName := caseUtils.ToCamelCase(field.Name) + "Node"
 	arrayName := caseUtils.ToCamelCase(field.Name) + "Array"
+	arrayType, err := c.getCSharpType(field)
+	if err != nil {
+		return err
+	}
+	itemType, err := c.getCSharpArrayItemType(targetType)
+	if err != nil {
+		return err
+	}
 
 	builder.MapVarPairs(
 		"array", arrayName,
-		"arrayType", c.getCSharpType(field),
+		"arrayType", arrayType,
 		"field", resultField,
-		"itemType", c.getCSharpArrayItemType(targetType),
+		"itemType", itemType,
 		"jsonName", jsonName,
 		"node", nodeName,
 		"type", targetType.GetName(),
@@ -350,7 +371,10 @@ func (c *CSharpGenerationContext) generateArrayDeserializeJson(
 	default:
 		if targetType.IsCustomTypeEnum() {
 			baseType := c.getCSharpEnumBaseType(targetType.GetDefinition().GetEnumDefinition())
-			enumType := c.getCSharpEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			enumType, err := c.getCSharpEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			if err != nil {
+				return err
+			}
 			builder.LineD("$field.Add((" + enumType + ")item.GetValue<" + baseType + ">());")
 		} else if c.isCSharpJsonNumber(targetType) {
 			builder.LineD("$field.Add(item.GetValue<$itemType>());")
@@ -391,7 +415,7 @@ func (c *CSharpGenerationContext) isCSharpJsonNumber(targetType *cclValues.CCLTy
 	}
 }
 
-func (c *CSharpGenerationContext) getCSharpArrayItemType(targetType *cclValues.CCLTypeUsage) string {
+func (c *CSharpGenerationContext) getCSharpArrayItemType(targetType *cclValues.CCLTypeUsage) (string, error) {
 	field := &CCLField{
 		Type: targetType,
 	}

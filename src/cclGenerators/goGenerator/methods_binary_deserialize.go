@@ -214,8 +214,11 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(
 				readType := goBaseIntegerTypeForRead(field.Type)
 				assignExpr := readType + "(" + toReadName + ")"
 				if field.Type.IsCustomTypeEnum() {
-					assignExpr = c.getGoEnumTypeName(field.Type.GetDefinition().GetEnumDefinition()) +
-						"(" + toReadName + ")"
+					enumTypeName, err := c.getGoEnumTypeName(field.Type.GetDefinition().GetEnumDefinition())
+					if err != nil {
+						return err
+					}
+					assignExpr = enumTypeName + "(" + toReadName + ")"
 				} else {
 					assignExpr = "int(" + toReadName + ")"
 				}
@@ -372,8 +375,11 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(
 				readType := goBaseIntegerTypeForRead(targetFieldType)
 				assignExpr := "int(elem)"
 				if targetFieldType.IsCustomTypeEnum() {
-					assignExpr = c.getGoEnumTypeName(targetFieldType.GetDefinition().GetEnumDefinition()) +
-						"(elem)"
+					enumTypeName, err := c.getGoEnumTypeName(targetFieldType.GetDefinition().GetEnumDefinition())
+					if err != nil {
+						return err
+					}
+					assignExpr = enumTypeName + "(elem)"
 				}
 				builder.MapVarPairs(
 					"readType", readType,

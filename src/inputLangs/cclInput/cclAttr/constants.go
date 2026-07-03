@@ -12,4 +12,5 @@ const (
 	AttrUseWGodot             CCLAttributeName = "UseWGodot"
 	AttrEnumMemberNamingStyle CCLAttributeName = "EnumMemberNamingStyle"
 	AttrEnumMemberNamePrefix  CCLAttributeName = "EnumMemberNamePrefix"
+	AttrEnumTypeNamePrefix    CCLAttributeName = "EnumTypeNamePrefix"
 )

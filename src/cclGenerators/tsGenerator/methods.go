@@ -145,7 +145,11 @@ func (c *TypeScriptGenerationContext) generateCodeForModel(model *CCLModel) erro
 						)
 					}
 				} else {
-					builder.DoImport(enumDef.Name, "import { "+enumDef.Name+" } from './"+enumDef.Name+"';")
+					enumTypeName, err := c.getTypeScriptEnumLocalTypeName(enumDef)
+					if err != nil {
+						return err
+					}
+					builder.DoImport(enumDef.GetFullName(), "import { "+enumTypeName+" } from './"+enumDef.Name+"';")
 				}
 			}
 		}
@@ -181,7 +185,10 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 
 	// Fields
 	for _, field := range model.Fields {
-		tsType := c.getTypeScriptType(field)
+		tsType, err := c.getTypeScriptType(field)
+		if err != nil {
+			return err
+		}
 		fieldName := caseUtils.ToCamelCase(field.Name)
 		if field.IsNullable() {
 			tsType = tsType + " | null"
@@ -309,7 +316,7 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 
 //---------------------------------------------------------
 
-func (c *TypeScriptGenerationContext) getTypeScriptType(field *CCLField) string {
+func (c *TypeScriptGenerationContext) getTypeScriptType(field *CCLField) (string, error) {
 	targetType := field.Type
 	if targetType.IsArray() {
 		targetType = targetType.GetUnderlyingType()
@@ -331,7 +338,11 @@ func (c *TypeScriptGenerationContext) getTypeScriptType(field *CCLField) string 
 		tsType = "number" // Using timestamp
 	default:
 		if targetType.IsCustomTypeEnum() {
-			tsType = c.getTypeScriptEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			enumTypeName, err := c.getTypeScriptEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			if err != nil {
+				return "", err
+			}
+			tsType = enumTypeName
 		} else if targetType.IsCustomTypeModel() {
 			tsType = targetType.GetName()
 		} else {
@@ -347,5 +358,5 @@ func (c *TypeScriptGenerationContext) getTypeScriptType(field *CCLField) string 
 		}
 	}
 
-	return tsType
+	return tsType, nil
 }

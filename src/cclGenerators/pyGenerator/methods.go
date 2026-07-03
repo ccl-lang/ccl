@@ -168,7 +168,10 @@ func (c *PythonGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		builder.WriteLine("pass")
 	} else {
 		for _, field := range model.Fields {
-			varType := c.getPythonType(field)
+			varType, err := c.getPythonType(field)
+			if err != nil {
+				return err
+			}
 			defaultValue := "None"
 			if field.IsArray() {
 				defaultValue = "[]"
@@ -270,7 +273,7 @@ func (c *PythonGenerationContext) getImportLineForType(targetType *cclValues.CCL
 	return "from ." + fileName + " import " + targetType.GetShortModelName(), nil
 }
 
-func (c *PythonGenerationContext) getPythonType(field *cclValues.ModelFieldDefinition) string {
+func (c *PythonGenerationContext) getPythonType(field *cclValues.ModelFieldDefinition) (string, error) {
 	targetType := field.Type
 	if targetType.IsArray() {
 		targetType = targetType.GetUnderlyingType()
@@ -293,7 +296,11 @@ func (c *PythonGenerationContext) getPythonType(field *cclValues.ModelFieldDefin
 		pyType = "int" // Using int64 timestamp
 	default:
 		if targetType.IsCustomTypeEnum() {
-			pyType = c.getPythonEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			enumTypeName, err := c.getPythonEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			if err != nil {
+				return "", err
+			}
+			pyType = enumTypeName
 		} else if targetType.IsCustomTypeModel() {
 			pyType = targetType.GetName()
 		} else {
@@ -306,5 +313,5 @@ func (c *PythonGenerationContext) getPythonType(field *cclValues.ModelFieldDefin
 		pyType = "list[" + pyType + "]"
 	}
 
-	return pyType
+	return pyType, nil
 }

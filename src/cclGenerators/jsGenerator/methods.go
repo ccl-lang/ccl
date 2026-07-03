@@ -145,7 +145,11 @@ func (c *JavaScriptGenerationContext) generateCodeForModel(model *CCLModel) erro
 						)
 					}
 				} else {
-					builder.DoImport(enumDef.Name, "import { "+enumDef.Name+" } from './"+enumDef.Name+".js';")
+					enumTypeName, err := c.getJavaScriptEnumTypeName(enumDef)
+					if err != nil {
+						return err
+					}
+					builder.DoImport(enumDef.GetFullName(), "import { "+enumTypeName+" } from './"+enumDef.Name+".js';")
 				}
 			}
 		}

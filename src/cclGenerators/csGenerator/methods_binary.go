@@ -20,11 +20,15 @@ func (c *CSharpGenerationContext) generateSerializeBinaryMethod(model *CCLModel,
 	for i := range model.Fields {
 		field := model.Fields[i]
 		if field.IsArray() {
-			c.generateArraySerializeBinary(field, builder)
+			if err := c.generateArraySerializeBinary(field, builder); err != nil {
+				return err
+			}
 			continue
 		}
 
-		c.generateFieldSerializeBinary(field, builder)
+		if err := c.generateFieldSerializeBinary(field, builder); err != nil {
+			return err
+		}
 	}
 
 	builder.Unindent().
@@ -38,9 +42,12 @@ func (c *CSharpGenerationContext) generateSerializeBinaryMethod(model *CCLModel,
 	return nil
 }
 
-func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
+func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) error {
 	fieldName := "this." + caseUtils.ToPascalCase(field.Name)
-	fieldWrite := c.csharpBinaryWriteExpression(field.Type, fieldName)
+	fieldWrite, err := c.csharpBinaryWriteExpression(field.Type, fieldName)
+	if err != nil {
+		return err
+	}
 	builder.MapVarPairs(
 		"field", fieldName,
 		"fieldWrite", fieldWrite,
@@ -104,12 +111,16 @@ func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 				WriteLine("}")
 		}
 	}
+	return nil
 }
 
-func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
+func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) error {
 	fieldName := "this." + caseUtils.ToPascalCase(field.Name)
 	targetFieldType := field.Type.GetUnderlyingType()
-	itemWrite := c.csharpBinaryWriteExpression(targetFieldType, "item")
+	itemWrite, err := c.csharpBinaryWriteExpression(targetFieldType, "item")
+	if err != nil {
+		return err
+	}
 	builder.MapVarPairs(
 		"field", fieldName,
 		"itemWrite", itemWrite,
@@ -177,6 +188,7 @@ func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, 
 		WriteLine("}").
 		Unindent().
 		WriteLine("}")
+	return nil
 }
 
 func (c *CSharpGenerationContext) generateDeserializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
@@ -215,11 +227,15 @@ func (c *CSharpGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 
 	for _, field := range model.Fields {
 		if field.IsArray() {
-			c.generateArrayDeserializeBinary(field, builder)
+			if err := c.generateArrayDeserializeBinary(field, builder); err != nil {
+				return err
+			}
 			continue
 		}
 
-		c.generateFieldDeserializeBinary(field, builder)
+		if err := c.generateFieldDeserializeBinary(field, builder); err != nil {
+			return err
+		}
 	}
 
 	builder.Unindent().
@@ -247,7 +263,7 @@ func (c *CSharpGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 	return nil
 }
 
-func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
+func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) error {
 	fieldName := caseUtils.ToPascalCase(field.Name)
 	resultField := "result." + fieldName
 	builder.MapVarPairs(
@@ -262,11 +278,14 @@ func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField
 	if field.Type.IsCustomTypeEnum() {
 		baseType := csharpStorageTypeName(field.Type)
 		readerMethod := c.csharpReaderMethod(baseType)
-		enumName := c.getCSharpEnumTypeName(field.Type.GetDefinition().GetEnumDefinition())
+		enumName, err := c.getCSharpEnumTypeName(field.Type.GetDefinition().GetEnumDefinition())
+		if err != nil {
+			return err
+		}
 		c.generateCSharpBinaryDeserializeBoundsCheck(builder, enumBinarySize(baseType))
 		builder.LineD("$field = (" + enumName + ")reader." + readerMethod + "();")
 		builder.NewLine()
-		return
+		return nil
 	}
 
 	switch field.Type.GetName() {
@@ -343,15 +362,20 @@ func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField
 				WriteLine("}")
 		}
 	}
+	return nil
 }
 
-func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) {
+func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField, builder *codeBuilder.CodeBuilder) error {
 	fieldName := caseUtils.ToPascalCase(field.Name)
 	resultField := "result." + fieldName
 	targetFieldType := field.Type.GetUnderlyingType()
+	fieldType, err := c.getCSharpType(field)
+	if err != nil {
+		return err
+	}
 	builder.MapVarPairs(
 		"field", resultField,
-		"fieldType", c.getCSharpType(field),
+		"fieldType", fieldType,
 		"type", targetFieldType.GetName(),
 	)
 	defer builder.UnmapVar(
@@ -372,14 +396,17 @@ func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField
 	if targetFieldType.IsCustomTypeEnum() {
 		baseType := csharpStorageTypeName(targetFieldType)
 		readerMethod := c.csharpReaderMethod(baseType)
-		enumName := c.getCSharpEnumTypeName(targetFieldType.GetDefinition().GetEnumDefinition())
+		enumName, err := c.getCSharpEnumTypeName(targetFieldType.GetDefinition().GetEnumDefinition())
+		if err != nil {
+			return err
+		}
 		c.generateCSharpBinaryDeserializeBoundsCheck(builder, enumBinarySize(baseType))
 		builder.LineD("$field.Add((" + enumName + ")reader." + readerMethod + "());")
 		builder.Unindent().
 			WriteLine("}").
 			Unindent().
 			WriteLine("}")
-		return
+		return nil
 	}
 
 	switch targetFieldType.GetName() {
@@ -447,6 +474,7 @@ func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField
 		WriteLine("}").
 		Unindent().
 		WriteLine("}")
+	return nil
 }
 
 func (c *CSharpGenerationContext) generateCSharpBinaryDeserializeBoundsCheck(

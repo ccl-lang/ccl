@@ -300,11 +300,19 @@ func (c *GoGenerationContext) generateFieldDeserializeJson(
 				registerGoImport(builder, "time")
 				builder.WriteLine(fieldName + " = time.Unix(0, " + valueName + ")")
 			} else {
-				builder.WriteLine(fieldName + " = " + c.goJsonIntegerCast(field.Type) + "(" + valueName + ")")
+				castType, err := c.goJsonIntegerCast(field.Type)
+				if err != nil {
+					return err
+				}
+				builder.WriteLine(fieldName + " = " + castType + "(" + valueName + ")")
 			}
 		} else if c.isGoJsonUnsignedInteger(field.Type) {
 			c.writeGoJsonUintRead(builder, valueName, rawName)
-			builder.WriteLine(fieldName + " = " + c.goJsonIntegerCast(field.Type) + "(" + valueName + ")")
+			castType, err := c.goJsonIntegerCast(field.Type)
+			if err != nil {
+				return err
+			}
+			builder.WriteLine(fieldName + " = " + castType + "(" + valueName + ")")
 		} else if c.isGoJsonFloat(field.Type) {
 			c.writeGoJsonFloatRead(builder, valueName, rawName)
 			builder.WriteLine(fieldName + " = " + c.goJsonFloatCast(field.Type) + "(" + valueName + ")")
@@ -331,7 +339,10 @@ func (c *GoGenerationContext) generateArrayDeserializeJson(
 	fieldName := "m." + field.Name
 	valueName := lowerGoVarName(field.Name) + "Items"
 	itemValueName := lowerGoVarName(field.Name) + "ItemValue"
-	itemType := c.getGoJsonArrayItemType(targetType)
+	itemType, err := c.getGoJsonArrayItemType(targetType)
+	if err != nil {
+		return err
+	}
 	if itemType == "" {
 		return c.unsupportedGoJsonField(field)
 	}
@@ -380,7 +391,11 @@ func (c *GoGenerationContext) generateArrayDeserializeJson(
 		registerGoImport(builder, "time")
 		builder.WriteLine(fieldName + " = append(" + fieldName + ", time.Unix(0, " + itemValueName + "))")
 	} else if c.isGoJsonSignedInteger(targetType) || c.isGoJsonUnsignedInteger(targetType) {
-		builder.WriteLine(fieldName + " = append(" + fieldName + ", " + c.goJsonIntegerCast(targetType) + "(" + itemValueName + "))")
+		castType, err := c.goJsonIntegerCast(targetType)
+		if err != nil {
+			return err
+		}
+		builder.WriteLine(fieldName + " = append(" + fieldName + ", " + castType + "(" + itemValueName + "))")
 	} else if c.isGoJsonFloat(targetType) {
 		builder.WriteLine(fieldName + " = append(" + fieldName + ", " + c.goJsonFloatCast(targetType) + "(" + itemValueName + "))")
 	}

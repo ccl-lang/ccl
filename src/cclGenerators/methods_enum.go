@@ -70,9 +70,37 @@ func (c *CodeGenerationBase) GetEnumMemberNamePrefix(
 	currentEnum *cclValues.EnumDefinition,
 	defaultPrefix string,
 ) (string, error) {
-	attr := c.GetGlobalOrEnumAttributes(
+	return c.getEnumPrefixByAttr(
 		targetLang,
 		cclAttr.AttrEnumMemberNamePrefix,
+		currentEnum,
+		defaultPrefix,
+	)
+}
+
+// GetEnumTypeNamePrefix returns the resolved type-name prefix for an enum.
+func (c *CodeGenerationBase) GetEnumTypeNamePrefix(
+	targetLang gValues.LanguageType,
+	currentEnum *cclValues.EnumDefinition,
+	defaultPrefix string,
+) (string, error) {
+	return c.getEnumPrefixByAttr(
+		targetLang,
+		cclAttr.AttrEnumTypeNamePrefix,
+		currentEnum,
+		defaultPrefix,
+	)
+}
+
+func (c *CodeGenerationBase) getEnumPrefixByAttr(
+	targetLang gValues.LanguageType,
+	attrName cclAttr.CCLAttributeName,
+	currentEnum *cclValues.EnumDefinition,
+	defaultPrefix string,
+) (string, error) {
+	attr := c.GetGlobalOrEnumAttributes(
+		targetLang,
+		attrName,
 		currentEnum,
 	).GetLast()
 	if attr == nil {

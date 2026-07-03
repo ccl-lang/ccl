@@ -32,6 +32,19 @@ func (c *JavaScriptGenerationContext) getJavaScriptEnumMemberName(
 	return prefix + style.ApplyStyle(member.Name), nil
 }
 
+func (c *JavaScriptGenerationContext) getJavaScriptEnumTypeName(enumDef *CCLEnum) (string, error) {
+	prefix, err := c.GetEnumTypeNamePrefix(
+		LanguageName,
+		enumDef,
+		"",
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return prefix + enumDef.Name, nil
+}
+
 func (c *JavaScriptGenerationContext) getJavaScriptEnumReference(
 	enumDef *CCLEnum,
 	member *cclValues.EnumMemberDefinition,
@@ -40,12 +53,16 @@ func (c *JavaScriptGenerationContext) getJavaScriptEnumReference(
 	if err != nil {
 		return "", err
 	}
-
-	if enumDef.IsNested() && enumDef.OwnedBy != nil {
-		return enumDef.OwnedBy.Name + "." + enumDef.Name + "." + memberName, nil
+	enumTypeName, err := c.getJavaScriptEnumTypeName(enumDef)
+	if err != nil {
+		return "", err
 	}
 
-	return enumDef.Name + "." + memberName, nil
+	if enumDef.IsNested() && enumDef.OwnedBy != nil {
+		return enumDef.OwnedBy.Name + "." + enumTypeName + "." + memberName, nil
+	}
+
+	return enumTypeName + "." + memberName, nil
 }
 
 func (c *JavaScriptGenerationContext) generateEnumObjectDeclaration(
@@ -53,7 +70,12 @@ func (c *JavaScriptGenerationContext) generateEnumObjectDeclaration(
 	enumDef *CCLEnum,
 	prefix string,
 ) error {
-	builder.WriteLine(prefix + enumDef.Name + " = Object.freeze({").
+	enumTypeName, err := c.getJavaScriptEnumTypeName(enumDef)
+	if err != nil {
+		return err
+	}
+
+	builder.WriteLine(prefix + enumTypeName + " = Object.freeze({").
 		Indent()
 	for _, member := range enumDef.Members {
 		memberName, err := c.getJavaScriptEnumMemberName(enumDef, member)

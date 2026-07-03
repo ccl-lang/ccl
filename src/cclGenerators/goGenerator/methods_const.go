@@ -88,13 +88,18 @@ func (c *GoGenerationContext) generateConstantsForEnum(
 	builder *codeBuilder.CodeBuilder,
 	enumDef *CCLEnum,
 ) error {
+	enumTypeName, err := c.getGoEnumTypeName(enumDef)
+	if err != nil {
+		return err
+	}
+
 	for _, member := range enumDef.Members {
 		memberName, err := c.getGoEnumMemberName(enumDef, member)
 		if err != nil {
 			return err
 		}
 		builder.WriteLine(memberName + " " +
-			c.getGoEnumTypeName(enumDef) + " = " + ssg.ToBase10(member.Value),
+			enumTypeName + " = " + ssg.ToBase10(member.Value),
 		)
 	}
 	return nil

@@ -17,7 +17,10 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 	resultField := modelResultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
 	modelName := field.OwnedBy.GetName()
-	enumCastSuffix := gdEnumCastSuffix(field.Type)
+	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(field.Type)
+	if err != nil {
+		return err
+	}
 
 	builder.ExpectMappedVars(
 		"model",
@@ -174,13 +177,19 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 ) error {
 	targetFieldType := field.Type.GetUnderlyingType()
 	targetFieldTypeName := gdStorageTypeName(targetFieldType)
-	fieldTargetLangType := c.getGDScriptType(field)
+	fieldTargetLangType, err := c.getGDScriptType(field)
+	if err != nil {
+		return err
+	}
 	fieldRawName := caseUtils.ToSnakeCase(field.Name)
 	resultField := modelResultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
 	listName := fieldRawName + "_list"
 	modelName := field.OwnedBy.GetName()
-	enumCastSuffix := gdEnumCastSuffix(targetFieldType)
+	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(targetFieldType)
+	if err != nil {
+		return err
+	}
 
 	builder.ExpectMappedVars(
 		"model",

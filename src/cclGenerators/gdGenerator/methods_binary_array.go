@@ -90,8 +90,14 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	fieldRawName := caseUtils.ToSnakeCase(field.GetName())
 	resultField := modelResultName + "." + fieldRawName
 	targetFieldTypeName := gdStorageTypeName(targetFieldType)
-	fieldTargetLangType := c.getGDScriptType(field)
-	enumCastSuffix := gdEnumCastSuffix(targetFieldType)
+	fieldTargetLangType, err := c.getGDScriptType(field)
+	if err != nil {
+		return err
+	}
+	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(targetFieldType)
+	if err != nil {
+		return err
+	}
 	getDataCall := ""
 	if useWGodot {
 		getDataCall = "get_data_bytes(item_len)"
