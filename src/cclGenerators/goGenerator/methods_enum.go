@@ -17,6 +17,20 @@ func (c *GoGenerationContext) getGoEnumMemberName(
 	enumDef *CCLEnum,
 	member *cclValues.EnumMemberDefinition,
 ) (string, error) {
+	defaultPrefix := ""
+	if enumDef.IsNested() && enumDef.OwnedBy != nil {
+		defaultPrefix = enumDef.OwnedBy.Name
+	}
+
+	prefix, err := c.GetEnumMemberNamePrefix(
+		CurrentLanguage,
+		enumDef,
+		defaultPrefix,
+	)
+	if err != nil {
+		return "", err
+	}
+
 	style, err := c.GetEnumMemberNamingStyle(
 		CurrentLanguage,
 		enumDef,
@@ -26,7 +40,7 @@ func (c *GoGenerationContext) getGoEnumMemberName(
 		return "", err
 	}
 
-	return c.getGoEnumTypeName(enumDef) + style.ApplyStyle(member.Name), nil
+	return prefix + enumDef.Name + style.ApplyStyle(member.Name), nil
 }
 
 func (c *GoGenerationContext) getGoEnumBaseType(enumDef *CCLEnum) string {

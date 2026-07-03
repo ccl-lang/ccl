@@ -11,4 +11,5 @@ const (
 	AttrStrictBinaryParsing   CCLAttributeName = "StrictBinaryParsing"
 	AttrUseWGodot             CCLAttributeName = "UseWGodot"
 	AttrEnumMemberNamingStyle CCLAttributeName = "EnumMemberNamingStyle"
+	AttrEnumMemberNamePrefix  CCLAttributeName = "EnumMemberNamePrefix"
 )

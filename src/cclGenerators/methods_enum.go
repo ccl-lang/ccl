@@ -64,6 +64,33 @@ func (c *CodeGenerationBase) GetEnumMemberNamingStyle(
 	return style, nil
 }
 
+// GetEnumMemberNamePrefix returns the resolved member-name prefix for an enum.
+func (c *CodeGenerationBase) GetEnumMemberNamePrefix(
+	targetLang gValues.LanguageType,
+	currentEnum *cclValues.EnumDefinition,
+	defaultPrefix string,
+) (string, error) {
+	attr := c.GetGlobalOrEnumAttributes(
+		targetLang,
+		cclAttr.AttrEnumMemberNamePrefix,
+		currentEnum,
+	).GetLast()
+	if attr == nil {
+		return defaultPrefix, nil
+	}
+
+	param := attr.GetParamAt(0)
+	if param == nil {
+		return "", &cclErrors.InvalidAttributeUsageError{
+			AttrName:       attr.Name,
+			Message:        "requires a string or null first-parameter",
+			SourcePosition: attr.SourcePosition,
+		}
+	}
+
+	return param.GetAsString(), nil
+}
+
 // GetEnumStorageType returns the integer storage type for enum fields.
 func (c *CodeGenerationBase) GetEnumStorageType(
 	typeUsage *cclValues.CCLTypeUsage,

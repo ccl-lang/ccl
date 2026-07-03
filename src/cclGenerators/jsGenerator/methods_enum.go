@@ -11,6 +11,15 @@ func (c *JavaScriptGenerationContext) getJavaScriptEnumMemberName(
 	enumDef *CCLEnum,
 	member *cclValues.EnumMemberDefinition,
 ) (string, error) {
+	prefix, err := c.GetEnumMemberNamePrefix(
+		LanguageName,
+		enumDef,
+		"",
+	)
+	if err != nil {
+		return "", err
+	}
+
 	style, err := c.GetEnumMemberNamingStyle(
 		LanguageName,
 		enumDef,
@@ -20,7 +29,7 @@ func (c *JavaScriptGenerationContext) getJavaScriptEnumMemberName(
 		return "", err
 	}
 
-	return style.ApplyStyle(member.Name), nil
+	return prefix + style.ApplyStyle(member.Name), nil
 }
 
 func (c *JavaScriptGenerationContext) getJavaScriptEnumReference(

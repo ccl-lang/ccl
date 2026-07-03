@@ -19,6 +19,15 @@ func (c *PythonGenerationContext) getPythonEnumMemberName(
 	enumDef *CCLEnum,
 	member *cclValues.EnumMemberDefinition,
 ) (string, error) {
+	prefix, err := c.GetEnumMemberNamePrefix(
+		CurrentLanguage,
+		enumDef,
+		"",
+	)
+	if err != nil {
+		return "", err
+	}
+
 	style, err := c.GetEnumMemberNamingStyle(
 		CurrentLanguage,
 		enumDef,
@@ -28,7 +37,7 @@ func (c *PythonGenerationContext) getPythonEnumMemberName(
 		return "", err
 	}
 
-	return style.ApplyStyle(member.Name), nil
+	return prefix + style.ApplyStyle(member.Name), nil
 }
 
 func (c *PythonGenerationContext) getPythonEnumReference(

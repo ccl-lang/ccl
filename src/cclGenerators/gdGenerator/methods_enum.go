@@ -9,6 +9,15 @@ func (c *GDScriptGenerationContext) getGDScriptEnumMemberName(
 	enumDef *CCLEnum,
 	member *cclValues.EnumMemberDefinition,
 ) (string, error) {
+	prefix, err := c.GetEnumMemberNamePrefix(
+		CurrentLanguage,
+		enumDef,
+		"",
+	)
+	if err != nil {
+		return "", err
+	}
+
 	style, err := c.GetEnumMemberNamingStyle(
 		CurrentLanguage,
 		enumDef,
@@ -18,7 +27,7 @@ func (c *GDScriptGenerationContext) getGDScriptEnumMemberName(
 		return "", err
 	}
 
-	return style.ApplyStyle(member.Name), nil
+	return prefix + style.ApplyStyle(member.Name), nil
 }
 
 func (c *GDScriptGenerationContext) getGDScriptEnumReference(
