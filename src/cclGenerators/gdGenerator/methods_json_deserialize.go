@@ -17,7 +17,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 	resultField := modelResultName + "." + fieldRawName
 	valueName := fieldRawName + "_value"
 	modelName := field.OwnedBy.GetName()
-	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(field.Type)
+	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(field.Type, field.OwnedBy)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 	valueName := fieldRawName + "_value"
 	listName := fieldRawName + "_list"
 	modelName := field.OwnedBy.GetName()
-	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(targetFieldType)
+	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(targetFieldType, field.OwnedBy)
 	if err != nil {
 		return err
 	}

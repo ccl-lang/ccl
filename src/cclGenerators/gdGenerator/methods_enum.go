@@ -58,6 +58,7 @@ func (c *GDScriptGenerationContext) getGDScriptEnumDeclarationName(enumDef *CCLE
 
 func (c *GDScriptGenerationContext) getGDScriptEnumTypeReference(
 	typeUsage *cclValues.CCLTypeUsage,
+	currentModel *CCLModel,
 ) (string, error) {
 	enumDef := typeUsage.GetDefinition().GetEnumDefinition()
 	enumTypeName, err := c.getGDScriptEnumTypeName(enumDef)
@@ -71,7 +72,11 @@ func (c *GDScriptGenerationContext) getGDScriptEnumTypeReference(
 	}
 
 	if enumDef.IsNested() {
-		return enumDeclarationName, nil
+		if enumDef.OwnedBy == currentModel {
+			return enumDeclarationName, nil
+		}
+
+		return enumDef.OwnedBy.Name + "." + enumDeclarationName, nil
 	}
 
 	return enumTypeName + "." + enumDeclarationName, nil
@@ -79,12 +84,13 @@ func (c *GDScriptGenerationContext) getGDScriptEnumTypeReference(
 
 func (c *GDScriptGenerationContext) getGDScriptEnumCastSuffix(
 	typeUsage *cclValues.CCLTypeUsage,
+	currentModel *CCLModel,
 ) (string, error) {
 	if !typeUsage.IsCustomTypeEnum() {
 		return "", nil
 	}
 
-	enumTypeReference, err := c.getGDScriptEnumTypeReference(typeUsage)
+	enumTypeReference, err := c.getGDScriptEnumTypeReference(typeUsage, currentModel)
 	if err != nil {
 		return "", err
 	}
@@ -95,6 +101,7 @@ func (c *GDScriptGenerationContext) getGDScriptEnumCastSuffix(
 func (c *GDScriptGenerationContext) getGDScriptEnumReference(
 	enumDef *CCLEnum,
 	member *cclValues.EnumMemberDefinition,
+	currentModel *CCLModel,
 ) (string, error) {
 	memberName, err := c.getGDScriptEnumMemberName(enumDef, member)
 	if err != nil {
@@ -107,7 +114,11 @@ func (c *GDScriptGenerationContext) getGDScriptEnumReference(
 	}
 
 	if enumDef.IsNested() {
-		return enumTypeName + "." + memberName, nil
+		if enumDef.OwnedBy == currentModel {
+			return enumTypeName + "." + memberName, nil
+		}
+
+		return enumDef.OwnedBy.Name + "." + enumTypeName + "." + memberName, nil
 	}
 
 	enumDeclarationName, err := c.getGDScriptEnumDeclarationName(enumDef)

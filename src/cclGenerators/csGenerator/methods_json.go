@@ -292,7 +292,10 @@ func (c *CSharpGenerationContext) generateFieldDeserializeJson(
 	default:
 		if field.Type.IsCustomTypeEnum() {
 			baseType := c.getCSharpEnumBaseType(field.Type.GetDefinition().GetEnumDefinition())
-			enumType, err := c.getCSharpEnumTypeName(field.Type.GetDefinition().GetEnumDefinition())
+			enumType, err := c.getCSharpEnumTypeReference(
+				field.Type.GetDefinition().GetEnumDefinition(),
+				field.OwnedBy,
+			)
 			if err != nil {
 				return err
 			}
@@ -327,7 +330,7 @@ func (c *CSharpGenerationContext) generateArrayDeserializeJson(
 	if err != nil {
 		return err
 	}
-	itemType, err := c.getCSharpArrayItemType(targetType)
+	itemType, err := c.getCSharpArrayItemType(targetType, field.OwnedBy)
 	if err != nil {
 		return err
 	}
@@ -371,7 +374,10 @@ func (c *CSharpGenerationContext) generateArrayDeserializeJson(
 	default:
 		if targetType.IsCustomTypeEnum() {
 			baseType := c.getCSharpEnumBaseType(targetType.GetDefinition().GetEnumDefinition())
-			enumType, err := c.getCSharpEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			enumType, err := c.getCSharpEnumTypeReference(
+				targetType.GetDefinition().GetEnumDefinition(),
+				field.OwnedBy,
+			)
 			if err != nil {
 				return err
 			}
@@ -415,9 +421,13 @@ func (c *CSharpGenerationContext) isCSharpJsonNumber(targetType *cclValues.CCLTy
 	}
 }
 
-func (c *CSharpGenerationContext) getCSharpArrayItemType(targetType *cclValues.CCLTypeUsage) (string, error) {
+func (c *CSharpGenerationContext) getCSharpArrayItemType(
+	targetType *cclValues.CCLTypeUsage,
+	currentModel *CCLModel,
+) (string, error) {
 	field := &CCLField{
-		Type: targetType,
+		Type:    targetType,
+		OwnedBy: currentModel,
 	}
 	return c.getCSharpType(field)
 }

@@ -94,7 +94,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	if err != nil {
 		return err
 	}
-	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(targetFieldType)
+	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(targetFieldType, field.OwnedBy)
 	if err != nil {
 		return err
 	}

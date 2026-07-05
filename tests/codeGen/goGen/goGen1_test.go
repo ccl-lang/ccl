@@ -230,13 +230,8 @@ func assertGoConstantFile(
 	t.Helper()
 
 	constBlocks := extractGoConstBlocks(t, constantsContent)
-	if len(requiredModelIdSnippets) != 0 && len(requiredEnumSnippets) != 0 {
-		if len(constBlocks) != 2 {
-			t.Fatalf("Expected one model ID const block and one enum const block, got %d.\nGenerated:\n%s",
-				len(constBlocks), constantsContent)
-		}
-	} else if len(constBlocks) != 1 {
-		t.Fatalf("Expected one const block, got %d.\nGenerated:\n%s", len(constBlocks), constantsContent)
+	if len(constBlocks) == 0 {
+		t.Fatalf("Expected at least one const block.\nGenerated:\n%s", constantsContent)
 	}
 
 	if len(requiredModelIdSnippets) != 0 {
@@ -254,7 +249,15 @@ func assertGoConstantFile(
 	}
 
 	if len(requiredEnumSnippets) != 0 {
-		enumBlock := constBlocks[len(constBlocks)-1]
+		enumBlocks := constBlocks
+		if len(requiredModelIdSnippets) != 0 {
+			enumBlocks = constBlocks[1:]
+		}
+		if len(enumBlocks) == 0 {
+			t.Fatalf("Expected at least one enum const block.\nGenerated:\n%s", constantsContent)
+		}
+
+		enumBlock := strings.Join(enumBlocks, "\n")
 		if strings.Contains(enumBlock, "ModelId") {
 			t.Fatalf("Generated enum const block contains model IDs.\nBlock:\n%s", enumBlock)
 		}

@@ -201,7 +201,7 @@ func (c *GDScriptGenerationContext) generateModelClass(builder *codeBuilder.Code
 		if field.HasDefaultValue() {
 			defaultValue := gdDefaultLiteral(field.GetDefaultValue())
 			if enumRef := c.GetEnumDefaultReference(field); enumRef != nil {
-				ref, err := c.getGDScriptEnumReference(enumRef.Enum, enumRef.Member)
+				ref, err := c.getGDScriptEnumReference(enumRef.Enum, enumRef.Member, model)
 				if err != nil {
 					return err
 				}
@@ -291,7 +291,7 @@ func (c *GDScriptGenerationContext) getGDScriptType(field *cclValues.ModelFieldD
 	gdType := CCLTypesToGdTypes[targetType.GetName()]
 	if gdType == "" {
 		if targetType.IsCustomTypeEnum() {
-			enumTypeReference, err := c.getGDScriptEnumTypeReference(targetType)
+			enumTypeReference, err := c.getGDScriptEnumTypeReference(targetType, field.OwnedBy)
 			if err != nil {
 				return "", err
 			}

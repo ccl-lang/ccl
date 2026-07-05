@@ -94,6 +94,17 @@ func _init():
 		quit(1)
 		return
 
+	var game_item = GameItem.new()
+	game_item.item_type = GameItem.GameItemType.GOLD
+	game_item.count = 50
+
+	var game_shop_item = GameShopItem.new()
+	game_shop_item.featured_type = GameItem.GameItemType.GEM
+	if game_item.item_type != GameItem.GameItemType.GOLD or game_shop_item.featured_type != GameItem.GameItemType.GEM:
+		print("Error: nested enum reference mismatch")
+		quit(1)
+		return
+
 	var strict_user_data = StrictUserData.new()
 	strict_user_data.level = 7
 	strict_user_data.name = "Old Save"

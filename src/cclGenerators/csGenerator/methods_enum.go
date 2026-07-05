@@ -18,6 +18,22 @@ func (c *CSharpGenerationContext) getCSharpEnumTypeName(enumDef *CCLEnum) (strin
 	return prefix + enumDef.Name, nil
 }
 
+func (c *CSharpGenerationContext) getCSharpEnumTypeReference(
+	enumDef *CCLEnum,
+	currentModel *CCLModel,
+) (string, error) {
+	enumTypeName, err := c.getCSharpEnumTypeName(enumDef)
+	if err != nil {
+		return "", err
+	}
+
+	if enumDef.IsNested() && enumDef.OwnedBy != currentModel {
+		return enumDef.OwnedBy.Name + "." + enumTypeName, nil
+	}
+
+	return enumTypeName, nil
+}
+
 func (c *CSharpGenerationContext) getCSharpEnumMemberName(
 	enumDef *CCLEnum,
 	member *cclValues.EnumMemberDefinition,
@@ -46,13 +62,14 @@ func (c *CSharpGenerationContext) getCSharpEnumMemberName(
 func (c *CSharpGenerationContext) getCSharpEnumReference(
 	enumDef *CCLEnum,
 	member *cclValues.EnumMemberDefinition,
+	currentModel *CCLModel,
 ) (string, error) {
 	memberName, err := c.getCSharpEnumMemberName(enumDef, member)
 	if err != nil {
 		return "", err
 	}
 
-	enumTypeName, err := c.getCSharpEnumTypeName(enumDef)
+	enumTypeName, err := c.getCSharpEnumTypeReference(enumDef, currentModel)
 	if err != nil {
 		return "", err
 	}

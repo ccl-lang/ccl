@@ -250,7 +250,7 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		} else if field.HasDefaultValue() {
 			defaultValue := csharpDefaultLiteral(field.GetDefaultValue())
 			if enumRef := c.GetEnumDefaultReference(field); enumRef != nil {
-				ref, err := c.getCSharpEnumReference(enumRef.Enum, enumRef.Member)
+				ref, err := c.getCSharpEnumReference(enumRef.Enum, enumRef.Member, model)
 				if err != nil {
 					return err
 				}
@@ -396,7 +396,10 @@ func (c *CSharpGenerationContext) getCSharpType(field *CCLField) (string, error)
 	csType := c.getCSharpBuiltinTypeName(targetType.GetName())
 	if csType == "" {
 		if targetType.IsCustomTypeEnum() {
-			enumTypeName, err := c.getCSharpEnumTypeName(targetType.GetDefinition().GetEnumDefinition())
+			enumTypeName, err := c.getCSharpEnumTypeReference(
+				targetType.GetDefinition().GetEnumDefinition(),
+				field.OwnedBy,
+			)
 			if err != nil {
 				return "", err
 			}

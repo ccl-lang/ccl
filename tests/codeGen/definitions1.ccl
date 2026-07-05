@@ -67,6 +67,24 @@ model SkinInfo {
     Texture: TextureSkin;
 }
 
+model GameItem {
+    [EnumTypeNamePrefix("")]
+    [EnumMemberNamePrefix("")]
+    enum GameItemType {
+        Unknown,
+        Gold,
+        Gem,
+        Exp,
+    }
+
+    ItemType: GameItemType;
+    Count: int64;
+}
+
+model GameShopItem {
+    FeaturedType: GameItem.GameItemType;
+}
+
 // UserInfo and RoomInfo types
 [OutputFileGroup("users")]
 model UserInfo {

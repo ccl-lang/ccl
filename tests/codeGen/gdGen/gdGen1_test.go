@@ -97,6 +97,16 @@ func TestGdGenerator1(t *testing.T) {
 		}
 	}
 
+	gameShopItemContent := readGeneratedGdModel(t, result.OutputFiles, "class_name GameShopItem")
+	if !strings.Contains(gameShopItemContent, "var featured_type: GameItem.GameItemType") {
+		t.Fatalf("Generated GameShopItem model did not qualify external nested enum type.\nGenerated:\n%s", gameShopItemContent)
+	}
+
+	gameItemContent := readGeneratedGdModel(t, result.OutputFiles, "class_name GameItem")
+	if !strings.Contains(gameItemContent, "var item_type: GameItemType") {
+		t.Fatalf("Generated GameItem model did not keep same-owner nested enum type local.\nGenerated:\n%s", gameItemContent)
+	}
+
 	fmt.Printf("Running GDScript code from: %s\n", tmpDir)
 
 	output, err := RunGodotProject(&RunGodotOptions{

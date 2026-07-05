@@ -278,7 +278,10 @@ func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField
 	if field.Type.IsCustomTypeEnum() {
 		baseType := csharpStorageTypeName(field.Type)
 		readerMethod := c.csharpReaderMethod(baseType)
-		enumName, err := c.getCSharpEnumTypeName(field.Type.GetDefinition().GetEnumDefinition())
+		enumName, err := c.getCSharpEnumTypeReference(
+			field.Type.GetDefinition().GetEnumDefinition(),
+			field.OwnedBy,
+		)
 		if err != nil {
 			return err
 		}
@@ -396,7 +399,10 @@ func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField
 	if targetFieldType.IsCustomTypeEnum() {
 		baseType := csharpStorageTypeName(targetFieldType)
 		readerMethod := c.csharpReaderMethod(baseType)
-		enumName, err := c.getCSharpEnumTypeName(targetFieldType.GetDefinition().GetEnumDefinition())
+		enumName, err := c.getCSharpEnumTypeReference(
+			targetFieldType.GetDefinition().GetEnumDefinition(),
+			field.OwnedBy,
+		)
 		if err != nil {
 			return err
 		}

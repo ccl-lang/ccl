@@ -204,7 +204,7 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
 	resultField := modelResultName + "." + fieldRawName
 	targetFieldTypeName := gdStorageTypeName(field.Type)
 	fieldLenName := fieldRawName + "_len"
-	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(field.Type)
+	enumCastSuffix, err := c.getGDScriptEnumCastSuffix(field.Type, field.OwnedBy)
 	if err != nil {
 		return err
 	}
