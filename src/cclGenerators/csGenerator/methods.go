@@ -387,7 +387,9 @@ func (c *CSharpGenerationContext) getNamespace() string {
 	return DefaultNamespace
 }
 
-func (c *CSharpGenerationContext) getCSharpType(field *CCLField) (string, error) {
+// getCSharpRawType returns the raw type of the target field. it will not append
+// things such as List<csType>; for that consider using getCSharpType.
+func (c *CSharpGenerationContext) getCSharpRawType(field *CCLField) (string, error) {
 	targetType := field.Type
 	if targetType.IsArray() {
 		targetType = targetType.GetUnderlyingType()
@@ -411,12 +413,17 @@ func (c *CSharpGenerationContext) getCSharpType(field *CCLField) (string, error)
 		}
 	}
 
+	return csType, nil
+}
+
+func (c *CSharpGenerationContext) getCSharpType(field *CCLField) (string, error) {
+	csType, err := c.getCSharpRawType(field)
+	if err != nil {
+		return "", err
+	}
+
 	if field.IsArray() {
-		if targetType.IsCustomTypeModel() {
-			csType = "List<" + csType + ">"
-		} else {
-			csType = "List<" + csType + ">"
-		}
+		csType = "List<" + csType + ">"
 	}
 
 	return csType, nil

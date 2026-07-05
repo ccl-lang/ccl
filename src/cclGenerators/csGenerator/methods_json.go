@@ -330,7 +330,8 @@ func (c *CSharpGenerationContext) generateArrayDeserializeJson(
 	if err != nil {
 		return err
 	}
-	itemType, err := c.getCSharpArrayItemType(targetType, field.OwnedBy)
+
+	itemType, err := c.getCSharpRawType(field)
 	if err != nil {
 		return err
 	}
@@ -419,17 +420,6 @@ func (c *CSharpGenerationContext) isCSharpJsonNumber(targetType *cclValues.CCLTy
 	default:
 		return false
 	}
-}
-
-func (c *CSharpGenerationContext) getCSharpArrayItemType(
-	targetType *cclValues.CCLTypeUsage,
-	currentModel *CCLModel,
-) (string, error) {
-	field := &CCLField{
-		Type:    targetType,
-		OwnedBy: currentModel,
-	}
-	return c.getCSharpType(field)
 }
 
 func (c *CSharpGenerationContext) unsupportedCSharpJsonField(field *CCLField) error {
