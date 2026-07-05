@@ -13,6 +13,7 @@ const (
 	LanguagePy
 	LanguageJS
 	LanguageTS
+	LanguageRust
 )
 
 // naming styles

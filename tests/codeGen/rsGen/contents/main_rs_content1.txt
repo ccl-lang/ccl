@@ -1,0 +1,110 @@
+use ccl_rs_test_1::*;
+
+fn check(condition: bool, message: &str) {
+    if !condition {
+        panic!("{}", message);
+    }
+}
+
+#[test]
+fn runtime_verification() {
+    let user = UserInfo {
+        id: "user123".to_string(),
+        username: "test_user".to_string(),
+        skin: Some(Box::new(SkinInfo {
+            r#type: SkinType::Basic,
+            basic: Some(Box::new(BasicSkin {
+                r: 255,
+                g: 0,
+                b: 0,
+            })),
+            texture: Some(Box::new(TextureSkin::default())),
+        })),
+        ..Default::default()
+    };
+
+    let user_binary = user.serialize_binary();
+    let deserialized_user = UserInfo::deserialize_binary(&user_binary).expect("user binary deserialize");
+    check(deserialized_user.username == "test_user", "Deserialized username mismatch");
+    check(deserialized_user.r#type == UserInfoUserType::Player, "Default enum mismatch");
+
+    let user_json = user.serialize_json().expect("user json serialize");
+    check(user_json.contains("\"user_id\""), "JsonPropertyName did not apply for user_id");
+
+    let deserialized_json_user = UserInfo::deserialize_json(&user_json).expect("user json deserialize");
+    check(deserialized_json_user.id == user.id, "JSON user id mismatch");
+    check(deserialized_json_user.skin.is_some(), "JSON user skin is none");
+    check(
+        deserialized_json_user
+            .skin
+            .as_ref()
+            .unwrap()
+            .basic
+            .as_ref()
+            .unwrap()
+            .r == 255,
+        "JSON nested skin mismatch",
+    );
+
+    let texture = TextureSkin {
+        texture: vec!["a.png".to_string(), "b.png".to_string(), "c.png".to_string()],
+        some_ints: vec![1, 2, 3, 4, 5],
+        some_integers: vec![1, 2, 3, 4, 5],
+    };
+    let texture_binary = texture.serialize_binary();
+    let deserialized_texture =
+        TextureSkin::deserialize_binary(&texture_binary).expect("texture binary deserialize");
+    check(deserialized_texture.texture == texture.texture, "Texture array mismatch");
+    check(deserialized_texture.some_ints == texture.some_ints, "SomeInts array mismatch");
+
+    let bytes_model = AuthGuestAnswer {
+        rpc_id: 4,
+        some_property: "hello".to_string(),
+        some_float: 3.5,
+        success: true,
+        some_bytes: vec![1, 2, 3, 254],
+        my_field: Some(Box::new(SomeTestObj {
+            hello: "nested".to_string(),
+        })),
+        token: "token".to_string(),
+    };
+    let bytes_json = bytes_model.serialize_json().expect("bytes json serialize");
+    check(bytes_json.contains("AQID/g=="), "bytes JSON should use base64");
+    let bytes_from_json =
+        AuthGuestAnswer::deserialize_json(&bytes_json).expect("bytes json deserialize");
+    check(bytes_from_json.some_bytes == vec![1, 2, 3, 254], "bytes JSON mismatch");
+
+    let users_list = UsersList {
+        users: vec![Some(Box::new(user.clone()))],
+        photos: vec![vec![10, 20, 30]],
+        more_users: vec![Some(Box::new(user))],
+        ..Default::default()
+    };
+    let users_json = users_list.serialize_json().expect("users json serialize");
+    check(users_json.contains("ChQe"), "bytes array JSON should use base64");
+    let users_from_json = UsersList::deserialize_json(&users_json).expect("users json deserialize");
+    check(users_from_json.photos[0] == vec![10, 20, 30], "bytes array JSON mismatch");
+
+    let strict_user_data = StrictUserData {
+        level: 7,
+        name: "Old Save".to_string(),
+    };
+    let old_save_data = strict_user_data.serialize_binary();
+    let loose_user_data =
+        LooseUserData::deserialize_binary(&old_save_data).expect("loose binary deserialize");
+    check(loose_user_data.level == 7, "Loose binary parser level mismatch");
+    check(loose_user_data.name == "Old Save", "Loose binary parser name mismatch");
+    check(loose_user_data.last_quest_done == 0, "Loose binary parser default field mismatch");
+
+    let nan_rotation = RotationInfo {
+        x: f32::NAN,
+        y: f32::INFINITY,
+        z: f32::from_bits(1),
+    };
+    let nan_binary = nan_rotation.serialize_binary();
+    let nan_roundtrip =
+        RotationInfo::deserialize_binary(&nan_binary).expect("float edge binary deserialize");
+    check(nan_roundtrip.x.to_bits() == nan_rotation.x.to_bits(), "NaN bits mismatch");
+    check(nan_roundtrip.y == f32::INFINITY, "infinity mismatch");
+    check(nan_roundtrip.z.to_bits() == 1, "subnormal bits mismatch");
+}

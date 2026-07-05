@@ -1,0 +1,51 @@
+use ccl_rs_test_1::*;
+
+fn decode_hex(text: &str) -> Vec<u8> {
+    let mut result = Vec::new();
+    let bytes = text.as_bytes();
+    let mut index = 0;
+    while index < bytes.len() {
+        let high = hex_nibble(bytes[index]);
+        let low = hex_nibble(bytes[index + 1]);
+        result.push((high << 4) | low);
+        index += 2;
+    }
+    result
+}
+
+fn hex_nibble(value: u8) -> u8 {
+    match value {
+        b'0'..=b'9' => value - b'0',
+        b'a'..=b'f' => value - b'a' + 10,
+        b'A'..=b'F' => value - b'A' + 10,
+        _ => panic!("invalid hex"),
+    }
+}
+
+fn encode_hex(data: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut result = String::new();
+    for item in data {
+        result.push(HEX[(item >> 4) as usize] as char);
+        result.push(HEX[(item & 0x0f) as usize] as char);
+    }
+    result
+}
+
+#[test]
+fn rust_go_binary_compatibility() {
+    let expected_hex = "{{GO_HEX}}";
+    let value = RotationInfo {
+        x: 1.5,
+        y: -2.5,
+        z: 3.25,
+    };
+    let rust_binary = value.serialize_binary();
+    assert_eq!(encode_hex(&rust_binary), expected_hex);
+
+    let go_binary = decode_hex(expected_hex);
+    let from_go = RotationInfo::deserialize_binary(&go_binary).expect("deserialize Go payload");
+    assert_eq!(from_go.x.to_bits(), value.x.to_bits());
+    assert_eq!(from_go.y.to_bits(), value.y.to_bits());
+    assert_eq!(from_go.z.to_bits(), value.z.to_bits());
+}

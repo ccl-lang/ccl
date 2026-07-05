@@ -10,6 +10,7 @@ var (
 		LanguagePy:      "py",
 		LanguageJS:      "js",
 		LanguageTS:      "ts",
+		LanguageRust:    "rust",
 	}
 
 	langsAliasNames = map[string]LanguageType{
@@ -29,5 +30,7 @@ var (
 		"javascript": LanguageJS,
 		"ts":         LanguageTS,
 		"typescript": LanguageTS,
+		"rs":         LanguageRust,
+		"rust":       LanguageRust,
 	}
 )

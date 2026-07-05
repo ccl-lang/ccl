@@ -4,7 +4,7 @@
 #[CCLVersion("1.0.0")]
 #[SerializationType("binary")]
 #[SerializationType("json")]
-#[$go,$gd,$py,$ts,$cs:StrictBinaryParsing(false)]
+#[$go,$gd,$py,$ts,$cs,$rust:StrictBinaryParsing(false)]
 import "imported_definitions.ccl";
 
 #[OutputFileGroup("shared1")]
