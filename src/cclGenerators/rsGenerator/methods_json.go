@@ -30,14 +30,20 @@ func (c *RustGenerationContext) generateModelJsonAdapters(
 	builder *codeBuilder.CodeBuilder,
 	model *CCLModel,
 ) {
+	hasBytesField := false
+	hasBytesArrayField := false
 	for _, field := range model.Fields {
-		moduleName := rustFieldName(field.Name) + "_json"
 		if isRustBytesType(field.Type) {
-			generateRustBytesJsonAdapter(builder, moduleName)
-			continue
+			hasBytesField = true
 		}
 		if isRustBytesArrayType(field.Type) {
-			generateRustBytesArrayJsonAdapter(builder, moduleName)
+			hasBytesArrayField = true
 		}
+	}
+	if hasBytesField {
+		generateRustBytesJsonAdapter(builder, "ccl_bytes_json")
+	}
+	if hasBytesArrayField {
+		generateRustBytesArrayJsonAdapter(builder, "ccl_bytes_array_json")
 	}
 }

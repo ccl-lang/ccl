@@ -203,17 +203,17 @@ func (c *RustGenerationContext) generateFieldDeserializeBinary(
 	switch rustStorageTypeName(targetType) {
 	case cclValues.TypeNameString:
 		c.generateRustLengthRead(builder, "field_len", byteOrder, fallback)
-		c.generateRustBoundsCheck(builder, "field_len as usize", fallback)
-		builder.WriteLine(fieldName + " = String::from_utf8(data[offset..offset + field_len as usize].to_vec())").
+		c.generateRustBoundsCheck(builder, "field_len", fallback)
+		builder.WriteLine(fieldName + " = String::from_utf8(data[offset..offset + field_len].to_vec())").
 			Indent().
 			WriteLine(`.map_err(|err| err.to_string())?;`).
 			Unindent().
-			WriteLine("offset += field_len as usize;")
+			WriteLine("offset += field_len;")
 	case cclValues.TypeNameBytes:
 		c.generateRustLengthRead(builder, "field_len", byteOrder, fallback)
-		c.generateRustBoundsCheck(builder, "field_len as usize", fallback)
-		builder.WriteLine(fieldName + " = data[offset..offset + field_len as usize].to_vec();").
-			WriteLine("offset += field_len as usize;")
+		c.generateRustBoundsCheck(builder, "field_len", fallback)
+		builder.WriteLine(fieldName + " = data[offset..offset + field_len].to_vec();").
+			WriteLine("offset += field_len;")
 	case cclValues.TypeNameBool:
 		c.generateRustBoundsCheck(builder, "1", fallback)
 		builder.WriteLine(fieldName + " = data[offset] != 0;").
@@ -237,25 +237,25 @@ func (c *RustGenerationContext) generateArrayDeserializeBinary(
 	fieldName := "result." + rustFieldName(field.Name)
 	targetType := field.Type.GetUnderlyingType()
 	c.generateRustLengthRead(builder, "array_len", byteOrder, fallback)
-	builder.WriteLine(fieldName + " = Vec::with_capacity(array_len as usize);").
+	builder.WriteLine(fieldName + " = Vec::with_capacity(array_len);").
 		WriteLine("for _ in 0..array_len {").
 		Indent()
 
 	switch rustStorageTypeName(targetType) {
 	case cclValues.TypeNameString:
 		c.generateRustLengthRead(builder, "item_len", byteOrder, fallback)
-		c.generateRustBoundsCheck(builder, "item_len as usize", fallback)
-		builder.WriteLine("let item = String::from_utf8(data[offset..offset + item_len as usize].to_vec())").
+		c.generateRustBoundsCheck(builder, "item_len", fallback)
+		builder.WriteLine("let item = String::from_utf8(data[offset..offset + item_len].to_vec())").
 			Indent().
 			WriteLine(`.map_err(|err| err.to_string())?;`).
 			Unindent().
-			WriteLine("offset += item_len as usize;").
+			WriteLine("offset += item_len;").
 			WriteLine(fieldName + ".push(item);")
 	case cclValues.TypeNameBytes:
 		c.generateRustLengthRead(builder, "item_len", byteOrder, fallback)
-		c.generateRustBoundsCheck(builder, "item_len as usize", fallback)
-		builder.WriteLine("let item = data[offset..offset + item_len as usize].to_vec();").
-			WriteLine("offset += item_len as usize;").
+		c.generateRustBoundsCheck(builder, "item_len", fallback)
+		builder.WriteLine("let item = data[offset..offset + item_len].to_vec();").
+			WriteLine("offset += item_len;").
 			WriteLine(fieldName + ".push(item);")
 	case cclValues.TypeNameBool:
 		c.generateRustBoundsCheck(builder, "1", fallback)
@@ -281,7 +281,7 @@ func (c *RustGenerationContext) generateRustLengthRead(
 	fallback string,
 ) {
 	c.generateRustBoundsCheck(builder, "4", fallback)
-	builder.WriteLine("let " + name + " = u32::from_" + byteOrder + "_bytes(data[offset..offset + 4].try_into().map_err(|_| \"invalid binary data\".to_string())?);").
+	builder.WriteLine("let " + name + " = u32::from_" + byteOrder + "_bytes(data[offset..offset + 4].try_into().map_err(|_| \"invalid binary data\".to_string())?) as usize;").
 		WriteLine("offset += 4;")
 }
 
@@ -329,9 +329,9 @@ func (c *RustGenerationContext) generateRustCustomModelRead(
 	fallback string,
 ) {
 	c.generateRustLengthRead(builder, "field_len", byteOrder, fallback)
-	c.generateRustBoundsCheck(builder, "field_len as usize", fallback)
-	builder.WriteLine("let field_bytes = &data[offset..offset + field_len as usize];").
-		WriteLine("offset += field_len as usize;").
+	c.generateRustBoundsCheck(builder, "field_len", fallback)
+	builder.WriteLine("let field_bytes = &data[offset..offset + field_len];").
+		WriteLine("offset += field_len;").
 		WriteLine("if field_bytes.is_empty() || (field_bytes.len() == 1 && field_bytes[0] == 0) {").
 		Indent().
 		WriteLine(fieldName + " = None;").
@@ -351,9 +351,9 @@ func (c *RustGenerationContext) generateRustCustomModelArrayRead(
 	fallback string,
 ) {
 	c.generateRustLengthRead(builder, "item_len", byteOrder, fallback)
-	c.generateRustBoundsCheck(builder, "item_len as usize", fallback)
-	builder.WriteLine("let item_bytes = &data[offset..offset + item_len as usize];").
-		WriteLine("offset += item_len as usize;").
+	c.generateRustBoundsCheck(builder, "item_len", fallback)
+	builder.WriteLine("let item_bytes = &data[offset..offset + item_len];").
+		WriteLine("offset += item_len;").
 		WriteLine("if item_bytes.is_empty() || (item_bytes.len() == 1 && item_bytes[0] == 0) {").
 		Indent().
 		WriteLine(fieldName + ".push(None);").

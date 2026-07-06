@@ -155,10 +155,10 @@ func (c *RustGenerationContext) generateRustField(
 		builder.WriteLine(`#[serde(rename = "` + jsonName + `")]`)
 	}
 	if isRustBytesType(field.Type) {
-		builder.WriteLine(`#[serde(with = "` + fieldName + `_json")]`)
+		builder.WriteLine(`#[serde(with = "ccl_bytes_json")]`)
 	}
 	if isRustBytesArrayType(field.Type) {
-		builder.WriteLine(`#[serde(with = "` + fieldName + `_json")]`)
+		builder.WriteLine(`#[serde(with = "ccl_bytes_array_json")]`)
 	}
 	builder.WriteLine("pub " + fieldName + ": " + fieldType + ",")
 	return nil
