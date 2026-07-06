@@ -98,6 +98,7 @@ func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 			builder.LineD("if ($field != null)").
 				WriteLine("{").
 				Indent().
+				WriteLine("writer.Write((byte)1);").
 				LineD("var customBytes = $field.SerializeBinary();").
 				WriteLine("writer.Write((uint)customBytes.Length);").
 				WriteLine("writer.Write(customBytes);").
@@ -106,7 +107,7 @@ func (c *CSharpGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 				WriteLine("else").
 				WriteLine("{").
 				Indent().
-				WriteLine("writer.Write((uint)0);").
+				WriteLine("writer.Write((byte)0);").
 				Unindent().
 				WriteLine("}")
 		}
@@ -170,6 +171,7 @@ func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, 
 			builder.WriteLine("if (item != null)")
 			builder.WriteLine("{")
 			builder.Indent()
+			builder.WriteLine("writer.Write((byte)1);")
 			builder.WriteLine("var customBytes = item.SerializeBinary();")
 			builder.WriteLine("writer.Write((uint)customBytes.Length);")
 			builder.WriteLine("writer.Write(customBytes);")
@@ -178,7 +180,7 @@ func (c *CSharpGenerationContext) generateArraySerializeBinary(field *CCLField, 
 			builder.WriteLine("else")
 			builder.WriteLine("{")
 			builder.Indent()
-			builder.WriteLine("writer.Write((uint)0);")
+			builder.WriteLine("writer.Write((byte)0);")
 			builder.Unindent()
 			builder.WriteLine("}")
 		}
@@ -349,20 +351,7 @@ func (c *CSharpGenerationContext) generateFieldDeserializeBinary(field *CCLField
 		builder.LineD("$field = reader.ReadInt64();")
 	default:
 		if field.IsCustomTypeModel() {
-			builder.WriteLine("{").
-				Indent()
-			c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
-			builder.WriteLine("var len = reader.ReadUInt32();").
-				WriteLine("if (len > 0)").
-				WriteLine("{").
-				Indent().
-				LineD("if (len > ms.Length - ms.Position) return $binaryParseFallback;").
-				WriteLine("var bytes = reader.ReadBytes((int)len);").
-				LineD("$field = $type.DeserializeBinary(bytes);").
-				Unindent().
-				WriteLine("}").
-				Unindent().
-				WriteLine("}")
+			c.generateCSharpCustomModelFieldDeserializeBinary(builder)
 		}
 	}
 	return nil
@@ -457,22 +446,7 @@ func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField
 		builder.LineD("$field.Add(reader.ReadByte() != 0);")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
-			c.generateCSharpBinaryDeserializeBoundsCheck(builder, "4")
-			builder.WriteLine("var itemLen = reader.ReadUInt32();").
-				WriteLine("if (itemLen > 0)").
-				WriteLine("{").
-				Indent().
-				LineD("if (itemLen > ms.Length - ms.Position) return $binaryParseFallback;").
-				WriteLine("var bytes = reader.ReadBytes((int)itemLen);").
-				LineD("$field.Add($type.DeserializeBinary(bytes));").
-				Unindent().
-				WriteLine("}").
-				WriteLine("else").
-				WriteLine("{").
-				Indent().
-				LineD("$field.Add(null);").
-				Unindent().
-				WriteLine("}")
+			c.generateCSharpCustomModelArrayItemDeserializeBinary(builder)
 		}
 	}
 
@@ -481,13 +455,4 @@ func (c *CSharpGenerationContext) generateArrayDeserializeBinary(field *CCLField
 		Unindent().
 		WriteLine("}")
 	return nil
-}
-
-func (c *CSharpGenerationContext) generateCSharpBinaryDeserializeBoundsCheck(
-	builder *codeBuilder.CodeBuilder,
-	requiredBytes string,
-) {
-	builder.MapVarPairs("requiredBytes", requiredBytes)
-	builder.LineD("if (ms.Length - ms.Position < $requiredBytes) return $binaryParseFallback;")
-	builder.UnmapVar("requiredBytes")
 }

@@ -123,7 +123,22 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(
 			WriteLine("}")
 	default:
 		if isCustomType {
-			builder.LineD("$fieldBytes, err := $field.SerializeBinary()").
+			builder.LineD("if $field == nil {").
+				Indent().
+				WriteLine("if err := binary.Write(buf, binaryEndian, uint8(0)); err != nil {").
+				Indent().
+				WriteLine("return nil, err").
+				Unindent().
+				WriteLine("}").
+				Unindent().
+				WriteLine("} else {").
+				Indent().
+				WriteLine("if err := binary.Write(buf, binaryEndian, uint8(1)); err != nil {").
+				Indent().
+				WriteLine("return nil, err").
+				Unindent().
+				WriteLine("}").
+				LineD("$fieldBytes, err := $field.SerializeBinary()").
 				WriteLine("if err != nil {").
 				Indent().
 				WriteLine("return nil, err").
@@ -134,9 +149,11 @@ func (c *GoGenerationContext) generateFieldSerializeBinaryMethod(
 				WriteLine("return nil, err").
 				Unindent().
 				WriteLine("}").
-				LineD("if err := binary.Write(buf, binaryEndian, $fieldBytes); err != nil {").
+				LineD("if _, err := buf.Write($fieldBytes); err != nil {").
 				Indent().
 				WriteLine("return nil, err").
+				Unindent().
+				WriteLine("}").
 				Unindent().
 				WriteLine("}")
 		} else {
@@ -211,7 +228,22 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(
 			WriteLine("}")
 	default:
 		if isCustomType {
-			builder.LineD("$fieldBytes, err := elem.SerializeBinary()").
+			builder.WriteLine("if elem == nil {").
+				Indent().
+				WriteLine("if err := binary.Write(buf, binaryEndian, uint8(0)); err != nil {").
+				Indent().
+				WriteLine("return nil, err").
+				Unindent().
+				WriteLine("}").
+				Unindent().
+				WriteLine("} else {").
+				Indent().
+				WriteLine("if err := binary.Write(buf, binaryEndian, uint8(1)); err != nil {").
+				Indent().
+				WriteLine("return nil, err").
+				Unindent().
+				WriteLine("}").
+				LineD("$fieldBytes, err := elem.SerializeBinary()").
 				WriteLine("if err != nil {").
 				Indent().
 				WriteLine("return nil, err").
@@ -222,9 +254,11 @@ func (c *GoGenerationContext) generateArraySerializeBinaryMethod(
 				WriteLine("return nil, err").
 				Unindent().
 				WriteLine("}").
-				LineD("if err := binary.Write(buf, binaryEndian, $fieldBytes); err != nil {").
+				LineD("if _, err := buf.Write($fieldBytes); err != nil {").
 				Indent().
 				WriteLine("return nil, err").
+				Unindent().
+				WriteLine("}").
 				Unindent().
 				WriteLine("}")
 		} else {

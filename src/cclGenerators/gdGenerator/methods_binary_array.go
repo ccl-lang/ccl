@@ -64,9 +64,17 @@ func (c *GDScriptGenerationContext) generateArraySerializeBinary(
 			WriteLine("buffer.put_data(item)")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
-			builder.WriteLine("var item_bytes = item.serialize_binary() if item else PackedByteArray([0])").
+			builder.WriteLine("if item:").
+				Indent().
+				WriteLine("buffer.put_u8(1)").
+				WriteLine("var item_bytes = item.serialize_binary()").
 				WriteLine("buffer.put_u32(item_bytes.size())").
-				WriteLine("buffer.put_data(item_bytes)")
+				WriteLine("buffer.put_data(item_bytes)").
+				Unindent().
+				WriteLine("else:").
+				Indent().
+				WriteLine("buffer.put_u8(0)").
+				Unindent()
 		} else {
 			return &cclErrors.UnsupportedFieldTypeError{
 				TypeName:       targetFieldTypeName,
@@ -109,6 +117,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 		"model",
 	).MapVarPairs(
 		"fieldLen", fieldRawName+"_len",
+		"fieldItemPresent", fieldRawName+"_item_present",
 		"field", resultField,
 		"fieldT", targetFieldTypeName,
 		"fieldTargetT", fieldTargetLangType,
@@ -117,6 +126,7 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	)
 	defer builder.UnmapVar(
 		"fieldLen",
+		"fieldItemPresent",
 		"field",
 		"fieldT",
 		"fieldTargetT",
@@ -180,6 +190,14 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 			LineD("$field.append(buffer.$getDataCall)")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
+			c.generateBinaryDeserializeBoundsCheck(builder, "1")
+			builder.LineD("var $fieldItemPresent := buffer.get_u8()").
+				LineD("if $fieldItemPresent == 0:").
+				Indent().
+				LineD("$field.append(null)").
+				Unindent().
+				LineD("elif $fieldItemPresent == 1:").
+				Indent()
 			c.generateBinaryDeserializeBoundsCheck(builder, "4")
 			builder.WriteLine("var item_len := buffer.get_u32()").
 				WriteLine("if item_len > buffer.get_size() - buffer.get_position():").
@@ -187,7 +205,12 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 				LineD("return $binaryParseFallback").
 				Unindent().
 				LineD("var item_bytes: PackedByteArray = buffer.$getDataCall").
-				LineD("$field.append($fieldT.deserialize_binary(item_bytes))")
+				LineD("$field.append($fieldT.deserialize_binary(item_bytes))").
+				Unindent().
+				WriteLine("else:").
+				Indent().
+				LineD("return $binaryParseFallback").
+				Unindent()
 		} else {
 			return &cclErrors.UnsupportedFieldTypeError{
 				TypeName:       targetFieldTypeName,

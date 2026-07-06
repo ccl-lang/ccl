@@ -162,24 +162,39 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(
 			LineD("$field = time.Unix(0, $fieldUnix)")
 	default:
 		if isCustomType {
+			registerGoImport(builder, "errors")
 			lenVarName := fName + "BytesLen"
 			bytesVarName := fName + "Bytes"
+			presenceVarName := fName + "Present"
 			fieldType := field.Type.GetName()
 
 			builder.MapVarPairs(
 				"fieldBytesLen", lenVarName,
 				"fieldBytes", bytesVarName,
+				"fieldPresent", presenceVarName,
 				"fieldType", fieldType,
 			)
 
-			builder.LineD("var $fieldBytesLen uint32").
-				LineD("if err := binary.Read(buf, binaryEndian, &$fieldBytesLen); err != nil {").
+			builder.LineD("var $fieldPresent uint8").
+				LineD("if err := binary.Read(buf, binaryEndian, &$fieldPresent); err != nil {").
 				Indent().
 				LineD("return $binaryParseErrorReturn").
 				Unindent().
 				WriteLine("}")
 
-			builder.LineD("$fieldBytes := make([]byte, $fieldBytesLen)").
+			builder.LineD("if $fieldPresent == 0 {").
+				Indent().
+				LineD("m.$fieldName = nil").
+				Unindent().
+				LineD("} else if $fieldPresent == 1 {").
+				Indent().
+				LineD("var $fieldBytesLen uint32").
+				LineD("if err := binary.Read(buf, binaryEndian, &$fieldBytesLen); err != nil {").
+				Indent().
+				LineD("return $binaryParseErrorReturn").
+				Unindent().
+				WriteLine("}").
+				LineD("$fieldBytes := make([]byte, $fieldBytesLen)").
 				LineD("if $fieldBytesLen > 0 {").
 				Indent().
 				LineD("if _, err := buf.Read($fieldBytes); err != nil {").
@@ -188,24 +203,28 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(
 				Unindent().
 				WriteLine("}").
 				Unindent().
-				WriteLine("}")
-
-			// make sure m.field is not nil ONLY when len(bytesVarName) != 0 and !(len(bytesVarName) == 1 and bytesVarName[0] == 0)
-			builder.LineD("if m.$fieldName == nil && len($fieldBytes) != 0 && !(len($fieldBytes) == 1 && $fieldBytes[0] == 0) {").
+				WriteLine("}").
+				LineD("if m.$fieldName == nil {").
 				Indent().
 				LineD("m.$fieldName = new($fieldType)").
 				Unindent().
-				WriteLine("}")
-
-			builder.LineD("if err := m.$fieldName.DeserializeBinary($fieldBytes); err != nil {").
+				WriteLine("}").
+				LineD("if err := m.$fieldName.DeserializeBinary($fieldBytes); err != nil {").
 				Indent().
 				LineD("return $binaryParseErrorReturn").
+				Unindent().
+				WriteLine("}").
+				Unindent().
+				WriteLine("} else {").
+				Indent().
+				WriteLine(`return errors.New("invalid binary model presence marker")`).
 				Unindent().
 				WriteLine("}")
 
 			builder.UnmapVar(
 				"fieldBytesLen",
 				"fieldBytes",
+				"fieldPresent",
 				"fieldType",
 			)
 		} else {
@@ -341,11 +360,26 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(
 			LineD("$field[i] = time.Unix(0, elemUnix)")
 	default:
 		if isCustomType {
+			registerGoImport(builder, "errors")
 			builder.MapVarPairs("fieldType", targetFieldType.GetName())
+			builder.WriteLine("var elemPresent uint8").
+				WriteLine("if err := binary.Read(buf, binaryEndian, &elemPresent); err != nil {").
+				Indent().
+				LineD("return $binaryParseErrorReturn").
+				Unindent().
+				WriteLine("}")
 			if isPointer {
-				builder.LineD("var elem $fieldRealType = new($fieldType)")
+				builder.WriteLine("if elemPresent == 0 {").
+					Indent().
+					LineD("$field[i] = nil").
+					Unindent().
+					WriteLine("} else if elemPresent == 1 {").
+					Indent().
+					LineD("elem := new($fieldType)")
 			} else {
-				builder.LineD("var elem $fieldRealType")
+				builder.WriteLine("if elemPresent == 1 {").
+					Indent().
+					LineD("var elem $fieldRealType")
 			}
 			builder.WriteLine("var elemLen uint32").
 				WriteLine("if err := binary.Read(buf, binaryEndian, &elemLen); err != nil {").
@@ -369,6 +403,21 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(
 				Unindent().
 				WriteLine("}").
 				LineD("$field[i] = elem")
+			if isPointer {
+				builder.Unindent().
+					WriteLine("} else {").
+					Indent().
+					WriteLine(`return errors.New("invalid binary model presence marker")`).
+					Unindent().
+					WriteLine("}")
+			} else {
+				builder.Unindent().
+					WriteLine("} else {").
+					Indent().
+					WriteLine(`return errors.New("invalid binary model presence marker")`).
+					Unindent().
+					WriteLine("}")
+			}
 			builder.UnmapVar("fieldType")
 		} else {
 			if targetFieldTypeName == cclValues.TypeNameInt || targetFieldType.IsCustomTypeEnum() {

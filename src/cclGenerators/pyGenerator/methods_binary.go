@@ -80,14 +80,15 @@ func (c *PythonGenerationContext) generateFieldSerializeBinary(field *CCLField, 
 		if field.IsCustomTypeModel() {
 			builder.LineD("if $field:").
 				Indent().
+				WriteLine("buffer.extend(struct.pack('<B', 1))").
 				LineD("$rawFieldBytes = $field.serialize_binary()").
+				LineD("buffer.extend(struct.pack('<I', len($rawFieldBytes)))").
+				LineD("buffer.extend($rawFieldBytes)").
 				Unindent().
 				WriteLine("else:").
 				Indent().
-				LineD("$rawFieldBytes = b'\\x00'").
-				Unindent().
-				LineD("buffer.extend(struct.pack('<I', len($rawFieldBytes)))").
-				LineD("buffer.extend($rawFieldBytes)")
+				WriteLine("buffer.extend(struct.pack('<B', 0))").
+				Unindent()
 		}
 	}
 	builder.NewLine()
@@ -139,14 +140,15 @@ func (c *PythonGenerationContext) generateArraySerializeBinary(field *CCLField, 
 		if targetFieldType.IsCustomTypeModel() {
 			builder.WriteLine("if item:").
 				Indent().
+				WriteLine("buffer.extend(struct.pack('<B', 1))").
 				WriteLine("item_bytes = item.serialize_binary()").
+				WriteLine("buffer.extend(struct.pack('<I', len(item_bytes)))").
+				WriteLine("buffer.extend(item_bytes)").
 				Unindent().
 				WriteLine("else:").
 				Indent().
-				WriteLine("item_bytes = b'\\x00'").
-				Unindent().
-				WriteLine("buffer.extend(struct.pack('<I', len(item_bytes)))").
-				WriteLine("buffer.extend(item_bytes)")
+				WriteLine("buffer.extend(struct.pack('<B', 0))").
+				Unindent()
 		}
 	}
 	builder.UnindentLine()
@@ -326,7 +328,15 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 	default:
 		// Custom type handling
 		if field.IsCustomTypeModel() {
-			builder.LineD("$len = struct.unpack_from('<I', buffer, offset)[0]").
+			builder.WriteLine("present = struct.unpack_from('<B', buffer, offset)[0]").
+				WriteLine("offset += 1").
+				WriteLine("if present == 0:").
+				Indent().
+				LineD("$field = None").
+				Unindent().
+				WriteLine("elif present == 1:").
+				Indent().
+				LineD("$len = struct.unpack_from('<I', buffer, offset)[0]").
 				WriteLine("offset += 4").
 				LineD("if $len > len(buffer) - offset:").
 				Indent().
@@ -334,7 +344,12 @@ func (c *PythonGenerationContext) generateFieldDeserializeBinary(
 				Unindent().
 				LineD("$rawFieldBytes = bytes(buffer[offset:offset+$len])").
 				LineD("offset += $len").
-				LineD("$field = $type.deserialize_binary($rawFieldBytes)")
+				LineD("$field = $type.deserialize_binary($rawFieldBytes)").
+				Unindent().
+				WriteLine("else:").
+				Indent().
+				LineD("return $binaryParseFallback").
+				Unindent()
 		}
 	}
 	builder.NewLine()
@@ -453,7 +468,15 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 			WriteLine("offset += item_len")
 	default:
 		if targetFieldType.IsCustomTypeModel() {
-			builder.WriteLine("item_len = struct.unpack_from('<I', buffer, offset)[0]").
+			builder.WriteLine("item_present = struct.unpack_from('<B', buffer, offset)[0]").
+				WriteLine("offset += 1").
+				WriteLine("if item_present == 0:").
+				Indent().
+				LineD("$field.append(None)").
+				Unindent().
+				WriteLine("elif item_present == 1:").
+				Indent().
+				WriteLine("item_len = struct.unpack_from('<I', buffer, offset)[0]").
 				WriteLine("offset += 4").
 				WriteLine("if item_len > len(buffer) - offset:").
 				Indent().
@@ -461,7 +484,12 @@ func (c *PythonGenerationContext) generateArrayDeserializeBinary(
 				Unindent().
 				WriteLine("item_bytes = bytes(buffer[offset:offset+item_len])").
 				WriteLine("offset += item_len").
-				LineD("$field.append($type.deserialize_binary(item_bytes))")
+				LineD("$field.append($type.deserialize_binary(item_bytes))").
+				Unindent().
+				WriteLine("else:").
+				Indent().
+				LineD("return $binaryParseFallback").
+				Unindent()
 		}
 	}
 	builder.UnindentLine()

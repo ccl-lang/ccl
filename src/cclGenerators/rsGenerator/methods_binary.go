@@ -113,13 +113,13 @@ func (c *RustGenerationContext) generateFieldSerializeBinary(
 		if targetType.IsCustomTypeModel() {
 			builder.WriteLine("if let Some(value) = &" + fieldName + " {").
 				Indent().
+				WriteLine("buffer.push(1);").
 				WriteLine("let custom_bytes = value.serialize_binary();").
 				WriteLine("buffer.extend_from_slice(&(custom_bytes.len() as u32).to_" + byteOrder + "_bytes());").
 				WriteLine("buffer.extend_from_slice(&custom_bytes);").
 				Unindent().
 				WriteLine("} else {").
 				Indent().
-				WriteLine("buffer.extend_from_slice(&1u32.to_" + byteOrder + "_bytes());").
 				WriteLine("buffer.push(0);").
 				Unindent().
 				WriteLine("}")
@@ -155,13 +155,13 @@ func (c *RustGenerationContext) generateArraySerializeBinary(
 		if targetType.IsCustomTypeModel() {
 			builder.WriteLine("if let Some(value) = item {").
 				Indent().
+				WriteLine("buffer.push(1);").
 				WriteLine("let custom_bytes = value.serialize_binary();").
 				WriteLine("buffer.extend_from_slice(&(custom_bytes.len() as u32).to_" + byteOrder + "_bytes());").
 				WriteLine("buffer.extend_from_slice(&custom_bytes);").
 				Unindent().
 				WriteLine("} else {").
 				Indent().
-				WriteLine("buffer.extend_from_slice(&1u32.to_" + byteOrder + "_bytes());").
 				WriteLine("buffer.push(0);").
 				Unindent().
 				WriteLine("}")
@@ -328,17 +328,24 @@ func (c *RustGenerationContext) generateRustCustomModelRead(
 	byteOrder string,
 	fallback string,
 ) {
+	c.generateRustBoundsCheck(builder, "1", fallback)
+	builder.WriteLine("let field_present = data[offset];").
+		WriteLine("offset += 1;").
+		WriteLine("if field_present == 0 {").
+		Indent().
+		WriteLine(fieldName + " = None;").
+		Unindent().
+		WriteLine("} else if field_present == 1 {").
+		Indent()
 	c.generateRustLengthRead(builder, "field_len", byteOrder, fallback)
 	c.generateRustBoundsCheck(builder, "field_len", fallback)
 	builder.WriteLine("let field_bytes = &data[offset..offset + field_len];").
 		WriteLine("offset += field_len;").
-		WriteLine("if field_bytes.is_empty() || (field_bytes.len() == 1 && field_bytes[0] == 0) {").
-		Indent().
-		WriteLine(fieldName + " = None;").
+		WriteLine(fieldName + " = Some(Box::new(" + typeName + "::deserialize_binary(field_bytes)?));").
 		Unindent().
 		WriteLine("} else {").
 		Indent().
-		WriteLine(fieldName + " = Some(Box::new(" + typeName + "::deserialize_binary(field_bytes)?));").
+		WriteLine(fallback).
 		Unindent().
 		WriteLine("}")
 }
@@ -350,17 +357,24 @@ func (c *RustGenerationContext) generateRustCustomModelArrayRead(
 	byteOrder string,
 	fallback string,
 ) {
+	c.generateRustBoundsCheck(builder, "1", fallback)
+	builder.WriteLine("let item_present = data[offset];").
+		WriteLine("offset += 1;").
+		WriteLine("if item_present == 0 {").
+		Indent().
+		WriteLine(fieldName + ".push(None);").
+		Unindent().
+		WriteLine("} else if item_present == 1 {").
+		Indent()
 	c.generateRustLengthRead(builder, "item_len", byteOrder, fallback)
 	c.generateRustBoundsCheck(builder, "item_len", fallback)
 	builder.WriteLine("let item_bytes = &data[offset..offset + item_len];").
 		WriteLine("offset += item_len;").
-		WriteLine("if item_bytes.is_empty() || (item_bytes.len() == 1 && item_bytes[0] == 0) {").
-		Indent().
-		WriteLine(fieldName + ".push(None);").
+		WriteLine(fieldName + ".push(Some(Box::new(" + typeName + "::deserialize_binary(item_bytes)?)));").
 		Unindent().
 		WriteLine("} else {").
 		Indent().
-		WriteLine(fieldName + ".push(Some(Box::new(" + typeName + "::deserialize_binary(item_bytes)?)));").
+		WriteLine(fallback).
 		Unindent().
 		WriteLine("}")
 }
