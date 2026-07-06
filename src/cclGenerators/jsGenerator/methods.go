@@ -277,6 +277,10 @@ func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		WriteLine("}").
 		NewLine()
 
+	if err := c.generateDeepCloneMethod(model, builder); err != nil {
+		return err
+	}
+
 	if c.NeedsJsonSerialization(LanguageName, model) {
 		if err := c.generateSerializeJsonMethods(model, builder); err != nil {
 			return err

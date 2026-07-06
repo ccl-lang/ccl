@@ -13,6 +13,7 @@ class Program
             TestUser();
             TestPosition();
             TestEmptyNestedModel();
+            TestDeepClone();
             TestStrictBinaryParsing();
             Console.WriteLine("Runtime verification successful!");
         }
@@ -153,6 +154,60 @@ class Program
         }
 
         Console.WriteLine("Empty nested model test passed!");
+    }
+
+    static void TestDeepClone()
+    {
+        Console.WriteLine("Testing DeepClone...");
+        var user = new UserInfo();
+        user.Id = "clone-user";
+        user.Username = "clone_source";
+
+        var skin = new SkinInfo();
+        var basicSkin = new BasicSkin();
+        basicSkin.R = 255;
+        basicSkin.G = 1;
+        basicSkin.B = 2;
+        skin.Basic = basicSkin;
+        user.Skin = skin;
+
+        var usersList = new UsersList();
+        usersList.Users.Add(user);
+        usersList.Usernames.Add("alpha");
+        usersList.Photos.Add(new byte[] { 1, 2, 3 });
+
+        var clone = usersList.DeepClone();
+        if (Object.ReferenceEquals(clone, usersList))
+        {
+            throw new Exception("DeepClone returned the original model");
+        }
+        if (Object.ReferenceEquals(clone.Users, usersList.Users) ||
+            Object.ReferenceEquals(clone.Users[0], usersList.Users[0]))
+        {
+            throw new Exception("DeepClone reused nested users");
+        }
+        if (Object.ReferenceEquals(clone.Users[0].Skin, usersList.Users[0].Skin))
+        {
+            throw new Exception("DeepClone reused nested skin");
+        }
+
+        clone.Users[0].Skin.Basic.R = 99;
+        if (usersList.Users[0].Skin.Basic.R != 255)
+        {
+            throw new Exception("DeepClone nested mutation affected original");
+        }
+        clone.Usernames[0] = "changed";
+        if (usersList.Usernames[0] != "alpha")
+        {
+            throw new Exception("DeepClone primitive array mutation affected original");
+        }
+        clone.Photos[0][0] = 9;
+        if (usersList.Photos[0][0] != 1)
+        {
+            throw new Exception("DeepClone bytes array mutation affected original");
+        }
+
+        Console.WriteLine("DeepClone test passed!");
     }
 
     static void TestStrictBinaryParsing()

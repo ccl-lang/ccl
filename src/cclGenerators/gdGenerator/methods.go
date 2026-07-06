@@ -225,6 +225,10 @@ func (c *GDScriptGenerationContext) generateModelClass(builder *codeBuilder.Code
 		WriteLine("return " + model.Name + ".new()").
 		UnindentLine()
 
+	if err := c.generateDeepCloneMethod(model, builder); err != nil {
+		return err
+	}
+
 	return nil
 }
 

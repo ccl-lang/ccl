@@ -253,6 +253,10 @@ func (c *PythonGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		UnindentLine().
 		NewLine()
 
+	if err := c.generateDeepCloneMethod(model, builder); err != nil {
+		return err
+	}
+
 	return nil
 }
 

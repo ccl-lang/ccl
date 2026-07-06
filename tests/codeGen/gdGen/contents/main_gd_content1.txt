@@ -126,6 +126,40 @@ func _init():
 		quit(1)
 		return
 
+	var clone_users = UsersList.new()
+	clone_users.users.append(user)
+	clone_users.usernames.append("alpha")
+	var clone_photo := PackedByteArray([1, 2, 3])
+	clone_users.photos.append(clone_photo)
+	var clone_result = clone_users.deep_clone()
+	if clone_result == clone_users:
+		print("Error: DeepClone returned the original model")
+		quit(1)
+		return
+	if clone_result.users == clone_users.users or clone_result.users[0] == clone_users.users[0]:
+		print("Error: DeepClone reused nested users")
+		quit(1)
+		return
+	if clone_result.users[0].skin == clone_users.users[0].skin:
+		print("Error: DeepClone reused nested skin")
+		quit(1)
+		return
+	clone_result.users[0].skin.basic.r = 99
+	if clone_users.users[0].skin.basic.r != 255:
+		print("Error: DeepClone nested mutation affected original")
+		quit(1)
+		return
+	clone_result.usernames[0] = "changed"
+	if clone_users.usernames[0] != "alpha":
+		print("Error: DeepClone primitive array mutation affected original")
+		quit(1)
+		return
+	clone_result.photos[0][0] = 9
+	if clone_users.photos[0][0] != 1:
+		print("Error: DeepClone bytes array mutation affected original")
+		quit(1)
+		return
+
 	var strict_user_data = StrictUserData.new()
 	strict_user_data.level = 7
 	strict_user_data.name = "Old Save"

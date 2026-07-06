@@ -8,6 +8,7 @@ import { LooseUserData } from './models/LooseUserData';
 import { StrictUserData } from './models/StrictUserData';
 import { EmptyModel } from './models/EmptyModel';
 import { EmptyModelHolder } from './models/EmptyModelHolder';
+import { UsersList } from './models/UsersList';
 
 function testUser() {
 	console.log("Testing UserInfo...");
@@ -122,6 +123,52 @@ function testEmptyNestedModel() {
 	console.log("Empty nested model test passed!");
 }
 
+function testDeepClone() {
+	console.log("Testing DeepClone...");
+	const user = new UserInfo();
+	user.id = "clone-user";
+	user.username = "clone_source";
+
+	const skin = new SkinInfo();
+	const basicSkin = new BasicSkin();
+	basicSkin.r = 255;
+	basicSkin.g = 1;
+	basicSkin.b = 2;
+	skin.basic = basicSkin;
+	user.skin = skin;
+
+	const usersList = new UsersList();
+	usersList.users = [user];
+	usersList.usernames = ["alpha", "beta"];
+	usersList.photos = [new Uint8Array([1, 2, 3])];
+
+	const clone = usersList.deepClone();
+	if (clone === usersList) {
+		throw new Error("DeepClone returned the original model");
+	}
+	if (clone.users === usersList.users || clone.users[0] === usersList.users[0]) {
+		throw new Error("DeepClone reused nested users");
+	}
+	if (clone.users[0]?.skin === usersList.users[0]?.skin) {
+		throw new Error("DeepClone reused nested skin");
+	}
+
+	clone.users[0]!.skin!.basic!.r = 99;
+	if (usersList.users[0]!.skin!.basic!.r !== 255) {
+		throw new Error("DeepClone nested mutation affected original");
+	}
+	clone.usernames[0] = "changed";
+	if (usersList.usernames[0] !== "alpha") {
+		throw new Error("DeepClone primitive array mutation affected original");
+	}
+	clone.photos[0][0] = 9;
+	if (usersList.photos[0][0] !== 1) {
+		throw new Error("DeepClone bytes array mutation affected original");
+	}
+
+	console.log("DeepClone test passed!");
+}
+
 function testStrictBinaryParsing() {
 	console.log("Testing StrictBinaryParsing...");
 	const strictUserData = new StrictUserData();
@@ -150,6 +197,7 @@ try {
 	testUser();
 	testPosition();
 	testEmptyNestedModel();
+	testDeepClone();
 	testStrictBinaryParsing();
 	console.log("Runtime verification successful!");
 } catch (e) {

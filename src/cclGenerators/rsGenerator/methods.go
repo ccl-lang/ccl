@@ -126,6 +126,7 @@ func (c *RustGenerationContext) generateModel(builder *codeBuilder.CodeBuilder, 
 	if err := c.generateModelDefault(builder, model); err != nil {
 		return err
 	}
+	c.generateModelDeepClone(builder, model)
 	if c.NeedsJsonSerialization(CurrentLanguage, model) {
 		c.generateModelJsonMethods(builder, model)
 		c.generateModelJsonAdapters(builder, model)

@@ -247,7 +247,7 @@ func (c *GoGenerationContext) generateMethodsForModel(
 
 	// generate CloneEmpty() method
 	if c.NeedsCloneMethods(CurrentLanguage, currentModel) {
-		if err := c.generateCloneMethods(builder); err != nil {
+		if err := c.generateCloneMethods(builder, currentModel); err != nil {
 			return err
 		}
 	}

@@ -4,6 +4,7 @@
 #[CCLVersion("1.0.0")]
 #[SerializationType("binary")]
 #[SerializationType("json")]
+#[AddCloneMethods(true)]
 #[$go,$gd,$py,$ts,$cs,$rust:StrictBinaryParsing(false)]
 import "imported_definitions.ccl";
 

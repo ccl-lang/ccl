@@ -120,6 +120,44 @@ def test_empty_nested_model():
 
 	print("Empty nested model test passed!")
 
+def test_deep_clone():
+	print("Testing DeepClone...")
+	user = UserInfo()
+	user.id = "clone-user"
+	user.username = "clone_source"
+
+	skin = SkinInfo()
+	basic_skin = BasicSkin()
+	basic_skin.r = 255
+	basic_skin.g = 1
+	basic_skin.b = 2
+	skin.basic = basic_skin
+	user.skin = skin
+
+	users_list = UsersList()
+	users_list.users = [user]
+	users_list.usernames = ["alpha", "beta"]
+	users_list.photos = [bytes([1, 2, 3])]
+
+	clone = users_list.deep_clone()
+	if clone is users_list:
+		raise Exception("DeepClone returned the original model")
+	if clone.users is users_list.users or clone.users[0] is users_list.users[0]:
+		raise Exception("DeepClone reused nested users")
+	if clone.users[0].skin is users_list.users[0].skin:
+		raise Exception("DeepClone reused nested skin")
+
+	clone.users[0].skin.basic.r = 99
+	if users_list.users[0].skin.basic.r != 255:
+		raise Exception("DeepClone nested mutation affected original")
+	clone.usernames[0] = "changed"
+	if users_list.usernames[0] != "alpha":
+		raise Exception("DeepClone primitive array mutation affected original")
+	if clone.photos is users_list.photos:
+		raise Exception("DeepClone reused bytes array")
+
+	print("DeepClone test passed!")
+
 def test_strict_binary_parsing():
 	print("Testing StrictBinaryParsing...")
 	strict_user_data = StrictUserData()
@@ -144,6 +182,7 @@ if __name__ == "__main__":
 		test_user()
 		test_position()
 		test_empty_nested_model()
+		test_deep_clone()
 		test_strict_binary_parsing()
 		print("Runtime verification successful!")
 	except Exception as e:

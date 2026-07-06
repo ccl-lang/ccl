@@ -99,6 +99,16 @@ fn runtime_verification() {
     let users_from_json = UsersList::deserialize_json(&users_json).expect("users json deserialize");
     check(users_from_json.photos[0] == vec![10, 20, 30], "bytes array JSON mismatch");
 
+    let mut cloned_users = users_list.deep_clone();
+    check(cloned_users == users_list, "DeepClone value mismatch");
+    cloned_users.users[0].as_mut().unwrap().skin.as_mut().unwrap().basic.as_mut().unwrap().r = 99;
+    check(
+        users_list.users[0].as_ref().unwrap().skin.as_ref().unwrap().basic.as_ref().unwrap().r == 255,
+        "DeepClone nested mutation affected original",
+    );
+    cloned_users.photos[0][0] = 9;
+    check(users_list.photos[0][0] == 10, "DeepClone bytes array mutation affected original");
+
     let strict_user_data = StrictUserData {
         level: 7,
         name: "Old Save".to_string(),

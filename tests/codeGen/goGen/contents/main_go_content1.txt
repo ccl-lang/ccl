@@ -92,6 +92,14 @@ func main() {
 		SomeInts:     []int{1, 2, 3, 4, 5},
 		SomeIntegers: []int64{1, 2, 3, 4, 5},
 	}
+	textureClone := texture.DeepClone()
+	check(textureClone != nil, "DeepClone texture returned nil")
+	check(textureClone.Texture != nil && len(textureClone.Texture) == len(texture.Texture), "DeepClone texture array length mismatch")
+	textureClone.Texture[0] = "changed.png"
+	check(texture.Texture[0] == "a.png", "DeepClone string array mutation affected original")
+	textureClone.SomeInts[0] = 99
+	check(texture.SomeInts[0] == 1, "DeepClone int array mutation affected original")
+
 	textureBinary, err := texture.SerializeBinary()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to serialize texture skin: %v", err))
@@ -173,6 +181,26 @@ func main() {
 		Users:     []*models.UserInfo{&user, user2},
 		MoreUsers: []*models.UserInfo{user3},
 	}
+
+	usersListClone := usersList.DeepClone()
+	check(usersListClone != nil, "DeepClone returned nil")
+	check(usersListClone != &usersList, "DeepClone returned the original model")
+	check(usersListClone.Users != nil && len(usersListClone.Users) == len(usersList.Users), "DeepClone users length mismatch")
+	check(usersListClone.Users[1] != usersList.Users[1], "DeepClone reused nested user")
+	check(usersListClone.Users[1].Skin != usersList.Users[1].Skin, "DeepClone reused nested skin")
+	usersListClone.Users[1].Skin.Basic.R = 99
+	check(usersList.Users[1].Skin.Basic.R == 10, "DeepClone nested mutation affected original")
+
+	bytesModel := models.StrictUserData{
+		Photo:       []byte{1, 2, 3},
+		TheLooseOne: &models.LooseUserData{Name: "nested"},
+	}
+	bytesClone := bytesModel.DeepClone()
+	check(bytesClone != nil, "DeepClone bytes model returned nil")
+	bytesClone.Photo[0] = 9
+	check(bytesModel.Photo[0] == 1, "DeepClone bytes mutation affected original")
+	bytesClone.TheLooseOne.Name = "changed"
+	check(bytesModel.TheLooseOne.Name == "nested", "DeepClone direct nested mutation affected original")
 
 	usersListBinary, err := usersList.SerializeBinary()
 	if err != nil {

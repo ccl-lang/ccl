@@ -286,6 +286,10 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		WriteLine("}").
 		NewLine()
 
+	if err := c.generateDeepCloneMethod(model, builder); err != nil {
+		return err
+	}
+
 	// Binary Serialization
 	if c.NeedsBinarySerialization(CurrentLanguage, model) {
 		if err := c.generateSerializeBinaryMethod(model, builder); err != nil {
