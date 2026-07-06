@@ -23,8 +23,10 @@ func (c *GoGenerationContext) generateSerializeJsonMethod(
 	builder *codeBuilder.CodeBuilder,
 	model *CCLModel,
 ) error {
-	// Generated SerializeJSON methods build output with bytes.Buffer.
-	registerGoImport(builder, "bytes")
+	if len(model.Fields) > 0 {
+		// Generated SerializeJSON methods build output with bytes.Buffer.
+		registerGoImport(builder, "bytes")
+	}
 	if len(model.Fields) > 0 {
 		// Generated JSON field names and primitive values use strconv formatting helpers.
 		registerGoImport(builder, "strconv")
@@ -37,8 +39,17 @@ func (c *GoGenerationContext) generateSerializeJsonMethod(
 		Indent().
 		WriteLine("return \"null\", nil").
 		Unindent().
-		WriteLine("}").
-		WriteLine("var buf bytes.Buffer").
+		WriteLine("}")
+
+	if len(model.Fields) == 0 {
+		builder.WriteLine(`return "{}", nil`).
+			Unindent().
+			WriteLine("}").
+			NewLine()
+		return nil
+	}
+
+	builder.WriteLine("var buf bytes.Buffer").
 		WriteLine("buf.WriteByte('{')").
 		WriteLine("first := true").
 		NewLine()

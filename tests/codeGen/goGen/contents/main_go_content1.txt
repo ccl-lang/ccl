@@ -116,6 +116,23 @@ func main() {
 		check(deserializedTexture.SomeIntegers[i] == item, "SomeIntegers array item mismatch")
 	}
 
+	emptyHolder := models.EmptyModelHolder{
+		Empty:      &models.EmptyModel{},
+		EmptyItems: []*models.EmptyModel{&models.EmptyModel{}},
+	}
+	emptyHolderBinary, err := emptyHolder.SerializeBinary()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to serialize empty model holder: %v", err))
+	}
+	deserializedEmptyHolder := &models.EmptyModelHolder{}
+	err = deserializedEmptyHolder.DeserializeBinary(emptyHolderBinary)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to deserialize empty model holder: %v", err))
+	}
+	check(deserializedEmptyHolder.Empty != nil, "Empty nested model became nil")
+	check(len(deserializedEmptyHolder.EmptyItems) == 1, "Empty model array length mismatch")
+	check(deserializedEmptyHolder.EmptyItems[0] != nil, "Empty model array item became nil")
+
 	// Test UsersList with arrays of custom models
 	user2 := &models.UserInfo{
 		Id:       "user456",

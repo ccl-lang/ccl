@@ -40,8 +40,16 @@ func (c *RustGenerationContext) generateSerializeBinaryMethod(
 	byteOrder string,
 ) {
 	builder.WriteLine("pub fn serialize_binary(&self) -> Vec<u8> {").
-		Indent().
-		WriteLine("let mut buffer = Vec::new();")
+		Indent()
+	if len(model.Fields) == 0 {
+		builder.WriteLine("Vec::new()").
+			Unindent().
+			WriteLine("}").
+			NewLine()
+		return
+	}
+
+	builder.WriteLine("let mut buffer = Vec::new();")
 	for _, field := range model.Fields {
 		if field.IsArray() {
 			c.generateArraySerializeBinary(builder, field, byteOrder)
@@ -66,14 +74,26 @@ func (c *RustGenerationContext) generateDeserializeBinaryMethod(
 		fallback = `return Err("not enough binary data".to_string());`
 	}
 
-	builder.WriteLine("pub fn deserialize_binary(data: &[u8]) -> Result<Self, String> {").
+	dataArgName := "data"
+	if len(model.Fields) == 0 {
+		dataArgName = "_data"
+	}
+	builder.WriteLine("pub fn deserialize_binary(" + dataArgName + ": &[u8]) -> Result<Self, String> {").
+		Indent()
+	if len(model.Fields) == 0 {
+		builder.WriteLine("Ok(Self::default())").
+			Unindent().
+			WriteLine("}").
+			NewLine()
+		return
+	}
+
+	builder.WriteLine("let mut result = Self::default();").
+		WriteLine("if data.is_empty() {").
 		Indent().
-		WriteLine("if data.is_empty() || (data.len() == 1 && data[0] == 0) {").
-		Indent().
-		WriteLine("return Ok(Self::default());").
+		WriteLine("return Ok(result);").
 		Unindent().
 		WriteLine("}").
-		WriteLine("let mut result = Self::default();").
 		WriteLine("let mut offset: usize = 0;")
 	for _, field := range model.Fields {
 		if field.IsArray() {

@@ -7,6 +7,8 @@ import {
 	PositionInfo,
 	LooseUserData,
 	StrictUserData,
+	EmptyModel,
+	EmptyModelHolder,
 } from './models/generated';
 
 function testUser() {
@@ -99,6 +101,29 @@ function testPosition() {
 	console.log("PositionInfo test passed!");
 }
 
+function testEmptyNestedModel() {
+	console.log("Testing empty nested model binary...");
+	const holder = new EmptyModelHolder();
+	holder.empty = new EmptyModel();
+	holder.emptyItems = [new EmptyModel()];
+
+	const deserializedHolder = EmptyModelHolder.deserializeBinary(holder.serializeBinary());
+	if (!deserializedHolder) {
+		throw new Error("Empty model holder returned null");
+	}
+	if (!deserializedHolder.empty) {
+		throw new Error("Empty nested model became null");
+	}
+	if (deserializedHolder.emptyItems.length !== 1) {
+		throw new Error("Empty model array length mismatch");
+	}
+	if (!deserializedHolder.emptyItems[0]) {
+		throw new Error("Empty model array item became null");
+	}
+
+	console.log("Empty nested model test passed!");
+}
+
 function testStrictBinaryParsing() {
 	console.log("Testing StrictBinaryParsing...");
 	const strictUserData = new StrictUserData();
@@ -126,6 +151,7 @@ function testStrictBinaryParsing() {
 try {
 	testUser();
 	testPosition();
+	testEmptyNestedModel();
 	testStrictBinaryParsing();
 	console.log("Runtime verification successful!");
 } catch (e) {

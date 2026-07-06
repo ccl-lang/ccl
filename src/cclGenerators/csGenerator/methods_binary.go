@@ -215,8 +215,8 @@ func (c *CSharpGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 	builder.LineD("public static $model DeserializeBinary(byte[] data)").
 		WriteLine("{").
 		Indent().
-		WriteLine("if (data == null || data.Length == 0) return null;").
 		LineD("var result = new $model();").
+		WriteLine("if (data == null || data.Length == 0) return result;").
 		WriteLine("try").
 		WriteLine("{").
 		Indent().

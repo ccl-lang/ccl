@@ -105,6 +105,27 @@ func _init():
 		quit(1)
 		return
 
+	var empty_holder = EmptyModelHolder.new()
+	empty_holder.empty = EmptyModel.new()
+	empty_holder.empty_items.append(EmptyModel.new())
+	var empty_holder_from_bin = EmptyModelHolder.deserialize_binary(empty_holder.serialize_binary())
+	if empty_holder_from_bin == null:
+		print("Error: empty model holder returned null")
+		quit(1)
+		return
+	if empty_holder_from_bin.empty == null:
+		print("Error: empty nested model became null")
+		quit(1)
+		return
+	if empty_holder_from_bin.empty_items.size() != 1:
+		print("Error: empty model array length mismatch")
+		quit(1)
+		return
+	if empty_holder_from_bin.empty_items[0] == null:
+		print("Error: empty model array item became null")
+		quit(1)
+		return
+
 	var strict_user_data = StrictUserData.new()
 	strict_user_data.level = 7
 	strict_user_data.name = "Old Save"

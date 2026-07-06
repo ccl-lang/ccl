@@ -57,6 +57,20 @@ fn runtime_verification() {
     check(deserialized_texture.texture == texture.texture, "Texture array mismatch");
     check(deserialized_texture.some_ints == texture.some_ints, "SomeInts array mismatch");
 
+    let empty_holder = EmptyModelHolder {
+        empty: Some(Box::new(EmptyModel::default())),
+        empty_items: vec![Some(Box::new(EmptyModel::default()))],
+    };
+    let empty_holder_binary = empty_holder.serialize_binary();
+    let empty_holder_roundtrip =
+        EmptyModelHolder::deserialize_binary(&empty_holder_binary).expect("empty holder deserialize");
+    check(empty_holder_roundtrip.empty.is_some(), "Empty nested model became none");
+    check(empty_holder_roundtrip.empty_items.len() == 1, "Empty model array length mismatch");
+    check(
+        empty_holder_roundtrip.empty_items[0].is_some(),
+        "Empty model array item became none",
+    );
+
     let bytes_model = AuthGuestAnswer {
         rpc_id: 4,
         some_property: "hello".to_string(),
@@ -88,6 +102,7 @@ fn runtime_verification() {
     let strict_user_data = StrictUserData {
         level: 7,
         name: "Old Save".to_string(),
+        ..Default::default()
     };
     let old_save_data = strict_user_data.serialize_binary();
     let loose_user_data =

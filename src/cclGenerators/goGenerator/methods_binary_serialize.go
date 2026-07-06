@@ -12,40 +12,46 @@ func (c *GoGenerationContext) generateSerializeBinaryMethod(
 	builder *codeBuilder.CodeBuilder,
 	model *CCLModel,
 ) error {
-	// Generated SerializeBinary methods build output with bytes.Buffer.
-	registerGoImport(builder, "bytes")
-	// Generated SerializeBinary methods write fields with encoding/binary.
-	registerGoImport(builder, "encoding/binary")
+	// Generated SerializeBinary methods reject nil model receivers.
+	registerGoImport(builder, "errors")
 
-	endian, err := c.GetBinarySerializationEndian(CurrentLanguage, model)
-	if err != nil {
-		return err
-	}
-	binaryEndianInit := "binary.LittleEndian"
-	if endian == gValues.EndianBig {
-		binaryEndianInit = "binary.BigEndian"
-	}
+	builder.ExpectMappedVars("model")
 
-	builder.ExpectMappedVars(
-		"model",
-	)
-	builder.MapVarPairs(
-		"binaryEndianInit", binaryEndianInit,
-	)
-	defer builder.UnmapVar(
-		"binaryEndianInit",
-	)
+	if len(model.Fields) > 0 {
+		// Generated SerializeBinary methods build output with bytes.Buffer.
+		registerGoImport(builder, "bytes")
+		// Generated SerializeBinary methods write fields with encoding/binary.
+		registerGoImport(builder, "encoding/binary")
+
+		endian, err := c.GetBinarySerializationEndian(CurrentLanguage, model)
+		if err != nil {
+			return err
+		}
+		binaryEndianInit := "binary.LittleEndian"
+		if endian == gValues.EndianBig {
+			binaryEndianInit = "binary.BigEndian"
+		}
+		builder.MapVarPairs("binaryEndianInit", binaryEndianInit)
+		defer builder.UnmapVar("binaryEndianInit")
+	}
 
 	builder.NewLine().
 		LineD("func (m $model) SerializeBinary() ([]byte, error) {").
 		Indent().
-		// handle m is nil by returning []byte(0) and nil
 		WriteLine("if m == nil {").
 		Indent().
-		WriteLine("return []byte{0}, nil").
+		WriteLine(`return nil, errors.New("cannot serialize nil model")`).
 		Unindent().
 		WriteLine("}").
 		NewLine()
+
+	if len(model.Fields) == 0 {
+		builder.WriteLine("return []byte{}, nil").
+			Unindent().
+			WriteLine("}").
+			NewLine()
+		return nil
+	}
 
 	builder.WriteLine("buf := new(bytes.Buffer)").
 		LineD("binaryEndian := $binaryEndianInit").

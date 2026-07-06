@@ -198,7 +198,7 @@ func (c *TypeScriptGenerationContext) generateDeserializeBinaryMethod(model *CCL
 
 	builder.LineD("public static deserializeBinary(data: Uint8Array): $model | null {").
 		Indent().
-		WriteLine("if (!data || data.length === 0 || (data.length === 1 && data[0] === 0)) return null;").
+		LineD("if (!data || data.length === 0) return new $model();").
 		WriteLine("const view = new DataView(data.buffer, data.byteOffset, data.byteLength);").
 		WriteLine("let offset = 0;").
 		LineD("const result = new $model();").

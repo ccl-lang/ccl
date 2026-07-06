@@ -85,6 +85,14 @@ model GameShopItem {
     FeaturedType: GameItem.GameItemType;
 }
 
+model EmptyModel {
+}
+
+model EmptyModelHolder {
+    Empty: EmptyModel;
+    EmptyItems: EmptyModel[];
+}
+
 // UserInfo and RoomInfo types
 [OutputFileGroup("users")]
 model UserInfo {
@@ -240,4 +248,11 @@ model LooseUserData {
 model StrictUserData {
     Level: int;
     Name: string;
+    Photo: bytes;
+    EmptyStuff: EmptyModel;
+    TheLooseOne: LooseUserData;
+    EmptyItems: EmptyModel[];
+    LooseList: LooseUserData[];
+    NormalUser: UserInfo;
+    NormalUsers: UserInfo[];
 }

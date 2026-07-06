@@ -161,17 +161,16 @@ func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLMo
 
 	builder.LineD("static func deserialize_binary(data: PackedByteArray) -> $model:").
 		Indent().
-		// null-safety check
-		WriteLine("if not data or data.is_empty() or (data.size() == 1 and data[0] == 0):").
+		LineD("var $modelResult := $model.new()").
+		WriteLine("if not data or data.is_empty():").
 		Indent().
-		WriteLine("return null").
+		LineD("return $modelResult").
 		UnindentLine().
 		WriteLine("var buffer := StreamPeerBuffer.new()").
 		WriteLine("buffer.big_endian = " + bigEndian).
 		WriteLine("buffer.data_array = data")
 
-	builder.LineD("var $modelResult := $model.new()").
-		NewLine()
+	builder.NewLine()
 
 	for _, field := range model.Fields {
 		if field.IsArray() {

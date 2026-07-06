@@ -14,44 +14,62 @@ func (c *GoGenerationContext) generateDeserializeBinaryMethod(
 	builder *codeBuilder.CodeBuilder,
 	model *CCLModel,
 ) error {
-	// Generated DeserializeBinary methods read input with bytes.Reader.
-	registerGoImport(builder, "bytes")
-	// Generated DeserializeBinary methods read fields with encoding/binary.
-	registerGoImport(builder, "encoding/binary")
+	// Generated DeserializeBinary methods reject nil model receivers and invalid presence markers.
+	registerGoImport(builder, "errors")
 
-	endian, err := c.GetBinarySerializationEndian(CurrentLanguage, model)
-	if err != nil {
-		return err
-	}
-	strictBinaryParsing, err := c.UsesStrictBinaryParsing(CurrentLanguage, model)
-	if err != nil {
-		return err
-	}
-	binaryEndianInit := "binary.LittleEndian"
-	if endian == gValues.EndianBig {
-		binaryEndianInit = "binary.BigEndian"
-	}
-	binaryParseErrorReturn := "nil"
-	if strictBinaryParsing {
-		binaryParseErrorReturn = "err"
-	}
+	builder.ExpectMappedVars("model")
 
-	builder.ExpectMappedVars(
-		"model",
-	)
-	builder.MapVarPairs(
-		"binaryEndianInit", binaryEndianInit,
-		"binaryParseErrorReturn", binaryParseErrorReturn,
-	)
-	defer builder.UnmapVar(
-		"binaryEndianInit",
-		"binaryParseErrorReturn",
-	)
+	if len(model.Fields) > 0 {
+		// Generated DeserializeBinary methods read input with bytes.Reader.
+		registerGoImport(builder, "bytes")
+		// Generated DeserializeBinary methods read fields with encoding/binary.
+		registerGoImport(builder, "encoding/binary")
+
+		endian, err := c.GetBinarySerializationEndian(CurrentLanguage, model)
+		if err != nil {
+			return err
+		}
+		strictBinaryParsing, err := c.UsesStrictBinaryParsing(CurrentLanguage, model)
+		if err != nil {
+			return err
+		}
+		binaryEndianInit := "binary.LittleEndian"
+		if endian == gValues.EndianBig {
+			binaryEndianInit = "binary.BigEndian"
+		}
+		binaryParseErrorReturn := "nil"
+		if strictBinaryParsing {
+			binaryParseErrorReturn = "err"
+		}
+
+		builder.MapVarPairs(
+			"binaryEndianInit", binaryEndianInit,
+			"binaryParseErrorReturn", binaryParseErrorReturn,
+		)
+		defer builder.UnmapVar(
+			"binaryEndianInit",
+			"binaryParseErrorReturn",
+		)
+	}
 
 	builder.LineD("func (m $model) DeserializeBinary(data []byte) error {").
 		Indent().
-		// add nil checker or when the len(data) is 0 or (len(data) == 1 and data[0] == 0)
-		WriteLine("if m == nil || len(data) == 0 || (len(data) == 1 && data[0] == 0) {").
+		WriteLine("if m == nil {").
+		Indent().
+		WriteLine(`return errors.New("cannot deserialize into nil model")`).
+		Unindent().
+		WriteLine("}").
+		NewLine()
+
+	if len(model.Fields) == 0 {
+		builder.WriteLine("return nil").
+			Unindent().
+			WriteLine("}").
+			NewLine()
+		return nil
+	}
+
+	builder.WriteLine("if len(data) == 0 {").
 		Indent().
 		WriteLine("return nil").
 		Unindent().
@@ -162,7 +180,6 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(
 			LineD("$field = time.Unix(0, $fieldUnix)")
 	default:
 		if isCustomType {
-			registerGoImport(builder, "errors")
 			lenVarName := fName + "BytesLen"
 			bytesVarName := fName + "Bytes"
 			presenceVarName := fName + "Present"
@@ -360,7 +377,6 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(
 			LineD("$field[i] = time.Unix(0, elemUnix)")
 	default:
 		if isCustomType {
-			registerGoImport(builder, "errors")
 			builder.MapVarPairs("fieldType", targetFieldType.GetName())
 			builder.WriteLine("var elemPresent uint8").
 				WriteLine("if err := binary.Read(buf, binaryEndian, &elemPresent); err != nil {").

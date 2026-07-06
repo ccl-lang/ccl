@@ -12,6 +12,7 @@ class Program
         {
             TestUser();
             TestPosition();
+            TestEmptyNestedModel();
             TestStrictBinaryParsing();
             Console.WriteLine("Runtime verification successful!");
         }
@@ -124,6 +125,34 @@ class Program
         }
 
         Console.WriteLine("PositionInfo test passed!");
+    }
+
+    static void TestEmptyNestedModel()
+    {
+        Console.WriteLine("Testing empty nested model binary...");
+        var holder = new EmptyModelHolder();
+        holder.Empty = new EmptyModel();
+        holder.EmptyItems.Add(new EmptyModel());
+
+        var deserializedHolder = EmptyModelHolder.DeserializeBinary(holder.SerializeBinary());
+        if (deserializedHolder == null)
+        {
+            throw new Exception("Empty model holder returned null");
+        }
+        if (deserializedHolder.Empty == null)
+        {
+            throw new Exception("Empty nested model became null");
+        }
+        if (deserializedHolder.EmptyItems.Count != 1)
+        {
+            throw new Exception("Empty model array length mismatch");
+        }
+        if (deserializedHolder.EmptyItems[0] == null)
+        {
+            throw new Exception("Empty model array item became null");
+        }
+
+        Console.WriteLine("Empty nested model test passed!");
     }
 
     static void TestStrictBinaryParsing()

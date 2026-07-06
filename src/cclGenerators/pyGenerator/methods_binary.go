@@ -179,17 +179,24 @@ func (c *PythonGenerationContext) generateDeserializeBinaryMethod(model *CCLMode
 	builder.WriteLine("@staticmethod").
 		LineD("def deserialize_binary(data: bytes) -> $model | None:").
 		Indent().
-		// null-safety check
-		WriteLine("if not data or len(data) == 0 or (len(data) == 1 and data[0] == 0):").
+		LineD("$result = $model()").
+		WriteLine("if data is None or len(data) == 0:").
 		Indent().
-		WriteLine("return None").
+		LineD("return $result").
 		UnindentLine().
-		WriteLine("buffer = memoryview(data)").
-		WriteLine("offset = 0").
+		WriteLine("buffer = memoryview(data)")
+
+	if len(model.Fields) == 0 {
+		builder.LineD("return $result").
+			UnindentLine().
+			NewLine()
+		return nil
+	}
+
+	builder.WriteLine("offset = 0").
 		NewLine()
 
-	builder.LineD("$result = $model()").
-		WriteLine("try:").
+	builder.WriteLine("try:").
 		Indent()
 
 	for _, field := range model.Fields {

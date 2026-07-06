@@ -15,6 +15,8 @@ from models import (
 	UsersList,
 	LooseUserData,
 	StrictUserData,
+	EmptyModel,
+	EmptyModelHolder,
 )
 
 def test_user():
@@ -100,6 +102,24 @@ def test_position():
 
 	print("PositionInfo test passed!")
 
+def test_empty_nested_model():
+	print("Testing empty nested model binary...")
+	holder = EmptyModelHolder()
+	holder.empty = EmptyModel()
+	holder.empty_items = [EmptyModel()]
+
+	deserialized_holder = EmptyModelHolder.deserialize_binary(holder.serialize_binary())
+	if deserialized_holder is None:
+		raise Exception("Empty model holder returned None")
+	if deserialized_holder.empty is None:
+		raise Exception("Empty nested model became None")
+	if len(deserialized_holder.empty_items) != 1:
+		raise Exception("Empty model array length mismatch")
+	if deserialized_holder.empty_items[0] is None:
+		raise Exception("Empty model array item became None")
+
+	print("Empty nested model test passed!")
+
 def test_strict_binary_parsing():
 	print("Testing StrictBinaryParsing...")
 	strict_user_data = StrictUserData()
@@ -123,6 +143,7 @@ if __name__ == "__main__":
 	try:
 		test_user()
 		test_position()
+		test_empty_nested_model()
 		test_strict_binary_parsing()
 		print("Runtime verification successful!")
 	except Exception as e:
