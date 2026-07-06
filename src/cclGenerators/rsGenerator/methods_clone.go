@@ -2,10 +2,10 @@ package rsGenerator
 
 import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils/codeBuilder"
 
-func (c *RustGenerationContext) generateModelDeepClone(
+func (c *RustGenerationContext) generateCloneMethods(
 	builder *codeBuilder.CodeBuilder,
 	model *CCLModel,
-) {
+) error {
 	builder.WriteLine("impl " + model.Name + " {").
 		Indent().
 		WriteLine("pub fn deep_clone(&self) -> Self {").
@@ -16,4 +16,5 @@ func (c *RustGenerationContext) generateModelDeepClone(
 		Unindent().
 		WriteLine("}").
 		NewLine()
+	return nil
 }

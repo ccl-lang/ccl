@@ -246,15 +246,10 @@ func (c *PythonGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		UnindentLine().
 		NewLine()
 
-	// Add clone_empty method
-	builder.LineD(`def clone_empty(self) -> "$model":`).
-		Indent().
-		LineD("return $model()").
-		UnindentLine().
-		NewLine()
-
-	if err := c.generateDeepCloneMethod(model, builder); err != nil {
-		return err
+	if c.NeedsCloneMethods(CurrentLanguage, model) {
+		if err := c.generateCloneMethods(model, builder); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -278,16 +278,10 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		WriteLine("}").
 		NewLine()
 
-	// Clone Empty
-	builder.LineD("public cloneEmpty(): $model {").
-		Indent().
-		LineD("return new $model();").
-		Unindent().
-		WriteLine("}").
-		NewLine()
-
-	if err := c.generateDeepCloneMethod(model, builder); err != nil {
-		return err
+	if c.NeedsCloneMethods(CurrentLanguage, model) {
+		if err := c.generateCloneMethods(model, builder); err != nil {
+			return err
+		}
 	}
 
 	// Binary Serialization

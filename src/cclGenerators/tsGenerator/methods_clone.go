@@ -6,6 +6,22 @@ import (
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
+func (c *TypeScriptGenerationContext) generateCloneMethods(
+	model *CCLModel,
+	builder *codeBuilder.CodeBuilder,
+) error {
+	builder.ExpectMappedVars("model")
+
+	builder.LineD("public cloneEmpty(): $model {").
+		Indent().
+		LineD("return new $model();").
+		Unindent().
+		WriteLine("}").
+		NewLine()
+
+	return c.generateDeepCloneMethod(model, builder)
+}
+
 func (c *TypeScriptGenerationContext) generateDeepCloneMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,

@@ -110,7 +110,11 @@ func (c *RustGenerationContext) generateModel(builder *codeBuilder.CodeBuilder, 
 		builder.NewLine()
 	}
 
-	builder.WriteLine("#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]").
+	deriveLine := "#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]"
+	if c.NeedsCloneMethods(CurrentLanguage, model) {
+		deriveLine = "#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]"
+	}
+	builder.WriteLine(deriveLine).
 		WriteLine("#[serde(default)]").
 		WriteLine("pub struct " + model.Name + " {").
 		Indent()
@@ -126,7 +130,11 @@ func (c *RustGenerationContext) generateModel(builder *codeBuilder.CodeBuilder, 
 	if err := c.generateModelDefault(builder, model); err != nil {
 		return err
 	}
-	c.generateModelDeepClone(builder, model)
+	if c.NeedsCloneMethods(CurrentLanguage, model) {
+		if err := c.generateCloneMethods(builder, model); err != nil {
+			return err
+		}
+	}
 	if c.NeedsJsonSerialization(CurrentLanguage, model) {
 		c.generateModelJsonMethods(builder, model)
 		c.generateModelJsonAdapters(builder, model)

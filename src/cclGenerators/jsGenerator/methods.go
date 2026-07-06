@@ -269,16 +269,10 @@ func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		WriteLine("}").
 		NewLine()
 
-	// Clone Empty
-	builder.WriteLine("cloneEmpty() {").
-		Indent().
-		LineD("return new $model();").
-		Unindent().
-		WriteLine("}").
-		NewLine()
-
-	if err := c.generateDeepCloneMethod(model, builder); err != nil {
-		return err
+	if c.NeedsCloneMethods(LanguageName, model) {
+		if err := c.generateCloneMethods(model, builder); err != nil {
+			return err
+		}
 	}
 
 	if c.NeedsJsonSerialization(LanguageName, model) {

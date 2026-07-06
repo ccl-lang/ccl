@@ -219,14 +219,10 @@ func (c *GDScriptGenerationContext) generateModelClass(builder *codeBuilder.Code
 		WriteLine("return " + modelIdConstName).
 		UnindentLine()
 
-	// Add clone_empty method
-	builder.WriteLine("func clone_empty() -> " + model.Name + ":").
-		Indent().
-		WriteLine("return " + model.Name + ".new()").
-		UnindentLine()
-
-	if err := c.generateDeepCloneMethod(model, builder); err != nil {
-		return err
+	if c.NeedsCloneMethods(CurrentLanguage, model) {
+		if err := c.generateCloneMethods(model, builder); err != nil {
+			return err
+		}
 	}
 
 	return nil

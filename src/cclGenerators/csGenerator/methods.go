@@ -277,17 +277,10 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		WriteLine("}").
 		NewLine()
 
-	// Clone Empty
-	builder.LineD("public $model CloneEmpty()").
-		WriteLine("{").
-		Indent().
-		LineD("return new $model();").
-		Unindent().
-		WriteLine("}").
-		NewLine()
-
-	if err := c.generateDeepCloneMethod(model, builder); err != nil {
-		return err
+	if c.NeedsCloneMethods(CurrentLanguage, model) {
+		if err := c.generateCloneMethods(model, builder); err != nil {
+			return err
+		}
 	}
 
 	// Binary Serialization

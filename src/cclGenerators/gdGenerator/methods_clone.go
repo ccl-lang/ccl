@@ -6,6 +6,20 @@ import (
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
+func (c *GDScriptGenerationContext) generateCloneMethods(
+	model *CCLModel,
+	builder *codeBuilder.CodeBuilder,
+) error {
+	builder.ExpectMappedVars("model")
+
+	builder.WriteLine("func clone_empty() -> " + model.Name + ":").
+		Indent().
+		WriteLine("return " + model.Name + ".new()").
+		UnindentLine()
+
+	return c.generateDeepCloneMethod(model, builder)
+}
+
 func (c *GDScriptGenerationContext) generateDeepCloneMethod(
 	model *CCLModel,
 	builder *codeBuilder.CodeBuilder,
