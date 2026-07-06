@@ -199,11 +199,12 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(
 				Unindent().
 				WriteLine("}")
 
-			builder.LineD("if $fieldPresent == 0 {").
+			builder.LineD("switch $fieldPresent {").
+				WriteLine("case 0:").
 				Indent().
 				LineD("m.$fieldName = nil").
 				Unindent().
-				LineD("} else if $fieldPresent == 1 {").
+				WriteLine("case 1:").
 				Indent().
 				LineD("var $fieldBytesLen uint32").
 				LineD("if err := binary.Read(buf, binaryEndian, &$fieldBytesLen); err != nil {").
@@ -232,7 +233,7 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(
 				Unindent().
 				WriteLine("}").
 				Unindent().
-				WriteLine("} else {").
+				WriteLine("default:").
 				Indent().
 				WriteLine(`return errors.New("invalid binary model presence marker")`).
 				Unindent().
@@ -385,15 +386,17 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(
 				Unindent().
 				WriteLine("}")
 			if isPointer {
-				builder.WriteLine("if elemPresent == 0 {").
+				builder.WriteLine("switch elemPresent {").
+					WriteLine("case 0:").
 					Indent().
 					LineD("$field[i] = nil").
 					Unindent().
-					WriteLine("} else if elemPresent == 1 {").
+					WriteLine("case 1:").
 					Indent().
 					LineD("elem := new($fieldType)")
 			} else {
-				builder.WriteLine("if elemPresent == 1 {").
+				builder.WriteLine("switch elemPresent {").
+					WriteLine("case 1:").
 					Indent().
 					LineD("var elem $fieldRealType")
 			}
@@ -421,14 +424,14 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(
 				LineD("$field[i] = elem")
 			if isPointer {
 				builder.Unindent().
-					WriteLine("} else {").
+					WriteLine("default:").
 					Indent().
 					WriteLine(`return errors.New("invalid binary model presence marker")`).
 					Unindent().
 					WriteLine("}")
 			} else {
 				builder.Unindent().
-					WriteLine("} else {").
+					WriteLine("default:").
 					Indent().
 					WriteLine(`return errors.New("invalid binary model presence marker")`).
 					Unindent().
