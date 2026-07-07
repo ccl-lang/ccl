@@ -1,0 +1,59 @@
+name: Language Design
+description: Propose or discuss CCL syntax, semantics, attributes, methods, or type-system behavior.
+title: "language design: "
+labels:
+  - language-design
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for language-level ideas. CCL features need to stay simple for authors and practical for every supported target language.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What language behavior are you proposing?
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What user problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: syntax
+    attributes:
+      label: Example Syntax
+      description: Show the proposed CCL syntax.
+      render: ccl
+    validations:
+      required: true
+  - type: textarea
+    id: current_workaround
+    attributes:
+      label: Current Workaround
+      description: How can users solve this today, if they can?
+  - type: textarea
+    id: generators
+    attributes:
+      label: Generator Impact
+      description: How should this map to Go, Python, TypeScript, GDScript, JavaScript, C#, Rust, or future targets?
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility
+      description: Could this break existing CCL files or generated output?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other syntax or behavior did you consider?
+  - type: textarea
+    id: unresolved
+    attributes:
+      label: Unresolved Questions
+      description: What still needs a decision?
