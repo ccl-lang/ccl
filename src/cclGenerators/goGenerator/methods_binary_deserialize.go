@@ -38,17 +38,22 @@ func (c *GoGenerationContext) generateDeserializeBinaryMethod(
 			binaryEndianInit = "binary.BigEndian"
 		}
 		binaryParseErrorReturn := "nil"
+		binaryLengthErrorReturn := "nil"
 		if strictBinaryParsing {
 			binaryParseErrorReturn = "err"
+			binaryLengthErrorReturn = "io.ErrUnexpectedEOF"
+			registerGoImport(builder, "io")
 		}
 
 		builder.MapVarPairs(
 			"binaryEndianInit", binaryEndianInit,
 			"binaryParseErrorReturn", binaryParseErrorReturn,
+			"binaryLengthErrorReturn", binaryLengthErrorReturn,
 		)
 		defer builder.UnmapVar(
 			"binaryEndianInit",
 			"binaryParseErrorReturn",
+			"binaryLengthErrorReturn",
 		)
 	}
 
@@ -71,7 +76,7 @@ func (c *GoGenerationContext) generateDeserializeBinaryMethod(
 
 	builder.WriteLine("if len(data) == 0 {").
 		Indent().
-		WriteLine("return nil").
+		LineD("return $binaryLengthErrorReturn").
 		Unindent().
 		WriteLine("}").
 		NewLine().
@@ -113,61 +118,32 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(
 	fieldVar := "m." + fieldName
 	fName := strings.ToLower(string(fieldName[0])) + fieldName[1:]
 	fLenName := fName + "Len"
-	fNameStrBytes := fName + "StrBytes"
+	fNameBytes := fName + "Bytes"
 	fNameUnix := fName + "Unix"
 
 	builder.MapVarPairs(
 		"field", fieldVar,
 		"fieldLen", fLenName,
-		"fieldStrBytes", fNameStrBytes,
+		"fieldData", fNameBytes,
 		"fieldUnix", fNameUnix,
 		"fieldName", fieldName,
 	)
 	defer builder.UnmapVar(
 		"field",
 		"fieldLen",
-		"fieldStrBytes",
+		"fieldData",
 		"fieldUnix",
 		"fieldName",
 	)
 
 	switch fieldTypeName {
-	case cclValues.TypeNameString:
-		builder.LineD("var $fieldLen uint32").
-			LineD("if err := binary.Read(buf, binaryEndian, &$fieldLen); err != nil {").
-			Indent().
-			LineD("return $binaryParseErrorReturn").
-			Unindent().
-			WriteLine("}").
-			LineD("$fieldStrBytes := make([]byte, $fieldLen)").
-			LineD("if $fieldLen > 0 {").
-			Indent().
-			LineD("if _, err := buf.Read($fieldStrBytes); err != nil {").
-			Indent().
-			LineD("return $binaryParseErrorReturn").
-			Unindent().
-			WriteLine("}").
-			Unindent().
-			WriteLine("}").
-			LineD("$field = string($fieldStrBytes)")
-	case cclValues.TypeNameBytes:
-		builder.LineD("var $fieldLen uint32").
-			LineD("if err := binary.Read(buf, binaryEndian, &$fieldLen); err != nil {").
-			Indent().
-			LineD("return $binaryParseErrorReturn").
-			Unindent().
-			WriteLine("}").
-			LineD("bytesData := make([]byte, $fieldLen)").
-			LineD("if $fieldLen > 0 {").
-			Indent().
-			WriteLine("if _, err := buf.Read(bytesData); err != nil {").
-			Indent().
-			LineD("return $binaryParseErrorReturn").
-			Unindent().
-			WriteLine("}").
-			Unindent().
-			WriteLine("}").
-			LineD("$field = bytesData")
+	case cclValues.TypeNameString, cclValues.TypeNameBytes:
+		generateBinaryBytesRead(builder, fLenName, fNameBytes)
+		if fieldTypeName == cclValues.TypeNameString {
+			builder.LineD("$field = string($fieldData)")
+		} else {
+			builder.LineD("$field = $fieldData")
+		}
 	case cclValues.TypeNameDateTime:
 		// Generated datetime deserialization rebuilds values with time.Unix.
 		registerGoImport(builder, "time")
@@ -205,24 +181,9 @@ func (c *GoGenerationContext) generateFieldDeserializeBinaryMethod(
 				LineD("m.$fieldName = nil").
 				Unindent().
 				WriteLine("case 1:").
-				Indent().
-				LineD("var $fieldBytesLen uint32").
-				LineD("if err := binary.Read(buf, binaryEndian, &$fieldBytesLen); err != nil {").
-				Indent().
-				LineD("return $binaryParseErrorReturn").
-				Unindent().
-				WriteLine("}").
-				LineD("$fieldBytes := make([]byte, $fieldBytesLen)").
-				LineD("if $fieldBytesLen > 0 {").
-				Indent().
-				LineD("if _, err := buf.Read($fieldBytes); err != nil {").
-				Indent().
-				LineD("return $binaryParseErrorReturn").
-				Unindent().
-				WriteLine("}").
-				Unindent().
-				WriteLine("}").
-				LineD("if m.$fieldName == nil {").
+				Indent()
+			generateBinaryBytesRead(builder, lenVarName, bytesVarName)
+			builder.LineD("if m.$fieldName == nil {").
 				Indent().
 				LineD("m.$fieldName = new($fieldType)").
 				Unindent().
@@ -325,47 +286,19 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(
 		Indent().
 		LineD("return $binaryParseErrorReturn").
 		Unindent().
-		WriteLine("}").
-		LineD("$field = make([]$fieldRealType, $fieldLen)").
+		WriteLine("}")
+	generateBinaryLengthCheck(builder, fLenName, goBinaryMinimumElementSize(targetFieldType))
+	builder.LineD("$field = make([]$fieldRealType, $fieldLen)").
 		LineD("for i := uint32(0); i < $fieldLen; i++ {").
 		Indent()
 	switch targetFieldType.GetName() {
-	case cclValues.TypeNameString:
-		builder.WriteLine("var elemLen uint32").
-			WriteLine("if err := binary.Read(buf, binaryEndian, &elemLen); err != nil {").
-			Indent().
-			LineD("return $binaryParseErrorReturn").
-			Unindent().
-			WriteLine("}").
-			WriteLine("elemBytes := make([]byte, elemLen)").
-			WriteLine("if elemLen > 0 {").
-			Indent().
-			WriteLine("if _, err := buf.Read(elemBytes); err != nil {").
-			Indent().
-			LineD("return $binaryParseErrorReturn").
-			Unindent().
-			WriteLine("}").
-			Unindent().
-			WriteLine("}").
-			LineD("$field[i] = string(elemBytes)")
-	case cclValues.TypeNameBytes:
-		builder.WriteLine("var elemLen uint32").
-			WriteLine("if err := binary.Read(buf, binaryEndian, &elemLen); err != nil {").
-			Indent().
-			LineD("return $binaryParseErrorReturn").
-			Unindent().
-			WriteLine("}").
-			WriteLine("elemBytes := make([]byte, elemLen)").
-			WriteLine("if elemLen > 0 {").
-			Indent().
-			WriteLine("if _, err := buf.Read(elemBytes); err != nil {").
-			Indent().
-			LineD("return $binaryParseErrorReturn").
-			Unindent().
-			WriteLine("}").
-			Unindent().
-			WriteLine("}").
-			LineD("$field[i] = elemBytes")
+	case cclValues.TypeNameString, cclValues.TypeNameBytes:
+		generateBinaryBytesRead(builder, "elemLen", "elemBytes")
+		if targetFieldTypeName == cclValues.TypeNameString {
+			builder.LineD("$field[i] = string(elemBytes)")
+		} else {
+			builder.LineD("$field[i] = elemBytes")
+		}
 	case cclValues.TypeNameDateTime:
 		// Generated datetime array deserialization rebuilds elements with time.Unix.
 		registerGoImport(builder, "time")
@@ -400,23 +333,8 @@ func (c *GoGenerationContext) generateArrayDeserializeBinaryMethod(
 					Indent().
 					LineD("var elem $fieldRealType")
 			}
-			builder.WriteLine("var elemLen uint32").
-				WriteLine("if err := binary.Read(buf, binaryEndian, &elemLen); err != nil {").
-				Indent().
-				LineD("return $binaryParseErrorReturn").
-				Unindent().
-				WriteLine("}").
-				WriteLine("elemBytes := make([]byte, elemLen)").
-				WriteLine("if elemLen > 0 {").
-				Indent().
-				WriteLine("if _, err := buf.Read(elemBytes); err != nil {").
-				Indent().
-				LineD("return $binaryParseErrorReturn").
-				Unindent().
-				WriteLine("}").
-				Unindent().
-				WriteLine("}").
-				WriteLine("if err := elem.DeserializeBinary(elemBytes); err != nil {").
+			generateBinaryBytesRead(builder, "elemLen", "elemBytes")
+			builder.WriteLine("if err := elem.DeserializeBinary(elemBytes); err != nil {").
 				Indent().
 				LineD("return $binaryParseErrorReturn").
 				Unindent().

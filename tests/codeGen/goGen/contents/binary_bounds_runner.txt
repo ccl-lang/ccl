@@ -1,0 +1,65 @@
+package main
+
+import (
+ "bytes"
+ "fmt"
+ "os"
+
+ "ccl_test_generated/models"
+)
+
+func main() {
+ if err := checkDecoding(); err != nil { fmt.Fprintln(os.Stderr, err); os.Exit(1) }
+}
+
+func checkDecoding() error {
+ original := &models.Envelope{
+  IV: []byte{0, 1, 255}, Ciphertext: []byte{2, 3, 4, 5}, Label: "binary payload",
+  Nested: &models.Child{Number: 42}, Children: []*models.Child{nil, {Number: -7}},
+  Labels: []string{"", "hello"}, Chunks: [][]byte{{}, {9, 8, 7}},
+  Numbers: []int64{0, -1, 1 << 40}, Flags: []bool{false, true},
+  Choices: []models.Choice{models.ChoiceFirst, models.ChoiceSecond}, EmptyValue: &models.Empty{},
+ }
+ data, err := original.SerializeBinary()
+ if err != nil { return err }
+ decoded := &models.Envelope{}
+ if err = decoded.DeserializeBinary(data); err != nil { return err }
+ encodedAgain, err := decoded.SerializeBinary()
+ if err != nil || !bytes.Equal(data, encodedAgain) { return fmt.Errorf("binary roundtrip changed data: %v", err) }
+ // Decoded bytes own their storage and must survive reuse of the input buffer.
+ saved := bytes.Clone(data)
+ clear(data)
+ encodedAgain, err = decoded.SerializeBinary()
+ if err != nil || !bytes.Equal(saved, encodedAgain) { return fmt.Errorf("decoded bytes alias input: %v", err) }
+ // Every truncation must fail, including short reads inside fields and arrays.
+ for end := 0; end < len(saved); end++ {
+  if err = (&models.Envelope{}).DeserializeBinary(saved[:end]); err == nil {
+   return fmt.Errorf("accepted truncated message at %d of %d bytes", end, len(saved))
+  }
+ }
+ // An impossible byte length cannot allocate memory or overwrite the field.
+ malformed := []byte{255, 255, 255, 255, 1}
+ if err = decoded.DeserializeBinary(malformed); err == nil || !bytes.Equal(decoded.IV, original.IV) {
+  return fmt.Errorf("invalid byte length accepted or changed field: %v", err)
+ }
+ // Corrupt every length-prefix category, including lengths nested inside lists.
+ // Each prefix consists of empty preceding fields in the Envelope wire format.
+ prefixes := [][]byte{
+  {}, make([]byte, 4), make([]byte, 8), append(make([]byte, 12), 1),
+  make([]byte, 13), make([]byte, 17), make([]byte, 21), make([]byte, 25),
+  make([]byte, 29), make([]byte, 33),
+ }
+ for index, prefix := range prefixes {
+  invalid := append(bytes.Clone(prefix), malformed...)
+  if err = (&models.Envelope{}).DeserializeBinary(invalid); err == nil { return fmt.Errorf("accepted impossible length in field %d", index) }
+ }
+ // Lenient parsing still stops safely at missing or malformed trailing data.
+ loose := &models.Loose{IV: []byte{6}, Ciphertext: []byte{7, 8}}
+ looseData, err := loose.SerializeBinary()
+ if err != nil { return err }
+ for end := 0; end < len(looseData); end++ {
+  if err = (&models.Loose{}).DeserializeBinary(looseData[:end]); err != nil { return fmt.Errorf("lenient parsing rejected a prefix: %w", err) }
+ }
+ if err = (&models.Loose{}).DeserializeBinary(malformed); err != nil { return fmt.Errorf("lenient parsing rejected a malformed length: %w", err) }
+ return nil
+}
