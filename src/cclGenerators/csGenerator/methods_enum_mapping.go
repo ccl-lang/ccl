@@ -35,9 +35,13 @@ func (c *CSharpGenerationContext) generateEnumMappings(
 		if err != nil {
 			return err
 		}
+		methodName, err := c.GetEnumMappingMethodName(CurrentLanguage, enumDef, mapping.Target, "To"+strings.ReplaceAll(targetType, ".", ""))
+		if err != nil {
+			return err
+		}
 		builder.MapVarPairs(
 			"mapTarget", targetType,
-			"mapMethod", "To"+strings.ReplaceAll(targetType, ".", ""),
+			"mapMethod", methodName,
 			"mapFallback", fallback,
 		)
 		builder.LineD("public static $mapTarget $mapMethod($mapSource value)").

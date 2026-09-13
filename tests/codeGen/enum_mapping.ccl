@@ -27,4 +27,5 @@ enum ArchiveType {
 }
 
 [EnumMapSameMembers(accounts.PlayerItem.PlayerItemType)]
+[EnumMapUseShortMethodName(false)]
 enum ShopType { NameChanger = 12 }

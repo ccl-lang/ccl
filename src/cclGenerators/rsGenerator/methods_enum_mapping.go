@@ -25,6 +25,10 @@ func (c *RustGenerationContext) generateEnumMappings(
 			return err
 		}
 		methodName := "to_" + gValues.StyleSnakeCase.ApplyStyle(targetType)
+		methodName, err = c.GetEnumMappingMethodName(CurrentLanguage, enumDef, mapping.Target, methodName)
+		if err != nil {
+			return err
+		}
 		builder.MapVarPairs(
 			"mapSource", sourceType,
 			"mapTarget", "crate::"+targetType,

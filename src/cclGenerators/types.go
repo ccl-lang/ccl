@@ -1,8 +1,8 @@
 package cclGenerators
 
 import (
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
 type (
@@ -34,4 +34,6 @@ type CodeGenerationResult struct {
 
 type CodeGenerationBase struct {
 	Options *CodeGenerationOptions
+
+	enumMappingMethodNames map[string]map[string]bool
 }

@@ -12,7 +12,7 @@ import (
 )
 
 func TestEnumMappingsRuntime(t *testing.T) {
-	for _, mode := range []string{"separate", "single"} {
+	for _, mode := range []string{"separate", "single", "short"} {
 		t.Run(mode, func(t *testing.T) {
 			targetPath := filepath.Join(t.TempDir(), "ccl_enum_mapping")
 			definition, err := cclParser.ParseCCLSourceFile(&cclParser.CCLParseOptions{
@@ -25,6 +25,15 @@ func TestEnumMappingsRuntime(t *testing.T) {
 				_, err = cclParser.ParseCCLSourceContent(&cclParser.CCLParseOptions{
 					CodeContext:   definition.CodeContext,
 					SourceContent: `#[GenerateSingleFile(true, "Mappings.ts")]`,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			if mode == "short" {
+				_, err = cclParser.ParseCCLSourceContent(&cclParser.CCLParseOptions{
+					CodeContext:   definition.CodeContext,
+					SourceContent: `#[EnumMapUseShortMethodName(true)]`,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -44,6 +53,13 @@ func TestEnumMappingsRuntime(t *testing.T) {
 				t.Fatal(err)
 			}
 			runner := string(runnerBytes)
+			if mode == "short" {
+				runner = strings.NewReplacer(
+					"GameItemTypeMappings.toPlayerItemPlayerItemType", "GameItemTypeMappings.toPlayerItemType",
+					"GameItemTypeMappings.toSavedArchiveType", "GameItemTypeMappings.toArchiveType",
+					"PlayerItemTypeMappings.toGameItemGameItemType", "PlayerItemTypeMappings.toGameItemType",
+				).Replace(runner)
+			}
 			if mode == "single" {
 				runner = strings.NewReplacer(
 					"./models/GameItem", "./models/Mappings",

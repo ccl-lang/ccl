@@ -46,9 +46,13 @@ func (c *TypeScriptGenerationContext) generateEnumMappings(
 		if err != nil {
 			return err
 		}
+		methodName, err := c.GetEnumMappingMethodName(CurrentLanguage, enumDef, mapping.Target, "to"+strings.ReplaceAll(targetType, ".", ""))
+		if err != nil {
+			return err
+		}
 		builder.MapVarPairs(
 			"mapTarget", targetType,
-			"mapMethod", "to"+strings.ReplaceAll(targetType, ".", ""),
+			"mapMethod", methodName,
 			"mapFallback", fallback,
 		)
 		builder.LineD("export function $mapMethod(value: $mapSource): $mapTarget {").

@@ -21,6 +21,10 @@ func (c *PythonGenerationContext) generateEnumMappings(
 			return err
 		}
 		methodName := "to_" + gValues.StyleSnakeCase.ApplyStyle(strings.ReplaceAll(targetType, ".", "_"))
+		methodName, err = c.GetEnumMappingMethodName(CurrentLanguage, enumDef, mapping.Target, methodName)
+		if err != nil {
+			return err
+		}
 		builder.MapVarPairs(
 			"mapMethod", methodName,
 			"mapTarget", targetType,

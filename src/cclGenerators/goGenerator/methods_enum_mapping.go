@@ -18,13 +18,18 @@ func (c *GoGenerationContext) generateEnumMappings(enumDef *CCLEnum) error {
 		if err != nil {
 			return err
 		}
+		methodName, err := c.GetEnumMappingMethodName(CurrentLanguage, enumDef, mapping.Target, "To"+targetType)
+		if err != nil {
+			return err
+		}
 		builder.MapVarPairs(
 			"mapSource", sourceType,
 			"mapTarget", targetType,
+			"mapMethod", methodName,
 			"mapFallback", fallback,
 		)
 		builder.NewLine().
-			LineD("func (value $mapSource) To$mapTarget() $mapTarget {").
+			LineD("func (value $mapSource) $mapMethod() $mapTarget {").
 			Indent().
 			WriteLine("switch value {")
 		for _, branch := range mapping.Cases {
@@ -56,6 +61,7 @@ func (c *GoGenerationContext) generateEnumMappings(enumDef *CCLEnum) error {
 		builder.UnmapVar(
 			"mapSource",
 			"mapTarget",
+			"mapMethod",
 			"mapFallback",
 			"mapCase",
 			"mapResult",

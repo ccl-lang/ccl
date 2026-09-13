@@ -35,6 +35,10 @@ func (c *GDScriptGenerationContext) generateEnumMappings(
 			return err
 		}
 		methodName := gValues.StyleSnakeCase.ApplyStyle(sourceType + "_to_" + methodTarget)
+		methodName, err = c.GetEnumMappingMethodName(CurrentLanguage, enumDef, mapping.Target, methodName)
+		if err != nil {
+			return err
+		}
 		builder.MapVarPairs(
 			"mapMethod", methodName,
 			"mapTarget", targetReference,

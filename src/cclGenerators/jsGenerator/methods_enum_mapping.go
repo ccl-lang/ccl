@@ -31,6 +31,10 @@ func (c *JavaScriptGenerationContext) generateEnumMappings(
 		if mapping.Target.OwnedBy != nil {
 			methodName = "to" + mapping.Target.OwnedBy.Name + targetType
 		}
+		methodName, err = c.GetEnumMappingMethodName(LanguageName, enumDef, mapping.Target, methodName)
+		if err != nil {
+			return err
+		}
 		if !c.IsSingleFile && mapping.Target != enumDef && (enumDef.OwnedBy == nil || mapping.Target.OwnedBy != enumDef.OwnedBy) {
 			importName := targetType
 			fileName := mapping.Target.Name
