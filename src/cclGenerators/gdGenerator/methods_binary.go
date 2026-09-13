@@ -70,7 +70,7 @@ func (c *GDScriptGenerationContext) generateFieldSerializeBinary(
 
 	switch targetFieldTypeName {
 	case cclValues.TypeNameString:
-		builder.LineD("var $fieldBytes = $field.to_utf8_buffer()").
+		builder.LineD("var $fieldBytes := $field.to_utf8_buffer()").
 			LineD("buffer.put_u32($fieldBytes.size())").
 			LineD("buffer.put_data($fieldBytes)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
@@ -104,7 +104,7 @@ func (c *GDScriptGenerationContext) generateFieldSerializeBinary(
 			builder.LineD("if $field:").
 				Indent().
 				WriteLine("buffer.put_u8(1)").
-				LineD("var $fieldBytes = $field.serialize_binary()").
+				LineD("var $fieldBytes := $field.serialize_binary()").
 				LineD("buffer.put_u32($fieldBytes.size())").
 				LineD("buffer.put_data($fieldBytes)").
 				Unindent().

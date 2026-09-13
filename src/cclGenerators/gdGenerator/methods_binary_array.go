@@ -36,7 +36,7 @@ func (c *GDScriptGenerationContext) generateArraySerializeBinary(
 
 	switch targetFieldTypeName {
 	case cclValues.TypeNameString:
-		builder.WriteLine("var item_bytes = item.to_utf8_buffer()").
+		builder.WriteLine("var item_bytes := item.to_utf8_buffer()").
 			WriteLine("buffer.put_u32(item_bytes.size())").
 			WriteLine("buffer.put_data(item_bytes)")
 	case cclValues.TypeNameInt, cclValues.TypeNameInt32:
@@ -67,7 +67,7 @@ func (c *GDScriptGenerationContext) generateArraySerializeBinary(
 			builder.WriteLine("if item:").
 				Indent().
 				WriteLine("buffer.put_u8(1)").
-				WriteLine("var item_bytes = item.serialize_binary()").
+				WriteLine("var item_bytes := item.serialize_binary()").
 				WriteLine("buffer.put_u32(item_bytes.size())").
 				WriteLine("buffer.put_data(item_bytes)").
 				Unindent().
