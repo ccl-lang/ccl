@@ -39,3 +39,6 @@ ccl-lang.github.io
 # All the huge examples with lots of real-world-like scenarios.
 ./ccl-examples
 
+
+.local-private/
+

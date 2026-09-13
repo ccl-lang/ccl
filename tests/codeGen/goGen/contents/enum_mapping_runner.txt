@@ -1,0 +1,27 @@
+package main
+
+import "ccl_test_generated/models"
+
+func main() {
+	for _, input := range []models.GameItemGameItemType{models.SrcGameItemTypeUNKNOWNZ, models.SrcGameItemTypeGOLD, models.SrcGameItemTypeNAME_CHANGER, models.SrcGameItemTypeNAME_CHANGER_ALIAS, models.SrcGameItemTypeNAMECHANGER, 123, -2} {
+		wantPlayer, wantArchive := models.PlayerItemPlayerItemType(99), models.SavedArchiveType(-1)
+		if input == 7 {
+			wantPlayer, wantArchive = 1, 42
+		}
+		if input.ToPlayerItemPlayerItemType() != wantPlayer || input.ToSavedArchiveType() != wantArchive {
+			panic("forward mapping/fallback failed")
+		}
+	}
+	for _, input := range []models.PlayerItemPlayerItemType{models.DstPlayerItemTypeUnknownXx, models.DstPlayerItemTypeNameChanger, 123} {
+		want := models.GameItemGameItemType(0)
+		if input == 1 {
+			want = 7
+		}
+		if input.ToGameItemGameItemType() != want {
+			panic("reverse mapping/fallback failed")
+		}
+	}
+	if models.ShopTypeNameChanger.ToPlayerItemPlayerItemType() != models.DstPlayerItemTypeNameChanger {
+		panic("second source conversion failed")
+	}
+}

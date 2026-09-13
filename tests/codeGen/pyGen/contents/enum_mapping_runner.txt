@@ -1,0 +1,10 @@
+from models import GameItem, PlayerItem, ShopType, SavedArchiveType
+source = GameItem.GameItemType
+target = PlayerItem.PlayerItemType
+for value in [source.UNKNOWNZ, source.GOLD, source.NAME_CHANGER, source.NAME_CHANGER_ALIAS, source.NAMECHANGER, 123, -2]:
+    assert source.to_player_item_player_item_type(value) == (1 if value == 7 else 99)
+    assert source.to_saved_archive_type(value) == (42 if value == 7 else -1)
+for value in [target.DstUNKNOWN_XX, target.DstNAME_CHANGER, 123]:
+    assert target.to_game_item_game_item_type(value) == (7 if value == 1 else 0)
+assert ShopType.to_player_item_player_item_type(ShopType.NAME_CHANGER) == target.DstNAME_CHANGER
+assert SavedArchiveType.NAME_CHANGER == 42

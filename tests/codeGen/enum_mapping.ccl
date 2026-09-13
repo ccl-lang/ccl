@@ -1,0 +1,30 @@
+import "enum_mapping_target.ccl";
+
+namespace inventory;
+
+[$go:OutputFileGroup("game")]
+model GameItem {
+    [EnumMapSameMembers(accounts.PlayerItem.PlayerItemType)]
+    [EnumMapSameMembers(ArchiveType)]
+    [EnumMapUnknownMember(GameItemType.Unknownz)]
+    [EnumMemberNamingStyle("UPPER_CASE")]
+    [$go:EnumMemberNamePrefix("Src")]
+    enum GameItemType {
+        Unknownz = 0,
+        Gold = 1,
+        NameChanger = 7,
+        NameChangerAlias = 7,
+        namechanger = 8,
+    }
+}
+
+[EnumMapUnknownMember(ArchiveType.Missing)]
+[EnumTypeNamePrefix("Saved")]
+enum ArchiveType {
+    Missing = -1,
+    NameChanger = 42,
+    NameChangerAlias = 42,
+}
+
+[EnumMapSameMembers(accounts.PlayerItem.PlayerItemType)]
+enum ShopType { NameChanger = 12 }

@@ -134,7 +134,10 @@ func (p *CCLAstParser) parseSingleAttributeNode() (*cclAst.AttributeNode, error)
 				}
 
 				if !p.peekHasAssignment() {
-					valueExpr := p.parseAttributeValueExpression()
+					valueExpr, err := p.parseAttributeValueExpression()
+					if err != nil {
+						return nil, err
+					}
 					currentParam = &cclAst.AttributeParamNode{
 						Value:          valueExpr,
 						SourcePosition: valueExpr.GetSourcePosition(),
@@ -208,7 +211,10 @@ func (p *CCLAstParser) parseSingleAttributeNode() (*cclAst.AttributeNode, error)
 							}
 						}
 
-						valueExpr := p.parseAttributeValueExpression()
+						valueExpr, err := p.parseAttributeValueExpression()
+						if err != nil {
+							return nil, err
+						}
 						currentParam.Value = valueExpr
 						continue
 					}
@@ -234,7 +240,10 @@ func (p *CCLAstParser) parseSingleAttributeNode() (*cclAst.AttributeNode, error)
 				}
 
 				// if we are here, then we have a value without a parameter name
-				valueExpr := p.parseAttributeValueExpression()
+				valueExpr, err := p.parseAttributeValueExpression()
+				if err != nil {
+					return nil, err
+				}
 				currentParam = &cclAst.AttributeParamNode{
 					Value:          valueExpr,
 					SourcePosition: valueExpr.GetSourcePosition(),
@@ -311,17 +320,23 @@ func (p *CCLAstParser) parseAttributeLanguageSelector() ([]string, error) {
 	return languages, nil
 }
 
-func (p *CCLAstParser) parseAttributeValueExpression() cclAst.AttributeValueExpression {
+func (p *CCLAstParser) parseAttributeValueExpression() (cclAst.AttributeValueExpression, error) {
 	token := p.current
 	sourcePos := p.getSourcePositionForToken(token)
 
 	if token.IsIdentifier() {
-		expr := &cclAst.IdentifierValueExpression{
-			Name:           token.GetIdentifier(),
-			SourcePosition: sourcePos,
-		}
+		tokens := []*cclLexer.CCLToken{token}
 		p.advance()
-		return expr
+		for p.isCurrentType(cclLexer.TokenTypeDot) {
+			tokens = append(tokens, p.current)
+			p.advance()
+			if !p.isCurrentType(cclLexer.TokenTypeIdentifier) {
+				return nil, p.ErrInvalidSyntax("Expected identifier after '.' in attribute argument")
+			}
+			tokens = append(tokens, p.current)
+			p.advance()
+		}
+		return p.parseValueExpressionFromTokens(tokens)
 	}
 
 	literalKind := cclAst.AttributeLiteralKindUnknown
@@ -345,7 +360,7 @@ func (p *CCLAstParser) parseAttributeValueExpression() cclAst.AttributeValueExpr
 		SourcePosition:  sourcePos,
 	}
 	p.advance()
-	return literalExpr
+	return literalExpr, nil
 }
 
 func (p *CCLAstParser) isCurrentAttribute() bool {

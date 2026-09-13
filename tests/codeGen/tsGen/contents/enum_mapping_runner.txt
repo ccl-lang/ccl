@@ -1,0 +1,16 @@
+import { GameItem } from './models/GameItem';
+import { PlayerItem } from './models/PlayerItem';
+import { ShopType, ShopTypeMappings } from './models/ShopType';
+const source = GameItem.GameItemType;
+const target = PlayerItem.PlayerItemType;
+if (source.NAME_CHANGER !== 7 || source.NAME_CHANGER_ALIAS !== 7 || source.GOLD !== 1) {
+    throw new Error('source enum members/values changed');
+}
+for (const input of [source.UNKNOWNZ, source.GOLD, source.NAME_CHANGER, source.NAME_CHANGER_ALIAS, source.NAMECHANGER, 123, -2]) {
+    if (GameItem.GameItemTypeMappings.toPlayerItemPlayerItemType(input as GameItem.GameItemType) !== (input === 7 ? 1 : 99) ||
+        GameItem.GameItemTypeMappings.toSavedArchiveType(input as GameItem.GameItemType) !== (input === 7 ? 42 : -1)) throw new Error('forward mapping/fallback failed');
+}
+for (const input of [target.DstUnknownXx, target.DstNameChanger, 123]) {
+    if (PlayerItem.PlayerItemTypeMappings.toGameItemGameItemType(input as PlayerItem.PlayerItemType) !== (input === 1 ? 7 : 0)) throw new Error('reverse mapping/fallback failed');
+}
+if (ShopTypeMappings.toPlayerItemPlayerItemType(ShopType.NameChanger) !== target.DstNameChanger) throw new Error('second source failed');

@@ -97,6 +97,9 @@ func (c *PythonGenerationContext) generateEnumClass(
 			builder.WriteLine(memberName + " = " + ssg.ToBase10(member.Value))
 		}
 	}
+	if err := c.generateEnumMappings(builder, enumDef); err != nil {
+		return err
+	}
 	builder.UnindentLine()
 	return nil
 }

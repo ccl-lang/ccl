@@ -31,7 +31,11 @@ func (c *RustGenerationContext) generateLibFile() error {
 			if enumDef.IsNested() {
 				continue
 			}
-			c.writeRustModuleExport(builder, enumDef.Name, enumDef.Name, declaredModules)
+			enumTypeName, err := c.getRustEnumTypeName(enumDef)
+			if err != nil {
+				return err
+			}
+			c.writeRustModuleExport(builder, enumDef.Name, enumTypeName, declaredModules)
 			continue
 		}
 

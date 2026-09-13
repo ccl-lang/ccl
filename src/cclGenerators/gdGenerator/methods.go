@@ -254,7 +254,7 @@ func (c *GDScriptGenerationContext) generateEnumDeclaration(
 	builder.Unindent().
 		WriteLine("}")
 
-	return nil
+	return c.generateEnumMappings(builder, enumDef)
 }
 
 func (c *GDScriptGenerationContext) generateModelAnnotations(

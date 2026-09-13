@@ -1,0 +1,16 @@
+using System;
+using CCLGenerated;
+class Program {
+    static void Main() {
+        foreach (var input in new int[] { 0, 1, 7, 8, 123, -2 }) {
+            var source = (GameItem.GameItemType)input;
+            if ((int)GameItem.GameItemTypeMappings.ToPlayerItemPlayerItemType(source) != (input == 7 ? 1 : 99) ||
+                (int)GameItem.GameItemTypeMappings.ToSavedArchiveType(source) != (input == 7 ? 42 : -1)) throw new Exception("forward mapping/fallback failed");
+        }
+        foreach (var input in new int[] { 99, 1, 123 }) {
+            if ((int)PlayerItem.PlayerItemTypeMappings.ToGameItemGameItemType((PlayerItem.PlayerItemType)input) != (input == 1 ? 7 : 0)) throw new Exception("reverse mapping/fallback failed");
+        }
+        if (GameItem.GameItemType.NAME_CHANGER_ALIAS != GameItem.GameItemType.NAME_CHANGER ||
+            ShopTypeMappings.ToPlayerItemPlayerItemType(ShopType.NameChanger) != PlayerItem.PlayerItemType.DstNameChanger) throw new Exception("aliases/second source failed");
+    }
+}

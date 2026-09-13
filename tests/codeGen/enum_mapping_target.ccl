@@ -1,0 +1,13 @@
+namespace accounts;
+
+[$go:OutputFileGroup("player")]
+model PlayerItem {
+    [EnumMapSameMembers(inventory.GameItem.GameItemType)]
+    [EnumMapUnknownMember(PlayerItemType.UnknownXX)]
+    [EnumMemberNamePrefix("Dst")]
+    enum PlayerItemType {
+        UnknownXX = 99,
+        NameChanger = 1,
+        NameChangerAlias = 1,
+    }
+}

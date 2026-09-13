@@ -1,6 +1,9 @@
 package cclValues
 
-import "github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
+import (
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
+)
 
 // EnumDefinition is a sanitized enum declaration.
 type EnumDefinition struct {
@@ -25,6 +28,12 @@ type EnumDefinition struct {
 	// Attributes is an array of attribute definitions applied to this enum.
 	Attributes []*AttributeUsageInfo
 
+	// MappingFallbacks are used by conversions arriving at this enum.
+	MappingFallbacks map[gValues.LanguageType]*EnumMemberDefinition
+
+	// Mappings contains only explicitly requested outgoing conversions.
+	Mappings map[gValues.LanguageType][]*EnumMapping
+
 	// SourcePosition is the position of the enum in the source code.
 	SourcePosition *cclUtils.SourceCodePosition
 }
@@ -44,7 +53,7 @@ type EnumMemberDefinition struct {
 	SourcePosition *cclUtils.SourceCodePosition
 }
 
-// EnumMemberReference is a field default value that references an enum member.
+// EnumMemberReference references a resolved enum member.
 type EnumMemberReference struct {
 	Enum   *EnumDefinition
 	Member *EnumMemberDefinition

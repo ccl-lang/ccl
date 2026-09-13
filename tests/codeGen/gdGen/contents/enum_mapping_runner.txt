@@ -1,0 +1,17 @@
+extends SceneTree
+func _init():
+    for value in [GameItem.GameItemType.UNKNOWNZ, GameItem.GameItemType.GOLD, GameItem.GameItemType.NAME_CHANGER, GameItem.GameItemType.NAME_CHANGER_ALIAS, GameItem.GameItemType.NAMECHANGER, 123, -2]:
+        if GameItem.game_item_type_to_player_item_player_item_type(value) != (1 if value == 7 else 99) or GameItem.game_item_type_to_saved_archive_type(value) != (42 if value == 7 else -1):
+            push_error("forward mapping/fallback failed")
+            quit(1)
+            return
+    for value in [PlayerItem.PlayerItemType.DstUNKNOWN_XX, PlayerItem.PlayerItemType.DstNAME_CHANGER, 123]:
+        if PlayerItem.player_item_type_to_game_item_game_item_type(value) != (7 if value == 1 else 0):
+            push_error("reverse mapping/fallback failed")
+            quit(1)
+            return
+    if ShopType.shop_type_to_player_item_player_item_type(ShopType.ShopTypeEnum.NAME_CHANGER) != PlayerItem.PlayerItemType.DstNAME_CHANGER:
+        quit(1)
+        return
+    print("enum mapping ok")
+    quit(0)

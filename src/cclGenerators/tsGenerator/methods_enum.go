@@ -95,7 +95,7 @@ func (c *TypeScriptGenerationContext) generateEnumDeclaration(
 	}
 	builder.Unindent().
 		WriteLine("}")
-	return nil
+	return c.generateEnumMappings(builder, enumDef)
 }
 
 func (c *TypeScriptGenerationContext) generateNestedEnumNamespace(

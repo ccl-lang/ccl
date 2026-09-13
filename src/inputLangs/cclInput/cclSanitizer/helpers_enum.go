@@ -35,7 +35,7 @@ func sanitizeEnumDeclaration(
 	enumDef.BaseType = baseType
 
 	for _, attrAst := range enumAst.Attributes {
-		attrUsage, err := ResolveAttributeUsage(ctx, attrAst)
+		attrUsage, err := resolveEnumAttributeUsage(ctx, attrAst)
 		if err != nil {
 			return nil, nil, err
 		}

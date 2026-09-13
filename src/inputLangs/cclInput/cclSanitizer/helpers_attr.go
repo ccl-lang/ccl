@@ -3,10 +3,11 @@ package cclSanitizer
 import (
 	"strings"
 
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
-	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 )
 
 // ResolveAttributeUsage resolves an attribute AST node into a usage info.
@@ -23,6 +24,13 @@ func ResolveAttributeUsage(
 	if ctx == nil {
 		return nil, &AttributeResolutionError{
 			Message: "missing code context for attribute resolution",
+		}
+	}
+	if isEnumMappingAttribute(node.GetAttributeName()) {
+		return nil, &cclErrors.InvalidAttributeUsageError{
+			AttrName:       node.GetAttributeName(),
+			Message:        "can only be applied to an enum declaration",
+			SourcePosition: node.GetSourcePosition(),
 		}
 	}
 

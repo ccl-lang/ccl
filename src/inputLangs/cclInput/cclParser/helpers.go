@@ -1,9 +1,9 @@
 package cclParser
 
 import (
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclSanitizer"
-	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
 
@@ -77,7 +77,7 @@ func sanitizeFileGraph(
 	}
 
 	for _, astFile := range astFiles {
-		definition, err := cclSanitizer.SanitizeCCLAst(ctx, astFile)
+		definition, err := cclSanitizer.SanitizeCCLDeclarations(ctx, astFile)
 		if err != nil {
 			return nil, err
 		}
@@ -94,5 +94,8 @@ func sanitizeFileGraph(
 		aggregate.NamespaceAttributes = append(aggregate.NamespaceAttributes, definition.NamespaceAttributes...)
 	}
 
+	if err := cclSanitizer.ResolveEnumMappings(ctx); err != nil {
+		return nil, err
+	}
 	return aggregate, nil
 }

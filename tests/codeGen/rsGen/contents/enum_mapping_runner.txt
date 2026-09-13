@@ -1,0 +1,17 @@
+use ccl_enum_mapping::{GameItemGameItemType, PlayerItemPlayerItemType, ShopType, SavedArchiveType};
+#[test]
+fn enum_mappings() {
+    for input in [0, 1, 7, 8, 123, -2] {
+        assert_eq!(GameItemGameItemType::map_raw_to_player_item_player_item_type(input) as i32, if input == 7 { 1 } else { 99 });
+        assert_eq!(GameItemGameItemType::map_raw_to_saved_archive_type(input) as i32, if input == 7 { 42 } else { -1 });
+    }
+    for input in [99, 1, 123] {
+        assert_eq!(PlayerItemPlayerItemType::map_raw_to_game_item_game_item_type(input) as i32, if input == 1 { 7 } else { 0 });
+    }
+    assert_eq!(GameItemGameItemType::NAME_CHANGER_ALIAS.to_player_item_player_item_type(), PlayerItemPlayerItemType::DstNameChanger);
+    assert_eq!(PlayerItemPlayerItemType::DstNameChangerAlias.to_game_item_game_item_type(), GameItemGameItemType::NAME_CHANGER);
+    assert_eq!(ShopType::NameChanger.to_player_item_player_item_type(), PlayerItemPlayerItemType::DstNameChanger);
+    assert_eq!(SavedArchiveType::NameChangerAlias as i32, 42);
+    assert_eq!(serde_json::to_string(&GameItemGameItemType::NAME_CHANGER_ALIAS).unwrap(), "7");
+    assert_eq!(serde_json::from_str::<GameItemGameItemType>("7").unwrap(), GameItemGameItemType::NAME_CHANGER);
+}

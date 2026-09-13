@@ -14,6 +14,21 @@ func SanitizeCCLAst(
 	ctx *cclValues.CCLCodeContext,
 	ast *cclAst.CCLFileAST,
 ) (*cclValues.SourceCodeDefinition, error) {
+	definition, err := SanitizeCCLDeclarations(ctx, ast)
+	if err != nil {
+		return nil, err
+	}
+	if err := ResolveEnumMappings(definition.CodeContext); err != nil {
+		return nil, err
+	}
+	return definition, nil
+}
+
+// SanitizeCCLDeclarations registers a file before source-graph relationships are resolved.
+func SanitizeCCLDeclarations(
+	ctx *cclValues.CCLCodeContext,
+	ast *cclAst.CCLFileAST,
+) (*cclValues.SourceCodeDefinition, error) {
 	if ast == nil {
 		return nil, &AstSanitizationError{
 			Message: "missing CCL AST",

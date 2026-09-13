@@ -13,4 +13,6 @@ const (
 	AttrEnumMemberNamingStyle CCLAttributeName = "EnumMemberNamingStyle"
 	AttrEnumMemberNamePrefix  CCLAttributeName = "EnumMemberNamePrefix"
 	AttrEnumTypeNamePrefix    CCLAttributeName = "EnumTypeNamePrefix"
+	AttrEnumMapSameMembers    CCLAttributeName = "EnumMapSameMembers"
+	AttrEnumMapUnknownMember  CCLAttributeName = "EnumMapUnknownMember"
 )

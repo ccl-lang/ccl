@@ -199,6 +199,9 @@ func (c *GoGenerationContext) generateHelpersForModel(
 func (c *GoGenerationContext) GenerateMethods() error {
 	for _, currentTypeDef := range c.GetGenerationTypeDefinitions() {
 		if currentTypeDef.IsCustomEnum() {
+			if err := c.generateEnumMappings(currentTypeDef.GetEnumDefinition()); err != nil {
+				return err
+			}
 			continue
 		}
 

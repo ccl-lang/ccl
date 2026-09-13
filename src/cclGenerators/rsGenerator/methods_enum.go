@@ -21,7 +21,12 @@ func (c *RustGenerationContext) generateEnum(
 		WriteLine("#[derive(Debug, Clone, Copy, PartialEq, Eq)]").
 		WriteLine("pub enum " + enumTypeName + " {").
 		Indent()
+	seenValues := map[int64]bool{}
 	for _, member := range enumDef.Members {
+		if seenValues[member.Value] {
+			continue
+		}
+		seenValues[member.Value] = true
 		memberName, err := c.getRustEnumMemberName(enumDef, member)
 		if err != nil {
 			return err
@@ -32,8 +37,11 @@ func (c *RustGenerationContext) generateEnum(
 		WriteLine("}").
 		NewLine()
 
+	if err := c.generateEnumAliases(builder, enumDef, enumTypeName); err != nil {
+		return err
+	}
 	c.generateEnumConversions(builder, enumDef, enumTypeName, baseType)
-	return nil
+	return c.generateEnumMappings(builder, enumDef)
 }
 
 func (c *RustGenerationContext) generateEnumConversions(
@@ -48,7 +56,12 @@ func (c *RustGenerationContext) generateEnumConversions(
 		Indent().
 		WriteLine("match value {").
 		Indent()
+	seenValues := map[int64]bool{}
 	for _, member := range enumDef.Members {
+		if seenValues[member.Value] {
+			continue
+		}
+		seenValues[member.Value] = true
 		memberName, _ := c.getRustEnumMemberName(enumDef, member)
 		builder.WriteLine(ssg.ToBase10(member.Value) + " => Some(Self::" + memberName + "),")
 	}
