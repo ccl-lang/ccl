@@ -6,6 +6,7 @@ const (
 	AttrJsonPropertyName          CCLAttributeName = "JsonPropertyName"
 	AttrOutputFileGroup           CCLAttributeName = "OutputFileGroup"
 	AttrGenerateSingleFile        CCLAttributeName = "GenerateSingleFile"
+	AttrGenerateModelIds          CCLAttributeName = "GenerateModelIds"
 	AttrAddCloneMethods           CCLAttributeName = "AddCloneMethods"
 	AttrAddAnnotation             CCLAttributeName = "AddAnnotation"
 	AttrStrictBinaryParsing       CCLAttributeName = "StrictBinaryParsing"

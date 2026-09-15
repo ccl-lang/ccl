@@ -186,9 +186,10 @@ func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		builder.NewLine()
 	}
 
-	// Write model ID constant
-	builder.LineD("static $modelIdConst = $modelId;").
-		NewLine()
+	if c.NeedsModelIds(LanguageName) {
+		builder.LineD("static $modelIdConst = $modelId;").
+			NewLine()
+	}
 
 	// Fields
 	for _, field := range model.Fields {
@@ -261,13 +262,14 @@ func (c *JavaScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		WriteLine("}").
 		NewLine()
 
-	// Get Model ID
-	builder.WriteLine("getModelId() {").
-		Indent().
-		LineD("return $model.$modelIdConst;").
-		Unindent().
-		WriteLine("}").
-		NewLine()
+	if c.NeedsModelIds(LanguageName) {
+		builder.WriteLine("getModelId() {").
+			Indent().
+			LineD("return $model.$modelIdConst;").
+			Unindent().
+			WriteLine("}").
+			NewLine()
+	}
 
 	if c.NeedsCloneMethods(LanguageName, model) {
 		if err := c.generateCloneMethods(model, builder); err != nil {

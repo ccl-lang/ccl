@@ -170,11 +170,16 @@ func (c *GDScriptGenerationContext) generateModelClass(builder *codeBuilder.Code
 	}
 	builder.NewLine()
 
-	// Write model ID constant
 	modelIdConstName := "MODEL_ID_" + strings.ToUpper(caseUtils.ToSnakeCase(model.Name))
-	builder.WriteLine("const " + modelIdConstName +
-		" = " + ssg.ToBase10(model.ModelId)).
-		NewLine()
+	builder.MapVarPairs(
+		"modelIdConst", modelIdConstName,
+		"modelId", ssg.ToBase10(model.ModelId),
+	)
+	defer builder.UnmapVar("modelIdConst", "modelId")
+	if c.NeedsModelIds(CurrentLanguage) {
+		builder.LineD("const $modelIdConst = $modelId").
+			NewLine()
+	}
 
 	for _, enumDef := range model.Enums {
 		if err := c.generateEnumDeclaration(builder, enumDef, true); err != nil {
@@ -213,11 +218,12 @@ func (c *GDScriptGenerationContext) generateModelClass(builder *codeBuilder.Code
 	}
 	builder.NewLine()
 
-	// Add get_model_id method
-	builder.WriteLine("func get_model_id() -> int:").
-		Indent().
-		WriteLine("return " + modelIdConstName).
-		UnindentLine()
+	if c.NeedsModelIds(CurrentLanguage) {
+		builder.WriteLine("func get_model_id() -> int:").
+			Indent().
+			LineD("return $modelIdConst").
+			UnindentLine()
+	}
 
 	if c.NeedsCloneMethods(CurrentLanguage, model) {
 		if err := c.generateCloneMethods(model, builder); err != nil {

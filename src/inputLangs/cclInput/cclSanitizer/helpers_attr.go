@@ -5,6 +5,7 @@ import (
 
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclErrors"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclUtils"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
@@ -33,10 +34,33 @@ func ResolveAttributeUsage(
 			SourcePosition: node.GetSourcePosition(),
 		}
 	}
+	if node.GetAttributeName() == cclAttr.AttrGenerateModelIds {
+		globalAttr, isScoped := node.(*cclAst.GlobalAttributeNode)
+		if !isScoped || globalAttr.Scope != cclAst.AttributeScopeGlobal {
+			return nil, &cclErrors.InvalidAttributeUsageError{
+				AttrName:       node.GetAttributeName(),
+				Message:        "is global-only; use #[GenerateModelIds(true)] or #[GenerateModelIds(false)]",
+				SourcePosition: node.GetSourcePosition(),
+			}
+		}
+	}
 
 	params, err := resolveAttributeParams(ctx, node.GetAttributeParams())
 	if err != nil {
 		return nil, err
+	}
+	if node.GetAttributeName() == cclAttr.AttrGenerateModelIds {
+		validBoolean := false
+		if len(params) == 1 {
+			_, validBoolean = params[0].GetValue().(bool)
+		}
+		if !validBoolean {
+			return nil, &cclErrors.InvalidAttributeUsageError{
+				AttrName:       node.GetAttributeName(),
+				Message:        "requires exactly one boolean parameter (true or false)",
+				SourcePosition: node.GetSourcePosition(),
+			}
+		}
 	}
 
 	languages, err := resolveAttributeLanguages(node.GetAttributeLanguages(), node.GetSourcePosition())

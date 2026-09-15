@@ -240,13 +240,15 @@ func (c *GoGenerationContext) generateMethodsForModel(
 		"modelIdConst",
 	)
 
-	builder.WriteLine("//------------------------------------------------------------").
-		NewLine().
-		LineD("func (m $model) GetModelId() int {").
-		Indent().
-		LineD("return $modelIdConst").
-		Unindent().
-		WriteLine("}")
+	if c.NeedsModelIds(CurrentLanguage) {
+		builder.WriteLine("//------------------------------------------------------------").
+			NewLine().
+			LineD("func (m $model) GetModelId() int {").
+			Indent().
+			LineD("return $modelIdConst").
+			Unindent().
+			WriteLine("}")
+	}
 
 	// generate CloneEmpty() method
 	if c.NeedsCloneMethods(CurrentLanguage, currentModel) {

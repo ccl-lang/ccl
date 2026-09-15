@@ -188,9 +188,10 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		builder.NewLine()
 	}
 
-	// Write model ID constant
-	builder.LineD("public const int $modelIdConst = $modelId;").
-		NewLine()
+	if c.NeedsModelIds(CurrentLanguage) {
+		builder.LineD("public const int $modelIdConst = $modelId;").
+			NewLine()
+	}
 
 	// Fields
 	for _, field := range model.Fields {
@@ -257,14 +258,15 @@ func (c *CSharpGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		WriteLine("}").
 		NewLine()
 
-	// Get Model ID
-	builder.WriteLine("public int GetModelId()").
-		WriteLine("{").
-		Indent().
-		LineD("return $modelIdConst;").
-		Unindent().
-		WriteLine("}").
-		NewLine()
+	if c.NeedsModelIds(CurrentLanguage) {
+		builder.WriteLine("public int GetModelId()").
+			WriteLine("{").
+			Indent().
+			LineD("return $modelIdConst;").
+			Unindent().
+			WriteLine("}").
+			NewLine()
+	}
 
 	if c.NeedsCloneMethods(CurrentLanguage, model) {
 		if err := c.generateCloneMethods(model, builder); err != nil {

@@ -159,6 +159,13 @@ func (c *CodeGenerationBase) GetOutputFileGroup(
 
 //---------------------------------------------------------
 
+// NeedsModelIds reports whether model ID constants and accessors should be generated.
+// Model IDs are enabled by default and can only be configured globally.
+func (c *CodeGenerationBase) NeedsModelIds(targetLang gValues.LanguageType) bool {
+	attr := c.GetGlobalAttribute(targetLang, cclAttr.AttrGenerateModelIds)
+	return attr == nil || attr.GetParamAt(0).GetAsBool()
+}
+
 // NeedsCloneMethods returns true if the current model or global attributes
 // indicate that clone methods are needed.
 func (c *CodeGenerationBase) NeedsCloneMethods(

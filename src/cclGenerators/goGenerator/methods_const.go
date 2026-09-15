@@ -78,9 +78,14 @@ func (c *GoGenerationContext) generateConstantsForModel(
 	builder *codeBuilder.CodeBuilder,
 	currentModel *CCLModel,
 ) error {
-	builder.WriteLine("ModelId" +
-		currentModel.Name + " = " + ssg.ToBase10(currentModel.ModelId),
-	)
+	if c.NeedsModelIds(CurrentLanguage) {
+		builder.MapVarPairs(
+			"model", currentModel.Name,
+			"modelId", ssg.ToBase10(currentModel.ModelId),
+		)
+		defer builder.UnmapVar("model", "modelId")
+		builder.LineD("ModelId$model = $modelId")
+	}
 	return nil
 }
 

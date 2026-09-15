@@ -179,9 +179,10 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 	builder.LineD("export class $model {").
 		Indent()
 
-	// Write model ID constant
-	builder.LineD("public static readonly $modelIdConst = $modelId;").
-		NewLine()
+	if c.NeedsModelIds(CurrentLanguage) {
+		builder.LineD("public static readonly $modelIdConst = $modelId;").
+			NewLine()
+	}
 
 	// Fields
 	for _, field := range model.Fields {
@@ -270,13 +271,14 @@ func (c *TypeScriptGenerationContext) generateModelClass(builder *codeBuilder.Co
 		WriteLine("}").
 		NewLine()
 
-	// Get Model ID
-	builder.WriteLine("public getModelId(): number {").
-		Indent().
-		LineD("return $model.$modelIdConst;").
-		Unindent().
-		WriteLine("}").
-		NewLine()
+	if c.NeedsModelIds(CurrentLanguage) {
+		builder.WriteLine("public getModelId(): number {").
+			Indent().
+			LineD("return $model.$modelIdConst;").
+			Unindent().
+			WriteLine("}").
+			NewLine()
+	}
 
 	if c.NeedsCloneMethods(CurrentLanguage, model) {
 		if err := c.generateCloneMethods(model, builder); err != nil {

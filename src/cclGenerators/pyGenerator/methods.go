@@ -156,9 +156,10 @@ func (c *PythonGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 		}
 	}
 
-	// Write model ID constant
-	builder.LineD("$modelIdConst = $modelId").
-		NewLine()
+	if c.NeedsModelIds(CurrentLanguage) {
+		builder.LineD("$modelIdConst = $modelId").
+			NewLine()
+	}
 
 	// Write __init__ method
 	builder.WriteLine("def __init__(self):").
@@ -239,12 +240,13 @@ func (c *PythonGenerationContext) generateModelClass(builder *codeBuilder.CodeBu
 	builder.UnindentLine().
 		NewLine()
 
-	// Add get_model_id method
-	builder.WriteLine("def get_model_id(self) -> int:").
-		Indent().
-		LineD("return $model.$modelIdConst").
-		UnindentLine().
-		NewLine()
+	if c.NeedsModelIds(CurrentLanguage) {
+		builder.WriteLine("def get_model_id(self) -> int:").
+			Indent().
+			LineD("return $model.$modelIdConst").
+			UnindentLine().
+			NewLine()
+	}
 
 	if c.NeedsCloneMethods(CurrentLanguage, model) {
 		if err := c.generateCloneMethods(model, builder); err != nil {
