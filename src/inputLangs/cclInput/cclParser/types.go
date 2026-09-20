@@ -1,6 +1,7 @@
 package cclParser
 
 import (
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclValues"
 )
@@ -13,6 +14,10 @@ type CCLParseOptions struct {
 	SourceFilePath string
 	SourceContent  string
 	CodeContext    *cclValues.CCLCodeContext
+
+	// TargetLanguage selects language-specific parser directives.
+	// LanguageUnknown leaves language-specific files included.
+	TargetLanguage gValues.LanguageType
 }
 
 // CCLAstParser parses tokens into a syntax-only AST.

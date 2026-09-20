@@ -27,6 +27,9 @@ func ResolveAttributeUsage(
 			Message: "missing code context for attribute resolution",
 		}
 	}
+	if node.GetAttributeName() == cclAttr.AttrSkipFile {
+		return ResolveSkipFileAttribute(node)
+	}
 	if isEnumMappingAttribute(node.GetAttributeName()) {
 		return nil, &cclErrors.InvalidAttributeUsageError{
 			AttrName:       node.GetAttributeName(),

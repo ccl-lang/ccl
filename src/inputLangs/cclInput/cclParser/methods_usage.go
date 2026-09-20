@@ -7,11 +7,6 @@ import (
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
 )
 
-func (p *CCLAstParser) parseCurrentTypeExpression() (cclAst.TypeExpression, error) {
-	allTokens := p.readUntilSemicolon()
-	return p.parseTypeExpressionFromTokens(allTokens)
-}
-
 func (p *CCLAstParser) parseTypeExpressionUntil(
 	stopTokens ...cclLexer.CCLTokenType,
 ) (cclAst.TypeExpression, error) {

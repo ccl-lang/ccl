@@ -3,7 +3,9 @@ package cclParser
 import (
 	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAst"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclAttr"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser/cclLexer"
+	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclSanitizer"
 )
 
 func (p *CCLAstParser) ParseAsAST() (*cclAst.CCLFileAST, error) {
@@ -24,6 +26,19 @@ func (p *CCLAstParser) ParseAsAST() (*cclAst.CCLFileAST, error) {
 			scopedAttr, err := p.parseGlobalAttributeNode()
 			if err != nil {
 				return nil, err
+			}
+
+			if scopedAttr.Name == cclAttr.AttrSkipFile {
+				skipAttr, err := cclSanitizer.ResolveSkipFileAttribute(scopedAttr)
+				if err != nil {
+					return nil, err
+				}
+				if skipAttr.IsForLanguage(p.Options.TargetLanguage) {
+					return &cclAst.CCLFileAST{
+						FilePath:  p.Options.SourceFilePath,
+						Namespace: gValues.DefaultMainNamespace,
+					}, nil
+				}
 			}
 
 			switch scopedAttr.Scope {

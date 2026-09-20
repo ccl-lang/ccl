@@ -22,6 +22,7 @@ func (r *importGraphResolver) parseSourceFileAsAST(options *CCLParseOptions) (*c
 		}
 	}
 
+	r.targetLanguage = options.TargetLanguage
 	astFile, sourceContent, err := r.parseAbsoluteSourceFileAsAST(sourceFilePath, nil)
 	if err != nil {
 		return nil, err
@@ -49,6 +50,7 @@ func (r *importGraphResolver) parseSourceFileGraphAsAST(
 		}
 	}
 
+	r.targetLanguage = options.TargetLanguage
 	rootAst, sourceContent, err := r.parseAbsoluteSourceFileGraphAsAST(sourceFilePath, nil)
 	if err != nil {
 		return nil, nil, "", err
@@ -91,6 +93,7 @@ func (r *importGraphResolver) parseAbsoluteSourceFileGraphAsAST(
 	sourceAst, err := ParseCCLSourceContentAsAST(&CCLParseOptions{
 		SourceFilePath: sourceFilePath,
 		SourceContent:  sourceContent,
+		TargetLanguage: r.targetLanguage,
 	})
 	if err != nil {
 		if importDecl == nil {
@@ -165,6 +168,7 @@ func (r *importGraphResolver) parseAbsoluteSourceFileAsAST(
 	sourceAst, err := ParseCCLSourceContentAsAST(&CCLParseOptions{
 		SourceFilePath: sourceFilePath,
 		SourceContent:  sourceContent,
+		TargetLanguage: r.targetLanguage,
 	})
 	if err != nil {
 		if importDecl == nil {

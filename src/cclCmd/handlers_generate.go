@@ -7,6 +7,7 @@ import (
 
 	"github.com/ccl-lang/ccl/src/cclGenerators"
 	"github.com/ccl-lang/ccl/src/cclLoader"
+	gValues "github.com/ccl-lang/ccl/src/core/globalValues"
 	"github.com/ccl-lang/ccl/src/inputLangs/cclInput/cclParser"
 )
 
@@ -47,6 +48,7 @@ func HandleGenerateCommand() {
 
 	parsedDefinitions, parseErr := cclParser.ParseCCLSourceFile(&cclParser.CCLParseOptions{
 		SourceFilePath: *source,
+		TargetLanguage: gValues.GetLanguageTypeFromName(*language),
 	})
 	if parseErr != nil {
 		fmt.Printf("Error: failed to parse source file %s: %v\n", *source, parseErr)

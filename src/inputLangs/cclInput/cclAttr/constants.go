@@ -5,6 +5,7 @@ const (
 	AttrSerializationType         CCLAttributeName = "SerializationType"
 	AttrJsonPropertyName          CCLAttributeName = "JsonPropertyName"
 	AttrOutputFileGroup           CCLAttributeName = "OutputFileGroup"
+	AttrSkipFile                  CCLAttributeName = "SkipFile"
 	AttrGenerateSingleFile        CCLAttributeName = "GenerateSingleFile"
 	AttrGenerateModelIds          CCLAttributeName = "GenerateModelIds"
 	AttrAddCloneMethods           CCLAttributeName = "AddCloneMethods"

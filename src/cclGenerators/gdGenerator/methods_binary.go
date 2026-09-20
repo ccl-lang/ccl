@@ -162,7 +162,7 @@ func (c *GDScriptGenerationContext) generateDeserializeBinaryMethod(model *CCLMo
 	builder.LineD("static func deserialize_binary(data: PackedByteArray) -> $model:").
 		Indent().
 		LineD("var $modelResult := $model.new()").
-		WriteLine("if not data or data.is_empty():").
+		WriteLine("if not data:").
 		Indent().
 		LineD("return $modelResult").
 		UnindentLine().

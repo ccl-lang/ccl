@@ -62,17 +62,6 @@ func (p *CCLAstParser) advance() {
 	}
 }
 
-// readUntilSemicolon reads tokens until it hits a semicolon or the end of the input.
-func (p *CCLAstParser) readUntilSemicolon() []*cclLexer.CCLToken {
-	startPos := p.pos
-
-	for !p.isCurrentType(cclLexer.TokenTypeSemicolon) && !p.IsAtEnd() {
-		p.advance()
-	}
-
-	return p.tokens[startPos:p.pos]
-}
-
 // GetCurrent returns the current token being parsed.
 // Please note that this method is exported mostly for tests.
 func (p *CCLAstParser) GetCurrent() *cclLexer.CCLToken {
