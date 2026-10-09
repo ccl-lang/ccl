@@ -55,10 +55,16 @@ func (c *GDScriptGenerationContext) generateArraySerializeBinary(
 		builder.WriteLine("buffer.put_u16(item)")
 	case cclValues.TypeNameUint64:
 		builder.WriteLine("buffer.put_u64(item)")
-	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
+	case cclValues.TypeNameFloat32:
 		builder.WriteLine("buffer.put_float(item)")
+	case cclValues.TypeNameFloat, cclValues.TypeNameFloat64:
+		builder.WriteLine("buffer.put_double(item)")
 	case cclValues.TypeNameBool:
 		builder.WriteLine("buffer.put_8(1 if item else 0)")
+	case cclValues.TypeNameVector3:
+		builder.WriteLine("buffer.put_float(item.x)").
+			WriteLine("buffer.put_float(item.y)").
+			WriteLine("buffer.put_float(item.z)")
 	case cclValues.TypeNameBytes:
 		builder.WriteLine("buffer.put_u32(item.size())").
 			WriteLine("buffer.put_data(item)")
@@ -174,12 +180,22 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeBinary(
 	case cclValues.TypeNameUint64:
 		c.generateBinaryDeserializeBoundsCheck(builder, "8")
 		builder.LineD("$field.append(buffer.get_u64()$enumCast)")
-	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
+	case cclValues.TypeNameFloat32:
 		c.generateBinaryDeserializeBoundsCheck(builder, "4")
 		builder.LineD("$field.append(buffer.get_float())")
+	case cclValues.TypeNameFloat, cclValues.TypeNameFloat64:
+		c.generateBinaryDeserializeBoundsCheck(builder, "8")
+		builder.LineD("$field.append(buffer.get_double())")
 	case cclValues.TypeNameBool:
 		c.generateBinaryDeserializeBoundsCheck(builder, "1")
 		builder.LineD("$field.append(buffer.get_8() != 0)")
+	case cclValues.TypeNameVector3:
+		c.generateBinaryDeserializeBoundsCheck(builder, "12")
+		builder.WriteLine("var item := Vector3.ZERO").
+			WriteLine("item.x = buffer.get_float()").
+			WriteLine("item.y = buffer.get_float()").
+			WriteLine("item.z = buffer.get_float()").
+			LineD("$field.append(item)")
 	case cclValues.TypeNameBytes:
 		c.generateBinaryDeserializeBoundsCheck(builder, "4")
 		builder.WriteLine("var item_len := buffer.get_u32()").

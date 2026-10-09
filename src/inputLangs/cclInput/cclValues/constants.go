@@ -17,6 +17,7 @@ const (
 	TypeNameFloat    = "float"
 	TypeNameFloat32  = "float32"
 	TypeNameFloat64  = "float64"
+	TypeNameVector3  = "Vector3"
 	TypeNameBool     = "bool"
 	TypeNameDateTime = "datetime"
 	TypeNamePointer  = "pointer"

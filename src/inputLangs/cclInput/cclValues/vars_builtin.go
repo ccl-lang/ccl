@@ -22,6 +22,7 @@ var (
 		"float":    TypeNameFloat,
 		"float32":  TypeNameFloat32,
 		"float64":  TypeNameFloat64,
+		"Vector3":  TypeNameVector3,
 		"bool":     TypeNameBool,
 		"datetime": TypeNameDateTime,
 		"pointer":  TypeNamePointer,

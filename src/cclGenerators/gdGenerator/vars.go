@@ -31,6 +31,7 @@ var (
 		"float":    "float",
 		"float64":  "float",
 		"float32":  "float",
+		"Vector3":  "Vector3",
 		"string":   "String",
 		"bool":     "bool",
 		"datetime": "int",

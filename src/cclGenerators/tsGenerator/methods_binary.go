@@ -9,9 +9,14 @@ import (
 func (c *TypeScriptGenerationContext) generateSerializeBinaryMethod(model *CCLModel, builder *codeBuilder.CodeBuilder) error {
 	builder.WriteLine("public serializeBinary(): Uint8Array {").
 		Indent().
-		WriteLine("const buffer: number[] = [];").
-		WriteLine("const dataView = new DataView(new ArrayBuffer(8));").
-		NewLine()
+		WriteLine("const buffer: number[] = [];")
+	for _, field := range model.Fields {
+		if field.IsArray() || typeScriptStorageTypeName(field.Type) != cclValues.TypeNameBool {
+			builder.WriteLine("const dataView = new DataView(new ArrayBuffer(8));")
+			break
+		}
+	}
+	builder.NewLine()
 
 	for i := range model.Fields {
 		field := model.Fields[i]
@@ -195,6 +200,15 @@ func (c *TypeScriptGenerationContext) generateDeserializeBinaryMethod(model *CCL
 		"binaryParseFallback", binaryParseFallback,
 	)
 	defer builder.UnmapVar("model", "binaryParseFallback")
+
+	if len(model.Fields) == 0 {
+		builder.LineD("public static deserializeBinary(_data: Uint8Array): $model | null {").
+			Indent().
+			LineD("return new $model();").
+			Unindent().
+			WriteLine("}")
+		return nil
+	}
 
 	builder.LineD("public static deserializeBinary(data: Uint8Array): $model | null {").
 		Indent().

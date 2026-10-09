@@ -89,10 +89,16 @@ func (c *GDScriptGenerationContext) generateFieldSerializeBinary(
 		builder.LineD("buffer.put_u16($field)")
 	case cclValues.TypeNameUint64:
 		builder.LineD("buffer.put_u64($field)")
-	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
+	case cclValues.TypeNameFloat32:
 		builder.LineD("buffer.put_float($field)")
+	case cclValues.TypeNameFloat, cclValues.TypeNameFloat64:
+		builder.LineD("buffer.put_double($field)")
 	case cclValues.TypeNameBool:
 		builder.LineD("buffer.put_8(1 if $field else 0)")
+	case cclValues.TypeNameVector3:
+		builder.LineD("buffer.put_float($field.x)").
+			LineD("buffer.put_float($field.y)").
+			LineD("buffer.put_float($field.z)")
 	case cclValues.TypeNameBytes:
 		builder.LineD("buffer.put_u32($field.size())").
 			LineD("buffer.put_data($field)")
@@ -276,12 +282,20 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeBinary(
 	case cclValues.TypeNameUint64:
 		c.generateBinaryDeserializeBoundsCheck(builder, "8")
 		builder.LineD("$field = buffer.get_u64()$enumCast")
-	case cclValues.TypeNameFloat, cclValues.TypeNameFloat32, cclValues.TypeNameFloat64:
+	case cclValues.TypeNameFloat32:
 		c.generateBinaryDeserializeBoundsCheck(builder, "4")
 		builder.LineD("$field = buffer.get_float()")
+	case cclValues.TypeNameFloat, cclValues.TypeNameFloat64:
+		c.generateBinaryDeserializeBoundsCheck(builder, "8")
+		builder.LineD("$field = buffer.get_double()")
 	case cclValues.TypeNameBool:
 		c.generateBinaryDeserializeBoundsCheck(builder, "1")
 		builder.LineD("$field = buffer.get_8() != 0")
+	case cclValues.TypeNameVector3:
+		c.generateBinaryDeserializeBoundsCheck(builder, "12")
+		builder.LineD("$field.x = buffer.get_float()").
+			LineD("$field.y = buffer.get_float()").
+			LineD("$field.z = buffer.get_float()")
 	case cclValues.TypeNameBytes:
 		c.generateBinaryDeserializeBoundsCheck(builder, "4")
 		builder.LineD("var $fieldLen := buffer.get_u32()").

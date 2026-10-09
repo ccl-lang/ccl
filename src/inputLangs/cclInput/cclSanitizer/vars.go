@@ -22,6 +22,7 @@ var builtinTypeNamesLower = map[string]string{
 	strings.ToLower(cclValues.TypeNameFloat):    cclValues.TypeNameFloat,
 	strings.ToLower(cclValues.TypeNameFloat32):  cclValues.TypeNameFloat32,
 	strings.ToLower(cclValues.TypeNameFloat64):  cclValues.TypeNameFloat64,
+	strings.ToLower(cclValues.TypeNameVector3):  cclValues.TypeNameVector3,
 	strings.ToLower(cclValues.TypeNameBool):     cclValues.TypeNameBool,
 	strings.ToLower(cclValues.TypeNameDateTime): cclValues.TypeNameDateTime,
 	strings.ToLower(cclValues.TypeNamePointer):  cclValues.TypeNamePointer,

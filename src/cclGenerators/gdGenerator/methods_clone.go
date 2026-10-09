@@ -43,36 +43,40 @@ func (c *GDScriptGenerationContext) generateDeepCloneField(
 	builder *codeBuilder.CodeBuilder,
 ) {
 	fieldName := caseUtils.ToSnakeCase(field.Name)
-	builder.MapVarPairs("field", fieldName)
-	defer builder.UnmapVar("field")
+	builder.MapVarPairs(
+		"field", fieldName,
+	)
+	defer builder.UnmapVar(
+		"field",
+	)
 
 	if field.IsArray() {
 		targetType := field.Type.GetUnderlyingType()
 		switch {
 		case targetType.IsCustomTypeModel():
 			builder.LineD("clone.$field = []").
-				LineD("for item in $field:").
+				LineD("for item in self.$field:").
 				Indent().
 				LineD("clone.$field.append(item.deep_clone() if item != null else null)").
 				Unindent()
 		case targetType.GetName() == cclValues.TypeNameBytes:
 			builder.LineD("clone.$field = []").
-				LineD("for item in $field:").
+				LineD("for item in self.$field:").
 				Indent().
 				LineD("clone.$field.append(item.duplicate())").
 				Unindent()
 		default:
-			builder.LineD("clone.$field = $field.duplicate()")
+			builder.LineD("clone.$field = self.$field.duplicate()")
 		}
 		return
 	}
 
 	switch {
 	case field.Type.IsCustomTypeModel():
-		builder.LineD("clone.$field = $field.deep_clone() if $field != null else null")
+		builder.LineD("clone.$field = self.$field.deep_clone() if self.$field else null")
 	case field.Type.GetName() == cclValues.TypeNameBytes:
-		builder.LineD("clone.$field = $field.duplicate()")
+		builder.LineD("clone.$field = self.$field.duplicate()")
 	default:
-		builder.LineD("clone.$field = $field")
+		builder.LineD("clone.$field = self.$field")
 	}
 }

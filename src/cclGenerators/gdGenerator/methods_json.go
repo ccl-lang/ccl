@@ -168,6 +168,8 @@ func (c *GDScriptGenerationContext) generateFieldSerializeJson(
 	)
 
 	switch field.Type.GetName() {
+	case cclValues.TypeNameVector3:
+		builder.LineD(`data["$jsonName"] = [$field.x, $field.y, $field.z]`)
 	case cclValues.TypeNameBytes:
 		builder.LineD(`data["$jsonName"] = Marshalls.raw_to_base64($field)`)
 	default:
@@ -210,6 +212,8 @@ func (c *GDScriptGenerationContext) generateArraySerializeJson(
 		Indent()
 
 	switch targetFieldType.GetName() {
+	case cclValues.TypeNameVector3:
+		builder.LineD("$list.append([item.x, item.y, item.z])")
 	case cclValues.TypeNameBytes:
 		builder.LineD("$list.append(Marshalls.raw_to_base64(item))")
 	default:

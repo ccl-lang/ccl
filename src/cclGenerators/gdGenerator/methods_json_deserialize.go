@@ -48,6 +48,11 @@ func (c *GDScriptGenerationContext) generateFieldDeserializeJson(
 		Unindent()
 
 	switch targetFieldTypeName {
+	case cclValues.TypeNameVector3:
+		builder.WriteLine("else:").Indent()
+		c.generateVector3JsonValidation(builder, valueName)
+		builder.LineD("$field = Vector3($value[0], $value[1], $value[2])")
+		builder.Unindent()
 	case cclValues.TypeNameString:
 		builder.LineD("elif $value is String:").
 			Indent().
@@ -232,6 +237,9 @@ func (c *GDScriptGenerationContext) generateArrayDeserializeJson(
 		Indent()
 
 	switch targetFieldTypeName {
+	case cclValues.TypeNameVector3:
+		c.generateVector3JsonValidation(builder, "item")
+		builder.LineD("$list.append(Vector3(item[0], item[1], item[2]))")
 	case cclValues.TypeNameString:
 		builder.LineD("if item is String:").
 			Indent().
